@@ -28,7 +28,7 @@ export function useDashboardData() {
       const { data: dashboardData, error } = await supabase
         .from('Dashboard')
         .select('*')
-        .order('Dt. Atendimento', { ascending: false });
+        .order('"Dt. Atendimento"', { ascending: false });
 
       if (error) throw error;
 
