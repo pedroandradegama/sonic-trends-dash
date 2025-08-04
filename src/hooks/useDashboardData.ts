@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { format, parseISO, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { format, parse, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface DashboardData {
@@ -48,7 +48,8 @@ export function useDashboardData() {
       if (!row['Dt. Atendimento']) return;
 
       try {
-        const date = parseISO(row['Dt. Atendimento']);
+        // Parse Brazilian date format (dd/mm/yyyy)
+        const date = parse(row['Dt. Atendimento'], 'd/M/yyyy', new Date());
         const monthKey = format(startOfMonth(date), 'yyyy-MM');
         const monthLabel = format(date, 'MMM/yy', { locale: ptBR });
 
@@ -62,7 +63,8 @@ export function useDashboardData() {
         }
 
         const stats = monthlyStats.get(monthKey);
-        const quantidade = parseInt(row['Qtde'] || '0');
+        // Parse quantity from "R$ 1,00" format to number
+        const quantidade = parseFloat(row['Qtde']?.replace(/[^\d.,]/g, '').replace(',', '.') || '0');
         const repasse = parseFloat(row['Vl. Repasse']?.replace(/[^\d.,]/g, '').replace(',', '.') || '0');
 
         stats.quantidade += quantidade;
@@ -95,7 +97,7 @@ export function useDashboardData() {
       }
 
       const stats = productStats.get(produto);
-      const quantidade = parseInt(row['Qtde'] || '0');
+      const quantidade = parseFloat(row['Qtde']?.replace(/[^\d.,]/g, '').replace(',', '.') || '0');
       const repasse = parseFloat(row['Vl. Repasse']?.replace(/[^\d.,]/g, '').replace(',', '.') || '0');
 
       stats.quantidade += quantidade;
@@ -116,7 +118,7 @@ export function useDashboardData() {
 
   // Calcula métricas principais
   const getMetrics = () => {
-    const totalExames = data.reduce((sum, row) => sum + parseInt(row['Qtde'] || '0'), 0);
+    const totalExames = data.reduce((sum, row) => sum + parseFloat(row['Qtde']?.replace(/[^\d.,]/g, '').replace(',', '.') || '0'), 0);
     const totalRepasse = data.reduce((sum, row) => {
       const repasse = parseFloat(row['Vl. Repasse']?.replace(/[^\d.,]/g, '').replace(',', '.') || '0');
       return sum + repasse;
@@ -132,7 +134,7 @@ export function useDashboardData() {
     const currentMonthData = data.filter(row => {
       if (!row['Dt. Atendimento']) return false;
       try {
-        const date = parseISO(row['Dt. Atendimento']);
+        const date = parse(row['Dt. Atendimento'], 'd/M/yyyy', new Date());
         return date >= currentMonth;
       } catch {
         return false;
@@ -142,15 +144,15 @@ export function useDashboardData() {
     const lastMonthData = data.filter(row => {
       if (!row['Dt. Atendimento']) return false;
       try {
-        const date = parseISO(row['Dt. Atendimento']);
+        const date = parse(row['Dt. Atendimento'], 'd/M/yyyy', new Date());
         return date >= lastMonth && date < currentMonth;
       } catch {
         return false;
       }
     });
 
-    const currentMonthExames = currentMonthData.reduce((sum, row) => sum + parseInt(row['Qtde'] || '0'), 0);
-    const lastMonthExames = lastMonthData.reduce((sum, row) => sum + parseInt(row['Qtde'] || '0'), 0);
+    const currentMonthExames = currentMonthData.reduce((sum, row) => sum + parseFloat(row['Qtde']?.replace(/[^\d.,]/g, '').replace(',', '.') || '0'), 0);
+    const lastMonthExames = lastMonthData.reduce((sum, row) => sum + parseFloat(row['Qtde']?.replace(/[^\d.,]/g, '').replace(',', '.') || '0'), 0);
 
     const crescimento = lastMonthExames > 0 
       ? ((currentMonthExames - lastMonthExames) / lastMonthExames) * 100
