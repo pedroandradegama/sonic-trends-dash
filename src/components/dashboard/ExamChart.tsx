@@ -3,8 +3,7 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tool
 interface ExamChartProps {
   data: Array<{
     month: string;
-    quantidade: number;
-    repasse: number;
+    value: number;
   }>;
 }
 
@@ -34,19 +33,11 @@ export function ExamChart({ data }: ExamChartProps) {
           <Legend />
           <Line 
             type="monotone" 
-            dataKey="quantidade" 
+            dataKey="value" 
             stroke="hsl(var(--medical-blue))" 
             strokeWidth={3}
             dot={{ fill: 'hsl(var(--medical-blue))', strokeWidth: 2, r: 4 }}
-            name="Quantidade de Exames"
-          />
-          <Line 
-            type="monotone" 
-            dataKey="repasse" 
-            stroke="hsl(var(--medical-success))" 
-            strokeWidth={3}
-            dot={{ fill: 'hsl(var(--medical-success))', strokeWidth: 2, r: 4 }}
-            name="Valor Repasse (R$)"
+            name="Valor"
           />
         </LineChart>
       </ResponsiveContainer>

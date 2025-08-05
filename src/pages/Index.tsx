@@ -1,20 +1,63 @@
-import { Activity, DollarSign, TrendingUp, Users, Stethoscope } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from 'react';
+import { useDashboardData } from '@/hooks/useDashboardData';
+import { useAuth } from '@/contexts/AuthContext';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { ExamChart } from '@/components/dashboard/ExamChart';
 import { ProductChart } from '@/components/dashboard/ProductChart';
 import { DataTable } from '@/components/dashboard/DataTable';
-import { useDashboardData } from '@/hooks/useDashboardData';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-const Index = () => {
+export default function Index() {
   const { data, loading, error, monthlyData, productData, metrics } = useDashboardData();
+  const { signOut, user } = useAuth();
+  const [selectedMetric, setSelectedMetric] = useState<'exames' | 'ticket' | 'repasse'>('exames');
+  const [selectedConvenio, setSelectedConvenio] = useState<string>('todos');
+
+  // Get unique convenios for filter
+  const convenios = ['todos', ...Array.from(new Set(data?.map(item => item.Convênio).filter(Boolean) || []))];
+
+  // Filter monthly data based on selected convenio
+  const filteredMonthlyData = selectedConvenio === 'todos' 
+    ? monthlyData 
+    : monthlyData?.map(month => {
+        const filteredData = data?.filter(item => 
+          item.Convênio === selectedConvenio &&
+          new Date(item['Dt. Atendimento']).getMonth() === new Date(month.month + ' 1, 2024').getMonth()
+        ) || [];
+        
+        const quantidade = filteredData.length;
+        const repasse = filteredData.reduce((sum, item) => {
+          const value = parseFloat(item['Vl. Repasse']?.replace(/[R$\s.]/g, '').replace(',', '.') || '0');
+          return sum + value;
+        }, 0);
+        
+        return {
+          ...month,
+          quantidade,
+          repasse,
+          ticket: quantidade > 0 ? repasse / quantidade : 0
+        };
+      });
+
+  const getChartData = () => {
+    if (!filteredMonthlyData) return [];
+    
+    return filteredMonthlyData.map(item => ({
+      month: item.month,
+      value: selectedMetric === 'exames' ? item.quantidade : 
+             selectedMetric === 'ticket' ? item.ticket :
+             item.repasse
+    }));
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Carregando dados do dashboard...</p>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-medical-blue"></div>
+          <p className="mt-4 text-muted-foreground">Carregando dados do dashboard...</p>
         </div>
       </div>
     );
@@ -22,9 +65,9 @@ const Index = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="text-destructive mb-4">Erro ao carregar dados</div>
+          <h2 className="text-2xl font-bold text-destructive mb-2">Erro ao carregar dados</h2>
           <p className="text-muted-foreground">{error}</p>
         </div>
       </div>
@@ -43,78 +86,104 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-medical-blue/5 to-medical-success/5 p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="border-b border-border pb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <Stethoscope className="h-8 w-8 text-medical-blue" />
-            <h1 className="text-3xl font-bold text-foreground">
-              Dashboard Médico - Imag
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-4xl font-bold text-foreground mb-2">
+              Dashboard Médico
             </h1>
+            <p className="text-muted-foreground text-lg">
+              Bem-vindo, {user?.email}
+            </p>
           </div>
-          <p className="text-muted-foreground">
-            Acompanhe os dados evolutivos dos exames ultrassonográficos
-          </p>
+          <Button onClick={signOut} variant="outline">
+            Sair
+          </Button>
         </div>
 
-        {/* KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <MetricCard
             title="Total de Exames"
-            value={formatNumber(metrics.totalExames)}
-            change={`${metrics.crescimento > 0 ? '+' : ''}${metrics.crescimento.toFixed(1)}%`}
-            changeType={metrics.crescimento > 0 ? 'positive' : metrics.crescimento < 0 ? 'negative' : 'neutral'}
-            description="vs mês anterior"
-            icon={Activity}
+            value={formatNumber(metrics?.totalExames || 0)}
+            description="Exames realizados no período"
+            icon="📊"
+            onClick={() => setSelectedMetric('exames')}
+            isSelected={selectedMetric === 'exames'}
           />
           <MetricCard
             title="Ticket Médio"
-            value={formatCurrency(metrics.ticketMedio)}
-            icon={DollarSign}
+            value={formatCurrency(metrics?.ticketMedio || 0)}
+            description="Valor médio por exame"
+            icon="💰"
+            onClick={() => setSelectedMetric('ticket')}
+            isSelected={selectedMetric === 'ticket'}
           />
           <MetricCard
             title="Repasse Total"
-            value={formatCurrency(metrics.totalRepasse)}
-            icon={TrendingUp}
-          />
-          <MetricCard
-            title="Médicos Ativos"
-            value={formatNumber(metrics.medicoCount)}
-            icon={Users}
+            value={formatCurrency(metrics?.totalRepasse || 0)}
+            description="Total de repasses recebidos"
+            icon="💳"
+            onClick={() => setSelectedMetric('repasse')}
+            isSelected={selectedMetric === 'repasse'}
+            trend={metrics?.crescimento}
           />
         </div>
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="border-border bg-gradient-to-br from-card to-muted/20 shadow-[var(--shadow-card)]">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-lg font-semibold text-foreground">
-                Evolução Mensal
-              </CardTitle>
+              <CardTitle>Evolução Mensal</CardTitle>
+              <CardDescription>
+                {selectedMetric === 'exames' ? 'Quantidade de exames' :
+                 selectedMetric === 'ticket' ? 'Ticket médio' :
+                 'Repasse total'} ao longo do tempo
+              </CardDescription>
+              <div className="flex gap-4 items-center">
+                <Select value={selectedConvenio} onValueChange={setSelectedConvenio}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Filtrar por convênio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {convenios.map(convenio => (
+                      <SelectItem key={convenio} value={convenio}>
+                        {convenio === 'todos' ? 'Todos os convênios' : convenio}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
-              <ExamChart data={monthlyData} />
+              <ExamChart data={getChartData()} />
             </CardContent>
           </Card>
-
-          <Card className="border-border bg-gradient-to-br from-card to-muted/20 shadow-[var(--shadow-card)]">
+          
+          <Card>
             <CardHeader>
-              <CardTitle className="text-lg font-semibold text-foreground">
-                Análise por Produto
-              </CardTitle>
+              <CardTitle>Análise por Produto</CardTitle>
+              <CardDescription>Distribuição de exames por tipo</CardDescription>
             </CardHeader>
             <CardContent>
-              <ProductChart data={productData} />
+              <ProductChart data={productData || []} />
             </CardContent>
           </Card>
         </div>
 
         {/* Data Table */}
-        <DataTable data={data.slice(0, 20)} />
+        <Card>
+          <CardHeader>
+            <CardTitle>Exames Recentes</CardTitle>
+            <CardDescription>Últimos exames realizados</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DataTable data={data?.slice(0, 10) || []} />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
-};
-
-export default Index;
+}
