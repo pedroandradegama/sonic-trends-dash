@@ -22,12 +22,26 @@ export default function Index() {
   const filteredMonthlyData = selectedConvenio === 'todos' 
     ? monthlyData 
     : monthlyData?.map(month => {
-        const filteredData = data?.filter(item => 
-          item.Convênio === selectedConvenio &&
-          new Date(item['Dt. Atendimento']).getMonth() === new Date(month.month + ' 1, 2024').getMonth()
-        ) || [];
+        // Filter data for this specific month and convenio
+        const monthDate = new Date(month.month + ', 2024');
+        const monthNumber = monthDate.getMonth();
+        const yearNumber = monthDate.getFullYear();
         
-        const quantidade = filteredData.length;
+        const filteredData = data?.filter(item => {
+          if (item.Convênio !== selectedConvenio) return false;
+          
+          // Parse the date correctly (assuming format DD/MM/YYYY)
+          const [day, monthStr, year] = item['Dt. Atendimento']?.split('/') || [];
+          if (!day || !monthStr || !year) return false;
+          
+          const itemDate = new Date(parseInt(year), parseInt(monthStr) - 1, parseInt(day));
+          return itemDate.getMonth() === monthNumber && itemDate.getFullYear() === yearNumber;
+        }) || [];
+        
+        const quantidade = filteredData.reduce((sum, item) => {
+          return sum + parseInt(item.Qtde || '0');
+        }, 0);
+        
         const repasse = filteredData.reduce((sum, item) => {
           const value = parseFloat(item['Vl. Repasse']?.replace(/[R$\s.]/g, '').replace(',', '.') || '0');
           return sum + value;
@@ -158,7 +172,7 @@ export default function Index() {
               </div>
             </CardHeader>
             <CardContent>
-              <ExamChart data={getChartData()} />
+              <ExamChart data={getChartData()} selectedMetric={selectedMetric} />
             </CardContent>
           </Card>
           
