@@ -18,6 +18,24 @@ export default function Index() {
   // Get unique convenios for filter
   const convenios = ['todos', ...Array.from(new Set(data?.map(item => item.Convênio).filter(Boolean) || []))];
 
+  // Filter data based on selected convenio
+  const filteredData = selectedConvenio === 'todos' 
+    ? data 
+    : data?.filter(item => item.Convênio === selectedConvenio) || [];
+
+  // Calculate filtered metrics
+  const filteredMetrics = {
+    totalExames: filteredData?.reduce((sum, row) => sum + parseFloat(row['Qtde']?.replace(/[^\d.,]/g, '').replace(',', '.') || '0'), 0) || 0,
+    totalRepasse: filteredData?.reduce((sum, row) => {
+      const repasse = parseFloat(row['Vl. Repasse']?.replace(/[^\d.,]/g, '').replace(',', '.') || '0');
+      return sum + repasse;
+    }, 0) || 0,
+    get ticketMedio() {
+      return this.totalExames > 0 ? this.totalRepasse / this.totalExames : 0;
+    },
+    crescimento: metrics?.crescimento || 0
+  };
+
   // Filter monthly data based on selected convenio
   const filteredMonthlyData = selectedConvenio === 'todos' 
     ? monthlyData 
@@ -121,7 +139,7 @@ export default function Index() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <MetricCard
             title="Total de Exames"
-            value={formatNumber(metrics?.totalExames || 0)}
+            value={formatNumber(filteredMetrics.totalExames)}
             description="Exames realizados no período"
             icon="📊"
             onClick={() => setSelectedMetric('exames')}
@@ -129,7 +147,7 @@ export default function Index() {
           />
           <MetricCard
             title="Ticket Médio"
-            value={formatCurrency(metrics?.ticketMedio || 0)}
+            value={formatCurrency(filteredMetrics.ticketMedio)}
             description="Valor médio por exame"
             icon="💰"
             onClick={() => setSelectedMetric('ticket')}
@@ -137,12 +155,12 @@ export default function Index() {
           />
           <MetricCard
             title="Repasse Total"
-            value={formatCurrency(metrics?.totalRepasse || 0)}
+            value={formatCurrency(filteredMetrics.totalRepasse)}
             description="Total de repasses recebidos"
             icon="💳"
             onClick={() => setSelectedMetric('repasse')}
             isSelected={selectedMetric === 'repasse'}
-            trend={metrics?.crescimento}
+            trend={filteredMetrics.crescimento}
           />
         </div>
 
