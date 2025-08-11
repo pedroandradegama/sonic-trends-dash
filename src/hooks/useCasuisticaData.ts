@@ -20,7 +20,7 @@ export function useCasuisticaData() {
     try {
       setLoading(true);
       setError(null);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("Casuistica")
         .select("*");
 

@@ -98,10 +98,18 @@ export default function Casuistica() {
 
     if (total === 0) return [] as Array<{ categoria: string; percent: number }>;
 
-    return (['0','1','2','3','4','5'] as const).map((k) => ({
-      categoria: `BI-RADS ${k}`,
-      percent: (counts[k] / total) * 100,
-    }));
+    const cats = ['0','1','2','3','4','5'] as const;
+    let arr = cats.map((k) => {
+      const raw = (counts[k] / total) * 100;
+      const rounded = Math.round(raw * 10) / 10;
+      return { categoria: `BI-RADS ${k}`, percent: rounded };
+    });
+    const sum = arr.reduce((s, a) => s + a.percent, 0);
+    const diff = Math.round((100 - sum) * 10) / 10;
+    if (arr.length > 0) {
+      arr[arr.length - 1].percent = Math.max(0, Math.min(100, Math.round((arr[arr.length - 1].percent + diff) * 10) / 10));
+    }
+    return arr;
   }, [filtered]);
 
   if (loading) {
