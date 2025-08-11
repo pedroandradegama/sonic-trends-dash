@@ -144,8 +144,11 @@ export default function Casuistica() {
             <p className="text-muted-foreground text-lg">Análise de diagnósticos por médico e método</p>
           </div>
           <div className="flex gap-2">
-            <Button asChild variant="secondary">
-              <Link to="/" aria-label="Ir para Dashboard de Repasse">Repasse</Link>
+            <Button asChild variant="outline" aria-pressed={false} aria-label="Exibir Dashboard de Repasse">
+              <Link to="/">Repasse</Link>
+            </Button>
+            <Button asChild variant="secondary" aria-pressed={true} aria-label="Exibir Dashboard de Casuística">
+              <Link to="/casuistica">Casuística</Link>
             </Button>
             <Button onClick={signOut} variant="outline">Sair</Button>
           </div>

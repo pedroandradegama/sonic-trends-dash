@@ -132,8 +132,11 @@ export default function Index() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button asChild variant="secondary">
-              <Link to="/casuistica" aria-label="Ir para Dashboard de Casuística">Casuística</Link>
+            <Button asChild variant="secondary" aria-pressed={true} aria-label="Exibir Dashboard de Repasse">
+              <Link to="/">Repasse</Link>
+            </Button>
+            <Button asChild variant="outline" aria-pressed={false} aria-label="Exibir Dashboard de Casuística">
+              <Link to="/casuistica">Casuística</Link>
             </Button>
             <Button onClick={signOut} variant="outline">
               Sair
