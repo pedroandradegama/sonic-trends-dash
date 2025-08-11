@@ -8,6 +8,7 @@ import { DataTable } from '@/components/dashboard/DataTable';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Link } from 'react-router-dom';
 
 export default function Index() {
   const { data, loading, error, monthlyData, productData, metrics } = useDashboardData();
@@ -130,9 +131,14 @@ export default function Index() {
               Bem-vindo, {user?.email}
             </p>
           </div>
-          <Button onClick={signOut} variant="outline">
-            Sair
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="secondary">
+              <Link to="/casuistica" aria-label="Ir para Dashboard de Casuística">Casuística</Link>
+            </Button>
+            <Button onClick={signOut} variant="outline">
+              Sair
+            </Button>
+          </div>
         </div>
 
         {/* Metrics Cards */}
