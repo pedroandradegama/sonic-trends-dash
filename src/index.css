@@ -17,9 +17,9 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 215 20% 20%;
 
-    --primary: 210 85% 45%;
+    --primary: 195 46% 27%; /* IMAG Primary #275667 */
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 210 85% 40%;
+    --primary-hover: 195 46% 22%;
 
     --secondary: 210 30% 95%;
     --secondary-foreground: 215 20% 25%;
@@ -43,12 +43,14 @@ All colors MUST be HSL.
     --input: 210 20% 92%;
     --ring: 210 85% 45%;
 
-    /* Medical dashboard specific colors */
-    --medical-blue: 210 85% 45%;
-    --medical-blue-light: 210 100% 88%;
-    --medical-gray: 215 15% 50%;
-    --medical-success: 142 69% 58%;
-    --medical-warning: 45 93% 47%;
+    /* IMAG Brand Colors */
+    --imag-primary: 195 46% 27%; /* #275667 */
+    --imag-primary-light: 195 46% 85%;
+    --imag-secondary: 210 20% 96%; /* #F5F7F9 */
+    --imag-accent: 195 100% 70%;
+    --imag-success: 142 69% 58%;
+    --imag-warning: 45 93% 47%;
+    --imag-error: 0 72% 51%;
 
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(210 85% 45%), hsl(195 100% 70%));

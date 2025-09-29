@@ -61,12 +61,14 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				medical: {
-					blue: 'hsl(var(--medical-blue))',
-					'blue-light': 'hsl(var(--medical-blue-light))',
-					gray: 'hsl(var(--medical-gray))',
-					success: 'hsl(var(--medical-success))',
-					warning: 'hsl(var(--medical-warning))'
+				imag: {
+					primary: 'hsl(var(--imag-primary))',
+					'primary-light': 'hsl(var(--imag-primary-light))',
+					secondary: 'hsl(var(--imag-secondary))',
+					accent: 'hsl(var(--imag-accent))',
+					success: 'hsl(var(--imag-success))',
+					warning: 'hsl(var(--imag-warning))',
+					error: 'hsl(var(--imag-error))'
 				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
