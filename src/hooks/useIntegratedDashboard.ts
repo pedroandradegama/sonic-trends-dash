@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useRepasseData } from "./useRepasseData";
 import { useNPSData } from "./useNPSData";
 import { useCasuisticaData } from "./useCasuisticaData";
-import { parse, isWithinInterval, startOfDay, endOfDay } from "date-fns";
+import { parse, isWithinInterval, startOfDay, endOfDay, subDays, subMonths, subYears, differenceInDays } from "date-fns";
 
 export interface DashboardFilters {
   startDate?: Date;
@@ -132,17 +132,86 @@ export function useIntegratedDashboard(filters: DashboardFilters = {}) {
     return filtered;
   }, [npsData, filters]);
 
+  // Calculate previous period for comparison
+  const previousPeriodFilters = useMemo(() => {
+    if (!filters.startDate || !filters.endDate) return null;
+
+    const daysDiff = differenceInDays(filters.endDate, filters.startDate);
+    const previousEnd = subDays(filters.startDate, 1);
+    const previousStart = subDays(previousEnd, daysDiff);
+
+    return {
+      startDate: previousStart,
+      endDate: previousEnd,
+      exames: filters.exames,
+      convenios: filters.convenios,
+      medicoNome: filters.medicoNome,
+    };
+  }, [filters]);
+
+  // Filter previous period data
+  const previousRepasse = useMemo(() => {
+    if (!previousPeriodFilters) return [];
+    
+    let filtered = repasseData;
+
+    if (previousPeriodFilters.medicoNome) {
+      filtered = filtered.filter(row => row["Médico"] === previousPeriodFilters.medicoNome);
+    }
+
+    filtered = filtered.filter(row => {
+      const rowDate = parseDate(row["Dt. Atendimento"]);
+      if (!rowDate) return false;
+
+      return isWithinInterval(rowDate, {
+        start: startOfDay(previousPeriodFilters.startDate),
+        end: endOfDay(previousPeriodFilters.endDate)
+      });
+    });
+
+    if (previousPeriodFilters.exames && previousPeriodFilters.exames.length > 0) {
+      filtered = filtered.filter(row => 
+        row["Produto"] && previousPeriodFilters.exames?.includes(row["Produto"])
+      );
+    }
+
+    if (previousPeriodFilters.convenios && previousPeriodFilters.convenios.length > 0) {
+      filtered = filtered.filter(row => 
+        row["Convênio"] && previousPeriodFilters.convenios?.includes(row["Convênio"])
+      );
+    }
+
+    return filtered;
+  }, [repasseData, previousPeriodFilters]);
+
   // Calculate KPIs
   const kpis: DashboardKPIs = useMemo(() => {
-    // Total exames
+    // Current period
     const totalExames = filteredRepasse.reduce((sum, row) => 
       sum + parseNumericValue(row["Qtde"]), 0
     );
 
-    // Repasse total
     const repasseTotal = filteredRepasse.reduce((sum, row) => 
       sum + parseNumericValue(row["Vl. Repasse"]), 0
     );
+
+    // Previous period for comparison
+    const previousTotalExames = previousRepasse.reduce((sum, row) => 
+      sum + parseNumericValue(row["Qtde"]), 0
+    );
+
+    const previousRepasseTotal = previousRepasse.reduce((sum, row) => 
+      sum + parseNumericValue(row["Vl. Repasse"]), 0
+    );
+
+    // Calculate variations
+    const totalExamesVariation = previousTotalExames > 0
+      ? ((totalExames - previousTotalExames) / previousTotalExames) * 100
+      : 0;
+
+    const repasseTotalVariation = previousRepasseTotal > 0
+      ? ((repasseTotal - previousRepasseTotal) / previousRepasseTotal) * 100
+      : 0;
 
     // Ticket médio
     const ticketMedio = totalExames > 0 ? repasseTotal / totalExames : 0;
@@ -200,9 +269,9 @@ export function useIntegratedDashboard(filters: DashboardFilters = {}) {
 
     return {
       totalExames,
-      totalExamesVariation: 0, // TODO: Calculate vs previous period
+      totalExamesVariation,
       repasseTotal,
-      repasseTotalVariation: 0, // TODO: Calculate vs previous period
+      repasseTotalVariation,
       ticketMedio,
       npsMedia,
       npsPercentual,
@@ -211,7 +280,7 @@ export function useIntegratedDashboard(filters: DashboardFilters = {}) {
       percentualParticularRepasse,
       percentualConvenioRepasse,
     };
-  }, [filteredRepasse, filteredNPS]);
+  }, [filteredRepasse, filteredNPS, previousRepasse]);
 
   // Get available filter options
   const availableExames = useMemo(() => 
