@@ -1,89 +1,63 @@
-import { useState } from 'react';
-import { useDashboardData } from '@/hooks/useDashboardData';
+import { useState, useMemo } from 'react';
+import { useIntegratedDashboard } from '@/hooks/useIntegratedDashboard';
 import { useAuth } from '@/contexts/AuthContext';
-import { MetricCard } from '@/components/dashboard/MetricCard';
-import { ExamChart } from '@/components/dashboard/ExamChart';
-import { ProductChart } from '@/components/dashboard/ProductChart';
-import { DataTable } from '@/components/dashboard/DataTable';
+import { KPICard } from '@/components/kpis/KPICard';
+import { PeriodFilter, PeriodType } from '@/components/filters/PeriodFilter';
+import { ExamFilter } from '@/components/filters/ExamFilter';
+import { ConvenioFilter } from '@/components/filters/ConvenioFilter';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
+import { Activity, DollarSign, TrendingUp, Star, PieChart } from 'lucide-react';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { startOfDay, endOfDay, subDays, startOfMonth, startOfYear, parse } from 'date-fns';
 
 export default function Index() {
-  const { data, loading, error, monthlyData, productData, metrics } = useDashboardData();
   const { signOut, user } = useAuth();
-  const [selectedMetric, setSelectedMetric] = useState<'exames' | 'ticket' | 'repasse'>('exames');
-  const [selectedConvenio, setSelectedConvenio] = useState<string>('todos');
+  const [period, setPeriod] = useState<PeriodType>('mtd');
+  const [startDate, setStartDate] = useState<Date>();
+  const [endDate, setEndDate] = useState<Date>();
+  const [customMonth, setCustomMonth] = useState<string>();
+  const [selectedExams, setSelectedExams] = useState<string[]>([]);
+  const [selectedConvenios, setSelectedConvenios] = useState<string[]>([]);
 
-  // Get unique convenios for filter
-  const convenios = ['todos', ...Array.from(new Set(data?.map(item => item.Convênio).filter(Boolean) || []))];
-
-  // Filter data based on selected convenio
-  const filteredData = selectedConvenio === 'todos' 
-    ? data 
-    : data?.filter(item => item.Convênio === selectedConvenio) || [];
-
-  // Calculate filtered metrics
-  const filteredMetrics = {
-    totalExames: filteredData?.reduce((sum, row) => sum + parseFloat(row['Qtde']?.replace(/[^\d.,]/g, '').replace(',', '.') || '0'), 0) || 0,
-    totalRepasse: filteredData?.reduce((sum, row) => {
-      const repasse = parseFloat(row['Vl. Repasse']?.replace(/[^\d.,]/g, '').replace(',', '.') || '0');
-      return sum + repasse;
-    }, 0) || 0,
-    get ticketMedio() {
-      return this.totalExames > 0 ? this.totalRepasse / this.totalExames : 0;
-    },
-    crescimento: metrics?.crescimento || 0
-  };
-
-  // Filter monthly data based on selected convenio
-  const filteredMonthlyData = selectedConvenio === 'todos' 
-    ? monthlyData 
-    : monthlyData?.map(month => {
-        // Filter data for this specific month and convenio
-        const monthDate = new Date(month.month + ', 2024');
-        const monthNumber = monthDate.getMonth();
-        const yearNumber = monthDate.getFullYear();
-        
-        const filteredData = data?.filter(item => {
-          if (item.Convênio !== selectedConvenio) return false;
-          
-          // Parse the date correctly (assuming format DD/MM/YYYY)
-          const [day, monthStr, year] = item['Dt. Atendimento']?.split('/') || [];
-          if (!day || !monthStr || !year) return false;
-          
-          const itemDate = new Date(parseInt(year), parseInt(monthStr) - 1, parseInt(day));
-          return itemDate.getMonth() === monthNumber && itemDate.getFullYear() === yearNumber;
-        }) || [];
-        
-        const quantidade = filteredData.reduce((sum, item) => {
-          return sum + parseInt(item.Qtde || '0');
-        }, 0);
-        
-        const repasse = filteredData.reduce((sum, item) => {
-          const value = parseFloat(item['Vl. Repasse']?.replace(/[R$\s.]/g, '').replace(',', '.') || '0');
-          return sum + value;
-        }, 0);
-        
-        return {
-          ...month,
-          quantidade,
-          repasse,
-          ticket: quantidade > 0 ? repasse / quantidade : 0
-        };
-      });
-
-  const getChartData = () => {
-    if (!filteredMonthlyData) return [];
+  // Calculate date range based on period
+  const dateRange = useMemo(() => {
+    const now = new Date();
     
-    return filteredMonthlyData.map(item => ({
-      month: item.month,
-      value: selectedMetric === 'exames' ? item.quantidade : 
-             selectedMetric === 'ticket' ? item.ticket :
-             item.repasse
-    }));
-  };
+    switch (period) {
+      case 'today':
+        return { start: startOfDay(now), end: endOfDay(now) };
+      case '7d':
+        return { start: startOfDay(subDays(now, 7)), end: endOfDay(now) };
+      case 'mtd':
+        return { start: startOfMonth(now), end: endOfDay(now) };
+      case 'ytd':
+        return { start: startOfYear(now), end: endOfDay(now) };
+      case 'month':
+        if (customMonth) {
+          const monthDate = parse(customMonth, 'yyyy-MM', new Date());
+          return { 
+            start: startOfMonth(monthDate), 
+            end: endOfDay(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0))
+          };
+        }
+        return { start: startOfMonth(now), end: endOfDay(now) };
+      case 'custom':
+        return startDate && endDate ? { start: startDate, end: endDate } : undefined;
+      default:
+        return undefined;
+    }
+  }, [period, startDate, endDate, customMonth]);
+
+  const filters = useMemo(() => ({
+    startDate: dateRange?.start,
+    endDate: dateRange?.end,
+    exames: selectedExams.length > 0 ? selectedExams : undefined,
+    convenios: selectedConvenios.length > 0 ? selectedConvenios : undefined,
+  }), [dateRange, selectedExams, selectedConvenios]);
+
+  const { loading, error, kpis, availableExames, availableConvenios } = useIntegratedDashboard(filters);
 
   if (loading) {
     return (
@@ -115,116 +89,153 @@ export default function Index() {
   };
 
   const formatNumber = (value: number) => {
-    return new Intl.NumberFormat('pt-BR').format(value);
+    return new Intl.NumberFormat('pt-BR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-medical-blue/5 to-medical-success/5 p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">
-              Dashboard Médico
-            </h1>
-            <p className="text-muted-foreground text-lg">
-              Bem-vindo, {user?.email}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button asChild variant="secondary" aria-pressed={true} aria-label="Exibir Dashboard de Repasse">
-              <Link to="/">Repasse</Link>
-            </Button>
-            <Button asChild variant="outline" aria-pressed={false} aria-label="Exibir Dashboard de Casuística">
-              <Link to="/casuistica">Casuística</Link>
-            </Button>
-            <Button onClick={signOut} variant="outline">
-              Sair
-            </Button>
-          </div>
-        </div>
+    <TooltipProvider>
+      <div className="min-h-screen bg-background p-4 md:p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Header */}
+          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-1">
+                Dashboard IMAG
+              </h1>
+              <p className="text-muted-foreground">
+                Bem-vindo, {user?.email}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button asChild variant="default" size="sm">
+                <Link to="/">Repasse</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/casuistica">Casuística</Link>
+              </Button>
+              <Button onClick={signOut} variant="outline" size="sm">
+                Sair
+              </Button>
+            </div>
+          </header>
 
-        {/* Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <MetricCard
-            title="Total de Exames"
-            value={formatNumber(filteredMetrics.totalExames)}
-            description="Exames realizados no período"
-            icon="📊"
-            onClick={() => setSelectedMetric('exames')}
-            isSelected={selectedMetric === 'exames'}
-          />
-          <MetricCard
-            title="Ticket Médio"
-            value={formatCurrency(filteredMetrics.ticketMedio)}
-            description="Valor médio por exame"
-            icon="💰"
-            onClick={() => setSelectedMetric('ticket')}
-            isSelected={selectedMetric === 'ticket'}
-          />
-          <MetricCard
-            title="Repasse Total"
-            value={formatCurrency(filteredMetrics.totalRepasse)}
-            description="Total de repasses recebidos"
-            icon="💳"
-            onClick={() => setSelectedMetric('repasse')}
-            isSelected={selectedMetric === 'repasse'}
-            trend={filteredMetrics.crescimento}
-          />
-        </div>
-
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Filters */}
           <Card>
             <CardHeader>
-              <CardTitle>Evolução Mensal</CardTitle>
-              <CardDescription>
-                {selectedMetric === 'exames' ? 'Quantidade de exames' :
-                 selectedMetric === 'ticket' ? 'Ticket médio' :
-                 'Repasse total'} ao longo do tempo
-              </CardDescription>
-              <div className="flex gap-4 items-center">
-                <Select value={selectedConvenio} onValueChange={setSelectedConvenio}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Filtrar por convênio" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {convenios.map(convenio => (
-                      <SelectItem key={convenio} value={convenio}>
-                        {convenio === 'todos' ? 'Todos os convênios' : convenio}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <CardTitle className="text-lg">Filtros</CardTitle>
+              <CardDescription>Selecione o período e os filtros desejados</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col md:flex-row gap-4 flex-wrap">
+                <PeriodFilter
+                  period={period}
+                  onPeriodChange={setPeriod}
+                  startDate={startDate}
+                  endDate={endDate}
+                  onDateRangeChange={(start, end) => {
+                    setStartDate(start);
+                    setEndDate(end);
+                  }}
+                  customMonth={customMonth}
+                  onCustomMonthChange={setCustomMonth}
+                />
+                <ExamFilter
+                  selectedExams={selectedExams}
+                  onExamsChange={setSelectedExams}
+                  availableExams={availableExames}
+                />
+                <ConvenioFilter
+                  selectedConvenios={selectedConvenios}
+                  onConveniosChange={setSelectedConvenios}
+                  availableConvenios={availableConvenios}
+                />
               </div>
-            </CardHeader>
-            <CardContent>
-              <ExamChart data={getChartData()} selectedMetric={selectedMetric} />
             </CardContent>
           </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Análise por Produto</CardTitle>
-              <CardDescription>Distribuição de exames por tipo</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ProductChart data={productData || []} />
-            </CardContent>
-          </Card>
-        </div>
 
-        {/* Data Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Exames Recentes</CardTitle>
-            <CardDescription>Últimos exames realizados</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DataTable data={data?.slice(0, 10) || []} />
-          </CardContent>
-        </Card>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center space-y-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-imag-primary mx-auto"></div>
+                <p className="text-muted-foreground">Carregando dados...</p>
+              </div>
+            </div>
+          ) : error ? (
+            <Card className="border-imag-error">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-2">
+                  <h3 className="text-lg font-semibold text-imag-error">Erro ao carregar dados</h3>
+                  <p className="text-muted-foreground">{error}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {/* KPI Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                <KPICard
+                  title="Exames"
+                  value={formatNumber(kpis.totalExames)}
+                  subtitle="Total no período"
+                  trend={{
+                    value: kpis.totalExamesVariation,
+                    isPositive: kpis.totalExamesVariation >= 0
+                  }}
+                  icon={<Activity className="h-5 w-5 text-imag-primary" />}
+                  tooltip="Total de exames realizados no período selecionado"
+                />
+                <KPICard
+                  title="Repasse Total"
+                  value={formatCurrency(kpis.repasseTotal)}
+                  trend={{
+                    value: kpis.repasseTotalVariation,
+                    isPositive: kpis.repasseTotalVariation >= 0
+                  }}
+                  icon={<DollarSign className="h-5 w-5 text-imag-primary" />}
+                  tooltip="Soma total dos repasses recebidos no período"
+                />
+                <KPICard
+                  title="Ticket Médio"
+                  value={formatCurrency(kpis.ticketMedio)}
+                  subtitle="Por exame"
+                  icon={<TrendingUp className="h-5 w-5 text-imag-primary" />}
+                  tooltip="Valor médio de repasse por exame (Repasse Total ÷ Total de Exames)"
+                />
+                <KPICard
+                  title="NPS Médio"
+                  value={kpis.npsMedia.toFixed(1)}
+                  subtitle={`${kpis.npsPercentual >= 0 ? '+' : ''}${kpis.npsPercentual.toFixed(1)}% NPS`}
+                  icon={<Star className="h-5 w-5 text-imag-primary" />}
+                  tooltip="Nota média (0-10) e NPS% = (%Promotores - %Detratores) × 100. Promotores: 9-10, Neutros: 7-8, Detratores: 0-6"
+                />
+                <KPICard
+                  title="Particular"
+                  value={`${kpis.percentualParticular.toFixed(1)}%`}
+                  subtitle={`${kpis.percentualParticularRepasse.toFixed(1)}% em R$`}
+                  icon={<PieChart className="h-5 w-5 text-imag-primary" />}
+                  tooltip="Percentual de exames particulares por volume e por valor de repasse"
+                />
+              </div>
+
+              {/* Charts - To be implemented in next stages */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Visualizações</CardTitle>
+                  <CardDescription>Gráficos serão implementados nas próximas etapas</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground text-center py-8">
+                    Em desenvolvimento: Gráficos de evolução temporal, distribuição por exame, convênios e casuística
+                  </p>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
