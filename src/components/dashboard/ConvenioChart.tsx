@@ -2,16 +2,16 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 
-interface ProductChartProps {
+interface ConvenioChartProps {
   data: Array<{
-    exame: string;
+    convenio: string;
     quantidade: number;
     valor: number;
   }>;
 }
 
-export function ProductChart({ data }: ProductChartProps) {
-  const [viewMode, setViewMode] = useState<'quantidade' | 'valor'>('quantidade');
+export function ConvenioChart({ data }: ConvenioChartProps) {
+  const [viewMode, setViewMode] = useState<'quantidade' | 'valor'>('valor');
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -29,9 +29,13 @@ export function ProductChart({ data }: ProductChartProps) {
     }).format(value);
   };
 
-  const chartData = data.slice(0, 10).map(d => ({
-    exame: d.exame,
-    value: viewMode === 'quantidade' ? d.quantidade : d.valor
+  // Top 10 convenios
+  const top10 = data.slice(0, 10);
+
+  const chartData = top10.map(d => ({
+    convenio: d.convenio.length > 25 ? d.convenio.substring(0, 25) + '...' : d.convenio,
+    quantidade: d.quantidade,
+    valor: d.valor
   }));
 
   return (
@@ -54,20 +58,20 @@ export function ProductChart({ data }: ProductChartProps) {
       </div>
       <div className="h-[400px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 150, bottom: 5 }}>
+          <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
             <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
             <XAxis 
-              type="number"
+              dataKey="convenio" 
+              className="text-muted-foreground"
+              tick={{ fontSize: 10 }}
+              angle={-45}
+              textAnchor="end"
+              height={100}
+            />
+            <YAxis 
               className="text-muted-foreground"
               tick={{ fontSize: 12 }}
               tickFormatter={viewMode === 'valor' ? formatCurrency : formatNumber}
-            />
-            <YAxis 
-              type="category"
-              dataKey="exame" 
-              className="text-muted-foreground"
-              tick={{ fontSize: 11 }}
-              width={140}
             />
             <RechartsTooltip 
               contentStyle={{
@@ -76,18 +80,28 @@ export function ProductChart({ data }: ProductChartProps) {
                 borderRadius: 'var(--radius)',
                 boxShadow: 'var(--shadow-card)'
               }}
-              formatter={(value) => [
-                viewMode === 'valor' ? formatCurrency(Number(value)) : formatNumber(Number(value)),
-                viewMode === 'valor' ? 'Valor' : 'Quantidade'
-              ]}
+              formatter={(value, name) => {
+                if (name === 'Quantidade') return [formatNumber(Number(value)), name];
+                if (name === 'Valor') return [formatCurrency(Number(value)), name];
+                return [value, name];
+              }}
             />
             <Legend />
-            <Bar 
-              dataKey="value" 
-              fill="hsl(var(--primary))" 
-              name={viewMode === 'valor' ? 'Valor' : 'Quantidade'}
-              radius={[0, 4, 4, 0]}
-            />
+            {viewMode === 'quantidade' ? (
+              <Bar 
+                dataKey="quantidade" 
+                fill="hsl(var(--primary))" 
+                name="Quantidade"
+                radius={[4, 4, 0, 0]}
+              />
+            ) : (
+              <Bar 
+                dataKey="valor" 
+                fill="hsl(var(--chart-2))" 
+                name="Valor"
+                radius={[4, 4, 0, 0]}
+              />
+            )}
           </BarChart>
         </ResponsiveContainer>
       </div>

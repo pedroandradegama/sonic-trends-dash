@@ -11,6 +11,9 @@ import { Link } from 'react-router-dom';
 import { Activity, DollarSign, TrendingUp, Star, PieChart } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { startOfDay, endOfDay, subDays, startOfMonth, startOfYear, parse } from 'date-fns';
+import { TimeSeriesChart } from '@/components/dashboard/TimeSeriesChart';
+import { ProductChart } from '@/components/dashboard/ProductChart';
+import { ConvenioChart } from '@/components/dashboard/ConvenioChart';
 
 export default function Index() {
   const { signOut, user } = useAuth();
@@ -57,7 +60,16 @@ export default function Index() {
     convenios: selectedConvenios.length > 0 ? selectedConvenios : undefined,
   }), [dateRange, selectedExams, selectedConvenios]);
 
-  const { loading, error, kpis, availableExames, availableConvenios } = useIntegratedDashboard(filters);
+  const { 
+    loading, 
+    error, 
+    kpis, 
+    availableExames, 
+    availableConvenios,
+    timeSeriesData,
+    examDistribution,
+    convenioDistribution
+  } = useIntegratedDashboard(filters);
 
   if (loading) {
     return (
@@ -220,16 +232,36 @@ export default function Index() {
                 />
               </div>
 
-              {/* Charts - To be implemented in next stages */}
-              <Card>
+              {/* Evolução Temporal */}
+              <Card className="bg-card border-border shadow-card">
                 <CardHeader>
-                  <CardTitle>Visualizações</CardTitle>
-                  <CardDescription>Gráficos serão implementados nas próximas etapas</CardDescription>
+                  <CardTitle className="text-foreground">Evolução Temporal</CardTitle>
+                  <CardDescription>Exames e Repasse ao longo do tempo</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground text-center py-8">
-                    Em desenvolvimento: Gráficos de evolução temporal, distribuição por exame, convênios e casuística
-                  </p>
+                  <TimeSeriesChart data={timeSeriesData} />
+                </CardContent>
+              </Card>
+
+              {/* Distribuição por Tipo de Exame */}
+              <Card className="bg-card border-border shadow-card">
+                <CardHeader>
+                  <CardTitle className="text-foreground">Distribuição por Tipo de Exame</CardTitle>
+                  <CardDescription>Top 10 exames por volume ou valor</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ProductChart data={examDistribution} />
+                </CardContent>
+              </Card>
+
+              {/* Convênios */}
+              <Card className="bg-card border-border shadow-card">
+                <CardHeader>
+                  <CardTitle className="text-foreground">Top 10 Convênios</CardTitle>
+                  <CardDescription>Principais convênios por volume ou valor</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ConvenioChart data={convenioDistribution} />
                 </CardContent>
               </Card>
             </>

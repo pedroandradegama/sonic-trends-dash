@@ -293,6 +293,81 @@ export function useIntegratedDashboard(filters: DashboardFilters = {}) {
     [repasseData]
   );
 
+  // Time series data (monthly aggregation)
+  const timeSeriesData = useMemo(() => {
+    const monthlyData = new Map<string, { exames: number; repasse: number }>();
+    
+    filteredRepasse.forEach(row => {
+      const date = parseDate(row["Dt. Atendimento"]);
+      if (!date) return;
+      
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const current = monthlyData.get(monthKey) || { exames: 0, repasse: 0 };
+      
+      current.exames += parseNumericValue(row["Qtde"]);
+      current.repasse += parseNumericValue(row["Vl. Repasse"]);
+      
+      monthlyData.set(monthKey, current);
+    });
+    
+    return Array.from(monthlyData.entries())
+      .map(([month, data]) => ({
+        month: month.replace('-', '/'),
+        exames: data.exames,
+        repasse: data.repasse,
+        ticketMedio: data.exames > 0 ? data.repasse / data.exames : 0
+      }))
+      .sort((a, b) => a.month.localeCompare(b.month));
+  }, [filteredRepasse]);
+
+  // Exam distribution
+  const examDistribution = useMemo(() => {
+    const examData = new Map<string, { quantidade: number; valor: number }>();
+    
+    filteredRepasse.forEach(row => {
+      const exame = row["Produto"];
+      if (!exame) return;
+      
+      const current = examData.get(exame) || { quantidade: 0, valor: 0 };
+      current.quantidade += parseNumericValue(row["Qtde"]);
+      current.valor += parseNumericValue(row["Vl. Repasse"]);
+      
+      examData.set(exame, current);
+    });
+    
+    return Array.from(examData.entries())
+      .map(([exame, data]) => ({
+        exame,
+        quantidade: data.quantidade,
+        valor: data.valor
+      }))
+      .sort((a, b) => b.quantidade - a.quantidade);
+  }, [filteredRepasse]);
+
+  // Convenio distribution
+  const convenioDistribution = useMemo(() => {
+    const convenioData = new Map<string, { quantidade: number; valor: number }>();
+    
+    filteredRepasse.forEach(row => {
+      const convenio = row["Convênio"];
+      if (!convenio) return;
+      
+      const current = convenioData.get(convenio) || { quantidade: 0, valor: 0 };
+      current.quantidade += parseNumericValue(row["Qtde"]);
+      current.valor += parseNumericValue(row["Vl. Repasse"]);
+      
+      convenioData.set(convenio, current);
+    });
+    
+    return Array.from(convenioData.entries())
+      .map(([convenio, data]) => ({
+        convenio,
+        quantidade: data.quantidade,
+        valor: data.valor
+      }))
+      .sort((a, b) => b.valor - a.valor);
+  }, [filteredRepasse]);
+
   return {
     loading,
     error,
@@ -302,5 +377,8 @@ export function useIntegratedDashboard(filters: DashboardFilters = {}) {
     casuisticaData,
     availableExames,
     availableConvenios,
+    timeSeriesData,
+    examDistribution,
+    convenioDistribution,
   };
 }
