@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DiagnosisChart } from '@/components/casuistica/DiagnosisChart';
 import { BIRADSChart } from '@/components/casuistica/BIRADSChart';
+import { DiagnosticosPanel } from '@/components/casuistica/DiagnosticosPanel';
 import { Link } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 function normalize(str?: string | null) {
   if (!str) return '';
@@ -154,104 +156,120 @@ export default function Casuistica() {
           </div>
         </div>
 
-        {/* Filtros */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Filtros</CardTitle>
-            <CardDescription>Selecione o médico e o método (Subgrupo)</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-muted-foreground mb-2">Médico Executante</label>
-                <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Filtrar por médico" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {doctors.map((m) => (
-                      <SelectItem key={m} value={m}>{m === 'todos' ? 'Todos' : m}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm text-muted-foreground mb-2">Subgrupo (Método)</label>
-                <Select value={selectedSubgrupo} onValueChange={setSelectedSubgrupo}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Filtrar por subgrupo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {subgrupos.map((s) => (
-                      <SelectItem key={s} value={s}>{s === 'todos' ? 'Todos' : s}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        {/* Tabs principais */}
+        <Tabs defaultValue="casuistica" className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="casuistica">Casuística Geral</TabsTrigger>
+            <TabsTrigger value="diagnosticos">Diagnósticos Histo</TabsTrigger>
+          </TabsList>
+
+          {/* Tab Casuística */}
+          <TabsContent value="casuistica" className="space-y-6">
+            {/* Filtros */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Filtros</CardTitle>
+                <CardDescription>Selecione o médico e o método (Subgrupo)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-muted-foreground mb-2">Médico Executante</label>
+                    <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Filtrar por médico" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {doctors.map((m) => (
+                          <SelectItem key={m} value={m}>{m === 'todos' ? 'Todos' : m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-muted-foreground mb-2">Subgrupo (Método)</label>
+                    <Select value={selectedSubgrupo} onValueChange={setSelectedSubgrupo}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Filtrar por subgrupo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subgrupos.map((s) => (
+                          <SelectItem key={s} value={s}>{s === 'todos' ? 'Todos' : s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Métricas rápidas */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Total de Laudos</CardTitle>
+                  <CardDescription>Registros no filtro atual</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-medical-blue">{new Intl.NumberFormat('pt-BR').format(totalLaudos)}</div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Métricas rápidas */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Total de Laudos</CardTitle>
-              <CardDescription>Registros no filtro atual</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-medical-blue">{new Intl.NumberFormat('pt-BR').format(totalLaudos)}</div>
-            </CardContent>
-          </Card>
-        </div>
+            {/* Gráficos */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Diagnósticos mais prevalentes</CardTitle>
+                  <CardDescription>Top diagnósticos em {selectedSubgrupo === 'todos' ? 'todos os métodos' : selectedSubgrupo}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DiagnosisChart data={topDiagnosticos} />
+                </CardContent>
+              </Card>
 
-        {/* Gráficos */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Diagnósticos mais prevalentes</CardTitle>
-              <CardDescription>Top diagnósticos em {selectedSubgrupo === 'todos' ? 'todos os métodos' : selectedSubgrupo}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <DiagnosisChart data={topDiagnosticos} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Distribuição BI-RADS (Mama)</CardTitle>
-              <CardDescription>Percentual por categoria (soma 100%)</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {biradsData.length > 0 ? (
-                <BIRADSChart data={biradsData} />
-              ) : (
-                <p className="text-muted-foreground">Sem dados de BI-RADS no filtro atual.</p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Referências (benchmarks) */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Referências BI-RADS (benchmarks)</CardTitle>
-            <CardDescription>Valores de referência em rastreamento (literatura)</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc pl-6 space-y-2 text-sm text-muted-foreground">
-              <li>Taxa de recall (aprox. BI-RADS 0): recomendada ~5% a 12% em mamografia de rastreamento (ACR/BCSC).</li>
-              <li>BI-RADS 1–2 (negativo/benigno): tipicamente a maioria dos exames (≈80%–90%).</li>
-              <li>BI-RADS 3: geralmente baixo (≈0,5%–2%).</li>
-              <li>BI-RADS 4–5: raros em rastreamento (≈0,3%–1%).</li>
-            </ul>
-            <div className="mt-3 text-xs">
-              Fontes: 
-              <a className="text-medical-blue underline ml-1" href="https://pubs.rsna.org/doi/10.1148/radiol.2016161174" target="_blank" rel="noreferrer">RSNA – BCSC Benchmarks</a>,
-              <a className="text-medical-blue underline ml-2" href="https://radiologyassistant.nl/breast/bi-rads/bi-rads-for-mammography-and-ultrasound-2013" target="_blank" rel="noreferrer">Radiology Assistant (BI-RADS)</a>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Distribuição BI-RADS (Mama)</CardTitle>
+                  <CardDescription>Percentual por categoria (soma 100%)</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {biradsData.length > 0 ? (
+                    <BIRADSChart data={biradsData} />
+                  ) : (
+                    <p className="text-muted-foreground">Sem dados de BI-RADS no filtro atual.</p>
+                  )}
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
+
+            {/* Referências (benchmarks) */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Referências BI-RADS (benchmarks)</CardTitle>
+                <CardDescription>Valores de referência em rastreamento (literatura)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-disc pl-6 space-y-2 text-sm text-muted-foreground">
+                  <li>Taxa de recall (aprox. BI-RADS 0): recomendada ~5% a 12% em mamografia de rastreamento (ACR/BCSC).</li>
+                  <li>BI-RADS 1–2 (negativo/benigno): tipicamente a maioria dos exames (≈80%–90%).</li>
+                  <li>BI-RADS 3: geralmente baixo (≈0,5%–2%).</li>
+                  <li>BI-RADS 4–5: raros em rastreamento (≈0,3%–1%).</li>
+                </ul>
+                <div className="mt-3 text-xs">
+                  Fontes: 
+                  <a className="text-medical-blue underline ml-1" href="https://pubs.rsna.org/doi/10.1148/radiol.2016161174" target="_blank" rel="noreferrer">RSNA – BCSC Benchmarks</a>,
+                  <a className="text-medical-blue underline ml-2" href="https://radiologyassistant.nl/breast/bi-rads/bi-rads-for-mammography-and-ultrasound-2013" target="_blank" rel="noreferrer">Radiology Assistant (BI-RADS)</a>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tab Diagnósticos Histopatológicos */}
+          <TabsContent value="diagnosticos" className="space-y-6">
+            <DiagnosticosPanel />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
