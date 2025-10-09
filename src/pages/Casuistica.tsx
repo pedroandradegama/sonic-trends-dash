@@ -152,6 +152,9 @@ export default function Casuistica() {
             <Button asChild variant="secondary" aria-pressed={true} aria-label="Exibir Dashboard de Casuística">
               <Link to="/casuistica">Casuística</Link>
             </Button>
+            <Button asChild variant="outline">
+              <Link to="/nps">NPS</Link>
+            </Button>
             <Button onClick={signOut} variant="outline">Sair</Button>
           </div>
         </div>

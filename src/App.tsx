@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Casuistica from "./pages/Casuistica";
+import NPS from "./pages/NPS";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,11 @@ const App = () => (
             <Route path="/casuistica" element={
               <ProtectedRoute>
                 <Casuistica />
+              </ProtectedRoute>
+            } />
+            <Route path="/nps" element={
+              <ProtectedRoute>
+                <NPS />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

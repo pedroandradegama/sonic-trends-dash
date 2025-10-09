@@ -128,6 +128,9 @@ export default function Index() {
               <Button asChild variant="outline" size="sm">
                 <Link to="/casuistica">Casuística</Link>
               </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/nps">NPS</Link>
+              </Button>
               <Button onClick={signOut} variant="outline" size="sm">
                 Sair
               </Button>
