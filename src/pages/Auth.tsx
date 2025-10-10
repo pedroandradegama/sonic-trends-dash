@@ -6,12 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [creatingMedicos, setCreatingMedicos] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -21,6 +23,30 @@ export default function Auth() {
       navigate('/');
     }
   }, [user, navigate]);
+
+  const handleCreateMedicos = async () => {
+    setCreatingMedicos(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-medicos');
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Médicos cadastrados!",
+        description: "Os médicos foram cadastrados com sucesso.",
+      });
+      
+      console.log('Resultado:', data);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao cadastrar médicos",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingMedicos(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,6 +122,19 @@ export default function Auth() {
               {loading ? 'Carregando...' : (isLogin ? 'Entrar' : 'Criar Conta')}
             </Button>
           </form>
+          
+          <div className="mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCreateMedicos}
+              disabled={creatingMedicos}
+              className="w-full"
+            >
+              {creatingMedicos ? 'Cadastrando...' : 'Cadastrar Médicos (Admin)'}
+            </Button>
+          </div>
+          
           <div className="mt-4 text-center">
             <button
               type="button"
