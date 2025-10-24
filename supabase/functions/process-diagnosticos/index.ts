@@ -44,7 +44,21 @@ serve(async (req) => {
       throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY não configurada');
     }
 
-    const credentials = JSON.parse(serviceAccountKey);
+    let credentials;
+    try {
+      credentials = JSON.parse(serviceAccountKey);
+      
+      // Validar campos obrigatórios
+      if (!credentials.client_email || !credentials.private_key) {
+        throw new Error('Service account JSON inválido: faltam campos obrigatórios (client_email, private_key)');
+      }
+    } catch (parseError) {
+      console.error('Erro ao fazer parse do GOOGLE_SERVICE_ACCOUNT_KEY:', parseError);
+      throw new Error(
+        'GOOGLE_SERVICE_ACCOUNT_KEY deve ser um JSON válido do Google Service Account. ' +
+        'Baixe o arquivo JSON completo do Google Cloud Console e cole todo o conteúdo.'
+      );
+    }
     
     // Configurações
     const DRIVE_FOLDER_ID = "1b-RPK9Vc3fyv8Oa3yBceqaXhRLDJS4y1";
