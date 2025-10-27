@@ -62,7 +62,7 @@ serve(async (req) => {
     
     // Configurações
     const DRIVE_FOLDER_ID = "1b-RPK9Vc3fyv8Oa3yBceqaXhRLDJS4y1";
-    const SHEETS_SPREADSHEET_ID = "1ALRU24yTcS3QxOPNiMKPOdx8gNzExR6n";
+    const SHEETS_SPREADSHEET_ID = "1pwIssvgaBVvREC2vWHCCAeoo0DYHrddF2C9rqhaRzr0";
     const SHEETS_TAB_MAPEAMENTO = "teste";
     const SHEETS_TAB_SAIDA = "Diagnósticos por Médico";
     const LIMIAR_FUZZY = 0.92;
