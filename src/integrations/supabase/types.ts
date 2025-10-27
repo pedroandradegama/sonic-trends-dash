@@ -7,40 +7,184 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
   public: {
     Tables: {
-      Dashboard: {
+      Casuistica: {
         Row: {
-          Convênio: string | null
-          "Dt. Atendimento": string | null
-          Médico: string | null
-          "Porcentagem Repasse": string | null
+          "Cód. Médico Executante": number | null
+          "Cód. Médico Solicitante": number | null
+          "Cód. Paciente": number | null
+          "Cód. Produto": number | null
+          "Cód. Status Laudo": number | null
+          Comentário: string | null
+          "Data do pedido": string | null
+          "Médico Executante": string | null
+          "Médico Solicitante": string | null
+          "Número Laudo": number | null
+          Paciente: string | null
+          Pedido: number | null
           Produto: string | null
-          Qtde: string | null
-          "Vl. Repasse": string | null
+          "Status laudo": string | null
+          Subgrupo: string | null
         }
         Insert: {
-          Convênio?: string | null
-          "Dt. Atendimento"?: string | null
-          Médico?: string | null
-          "Porcentagem Repasse"?: string | null
+          "Cód. Médico Executante"?: number | null
+          "Cód. Médico Solicitante"?: number | null
+          "Cód. Paciente"?: number | null
+          "Cód. Produto"?: number | null
+          "Cód. Status Laudo"?: number | null
+          Comentário?: string | null
+          "Data do pedido"?: string | null
+          "Médico Executante"?: string | null
+          "Médico Solicitante"?: string | null
+          "Número Laudo"?: number | null
+          Paciente?: string | null
+          Pedido?: number | null
           Produto?: string | null
-          Qtde?: string | null
-          "Vl. Repasse"?: string | null
+          "Status laudo"?: string | null
+          Subgrupo?: string | null
         }
         Update: {
-          Convênio?: string | null
-          "Dt. Atendimento"?: string | null
-          Médico?: string | null
-          "Porcentagem Repasse"?: string | null
+          "Cód. Médico Executante"?: number | null
+          "Cód. Médico Solicitante"?: number | null
+          "Cód. Paciente"?: number | null
+          "Cód. Produto"?: number | null
+          "Cód. Status Laudo"?: number | null
+          Comentário?: string | null
+          "Data do pedido"?: string | null
+          "Médico Executante"?: string | null
+          "Médico Solicitante"?: string | null
+          "Número Laudo"?: number | null
+          Paciente?: string | null
+          Pedido?: number | null
           Produto?: string | null
-          Qtde?: string | null
-          "Vl. Repasse"?: string | null
+          "Status laudo"?: string | null
+          Subgrupo?: string | null
+        }
+        Relationships: []
+      }
+      NPS: {
+        Row: {
+          "Agendamento do exame": string | null
+          atendente: string | null
+          "Atendimento médico/técnico": string | null
+          "Atendimento na recepção": string | null
+          categoria_cor: string | null
+          categoria_id: number | null
+          categoria_nome: string | null
+          cliente_codigo: number | null
+          comentarios: string | null
+          "Como nos conheceu?": string | null
+          convenio: string | null
+          dados_adicionais: string | null
+          data_atendimento: string | null
+          data_resposta: string | null
+          destinatario: number | null
+          "Entrega do resultado": string | null
+          idade: number | null
+          mensagem_tipo: string | null
+          motivo_rnc: string | null
+          negocio: number | null
+          nota_real: number | null
+          nps: string | null
+          nps_id: number | null
+          nps_rnc: string | null
+          nps_setor_codigo: number | null
+          ordem_servico: number | null
+          paciente: string | null
+          prestador_nome: string | null
+          qtd_revisoes: string | null
+          "Qualidade do serviço": string | null
+          resposta: string | null
+          setor: string | null
+          sexo: string | null
+          telefone: number | null
+          "Tempo de espera": string | null
+          unidade: string | null
+          unidade_codigo: number | null
+        }
+        Insert: {
+          "Agendamento do exame"?: string | null
+          atendente?: string | null
+          "Atendimento médico/técnico"?: string | null
+          "Atendimento na recepção"?: string | null
+          categoria_cor?: string | null
+          categoria_id?: number | null
+          categoria_nome?: string | null
+          cliente_codigo?: number | null
+          comentarios?: string | null
+          "Como nos conheceu?"?: string | null
+          convenio?: string | null
+          dados_adicionais?: string | null
+          data_atendimento?: string | null
+          data_resposta?: string | null
+          destinatario?: number | null
+          "Entrega do resultado"?: string | null
+          idade?: number | null
+          mensagem_tipo?: string | null
+          motivo_rnc?: string | null
+          negocio?: number | null
+          nota_real?: number | null
+          nps?: string | null
+          nps_id?: number | null
+          nps_rnc?: string | null
+          nps_setor_codigo?: number | null
+          ordem_servico?: number | null
+          paciente?: string | null
+          prestador_nome?: string | null
+          qtd_revisoes?: string | null
+          "Qualidade do serviço"?: string | null
+          resposta?: string | null
+          setor?: string | null
+          sexo?: string | null
+          telefone?: number | null
+          "Tempo de espera"?: string | null
+          unidade?: string | null
+          unidade_codigo?: number | null
+        }
+        Update: {
+          "Agendamento do exame"?: string | null
+          atendente?: string | null
+          "Atendimento médico/técnico"?: string | null
+          "Atendimento na recepção"?: string | null
+          categoria_cor?: string | null
+          categoria_id?: number | null
+          categoria_nome?: string | null
+          cliente_codigo?: number | null
+          comentarios?: string | null
+          "Como nos conheceu?"?: string | null
+          convenio?: string | null
+          dados_adicionais?: string | null
+          data_atendimento?: string | null
+          data_resposta?: string | null
+          destinatario?: number | null
+          "Entrega do resultado"?: string | null
+          idade?: number | null
+          mensagem_tipo?: string | null
+          motivo_rnc?: string | null
+          negocio?: number | null
+          nota_real?: number | null
+          nps?: string | null
+          nps_id?: number | null
+          nps_rnc?: string | null
+          nps_setor_codigo?: number | null
+          ordem_servico?: number | null
+          paciente?: string | null
+          prestador_nome?: string | null
+          qtd_revisoes?: string | null
+          "Qualidade do serviço"?: string | null
+          resposta?: string | null
+          setor?: string | null
+          sexo?: string | null
+          telefone?: number | null
+          "Tempo de espera"?: string | null
+          unidade?: string | null
+          unidade_codigo?: number | null
         }
         Relationships: []
       }
@@ -68,6 +212,36 @@ export type Database = {
           medico_nome?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      Repasse: {
+        Row: {
+          Convênio: string | null
+          "Dt. Atendimento": string | null
+          Médico: string | null
+          "Porcentagem Repasse": string | null
+          Produto: string | null
+          Qtde: string | null
+          "Vl. Repasse": string | null
+        }
+        Insert: {
+          Convênio?: string | null
+          "Dt. Atendimento"?: string | null
+          Médico?: string | null
+          "Porcentagem Repasse"?: string | null
+          Produto?: string | null
+          Qtde?: string | null
+          "Vl. Repasse"?: string | null
+        }
+        Update: {
+          Convênio?: string | null
+          "Dt. Atendimento"?: string | null
+          Médico?: string | null
+          "Porcentagem Repasse"?: string | null
+          Produto?: string | null
+          Qtde?: string | null
+          "Vl. Repasse"?: string | null
         }
         Relationships: []
       }
