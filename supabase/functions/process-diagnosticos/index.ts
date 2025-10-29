@@ -252,15 +252,26 @@ async function listDriveFiles(folderId: string, accessToken: string) {
 }
 
 async function extractTextFromPDF(fileId: string, accessToken: string): Promise<string> {
-  // Exportar PDF como texto usando Google Drive API
+  // Baixar o PDF binário
   const response = await fetch(
-    `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/plain`,
+    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
     {
       headers: { Authorization: `Bearer ${accessToken}` }
     }
   );
   
-  return await response.text();
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Erro ao baixar PDF: ${response.status} - ${errorText}`);
+  }
+  
+  const pdfBuffer = await response.arrayBuffer();
+  
+  // Usar pdf-parse do npm via esm.sh
+  const pdfParse = await import('https://esm.sh/pdf-parse@1.1.1');
+  const data = await pdfParse.default(new Uint8Array(pdfBuffer));
+  
+  return data.text;
 }
 
 async function getMapeamentoFromSheets(
