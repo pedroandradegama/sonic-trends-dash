@@ -265,13 +265,28 @@ async function extractTextFromPDF(fileId: string, accessToken: string): Promise<
     throw new Error(`Erro ao baixar PDF: ${response.status} - ${errorText}`);
   }
   
-  const pdfBuffer = await response.arrayBuffer();
+  const pdfBytes = await response.arrayBuffer();
   
-  // Usar pdf-parse do npm via esm.sh
-  const pdfParse = await import('https://esm.sh/pdf-parse@1.1.1');
-  const data = await pdfParse.default(new Uint8Array(pdfBuffer));
+  // Usar pdfjs-dist via CDN (compatível com Deno)
+  const pdfjsLib = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/+esm');
   
-  return data.text;
+  // Configurar worker
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+  
+  const loadingTask = pdfjsLib.getDocument({ data: pdfBytes });
+  const pdf = await loadingTask.promise;
+  
+  let fullText = '';
+  
+  // Extrair texto de cada página
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const page = await pdf.getPage(pageNum);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items.map((item: any) => item.str).join(' ');
+    fullText += pageText + '\n';
+  }
+  
+  return fullText;
 }
 
 async function getMapeamentoFromSheets(
