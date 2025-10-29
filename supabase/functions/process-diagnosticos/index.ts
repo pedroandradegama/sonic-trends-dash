@@ -93,11 +93,13 @@ serve(async (req) => {
         
         // Baixar e extrair texto do PDF
         const pdfText = await extractTextFromPDF(file.id, accessToken);
+        console.log(`Texto extraído (primeiros 1000 chars): ${pdfText.substring(0, 1000)}`);
         
         // Extrair nome do paciente
         const paciente = extractPaciente(pdfText);
         if (!paciente) {
           console.log(`Paciente não encontrado em ${file.name}`);
+          console.log(`Texto completo: ${pdfText}`);
           continue;
         }
 
