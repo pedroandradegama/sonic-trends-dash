@@ -228,14 +228,24 @@ async function getAccessToken(credentials: any): Promise<string> {
 }
 
 async function listDriveFiles(folderId: string, accessToken: string) {
-  const response = await fetch(
-    `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType='application/pdf'&fields=files(id,name,modifiedTime)`,
-    {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    }
-  );
+  const query = `'${folderId}' in parents and mimeType='application/pdf' and trashed=false`;
+  const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,modifiedTime)`;
+  
+  console.log('Drive API URL:', url);
+  
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
   
   const data = await response.json();
+  
+  if (!response.ok) {
+    console.error('Erro na API do Drive:', JSON.stringify(data, null, 2));
+    throw new Error(`Drive API error: ${data.error?.message || 'Unknown error'}`);
+  }
+  
+  console.log('Resposta da API do Drive:', JSON.stringify(data, null, 2));
+  
   return data.files || [];
 }
 
