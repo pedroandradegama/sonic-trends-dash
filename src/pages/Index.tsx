@@ -1,14 +1,16 @@
 import { useState, useMemo } from 'react';
 import { useIntegratedDashboard } from '@/hooks/useIntegratedDashboard';
+import { useRepassePeriod } from '@/hooks/useDataPeriod';
 import { useAuth } from '@/contexts/AuthContext';
 import { KPICard } from '@/components/kpis/KPICard';
 import { PeriodFilter, PeriodType } from '@/components/filters/PeriodFilter';
+import { DataPeriodInfo } from '@/components/filters/DataPeriodInfo';
 import { ExamFilter } from '@/components/filters/ExamFilter';
 import { ConvenioFilter } from '@/components/filters/ConvenioFilter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
-import { Activity, DollarSign, TrendingUp, Star, PieChart } from 'lucide-react';
+import { Activity, DollarSign, TrendingUp, PieChart } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { startOfDay, endOfDay, subDays, startOfMonth, startOfYear, parse } from 'date-fns';
 import { TimeSeriesChart } from '@/components/dashboard/TimeSeriesChart';
@@ -17,6 +19,7 @@ import { ConvenioChart } from '@/components/dashboard/ConvenioChart';
 
 export default function Index() {
   const { signOut, user } = useAuth();
+  const { minDate, maxDate, loading: periodLoading } = useRepassePeriod();
   const [period, setPeriod] = useState<PeriodType>('mtd');
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
@@ -141,7 +144,10 @@ export default function Index() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Filtros</CardTitle>
-              <CardDescription>Selecione o período e os filtros desejados</CardDescription>
+              <CardDescription className="flex items-center justify-between">
+                <span>Selecione o período e os filtros desejados</span>
+                <DataPeriodInfo minDate={minDate} maxDate={maxDate} loading={periodLoading} />
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col md:flex-row gap-4 flex-wrap">
@@ -190,7 +196,7 @@ export default function Index() {
           ) : (
             <>
               {/* KPI Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <KPICard
                   title="Exames"
                   value={formatNumber(kpis.totalExames)}
@@ -218,13 +224,6 @@ export default function Index() {
                   subtitle="Por exame"
                   icon={<TrendingUp className="h-5 w-5 text-imag-primary" />}
                   tooltip="Valor médio de repasse por exame (Repasse Total ÷ Total de Exames)"
-                />
-                <KPICard
-                  title="NPS Médio"
-                  value={kpis.npsMedia.toFixed(1)}
-                  subtitle={`${kpis.npsPercentual >= 0 ? '+' : ''}${kpis.npsPercentual.toFixed(1)}% NPS`}
-                  icon={<Star className="h-5 w-5 text-imag-primary" />}
-                  tooltip="Nota média (0-10) e NPS% = (%Promotores - %Detratores) × 100. Promotores: 9-10, Neutros: 7-8, Detratores: 0-6"
                 />
                 <KPICard
                   title="Particular"

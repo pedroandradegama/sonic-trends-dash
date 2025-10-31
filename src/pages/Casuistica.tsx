@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCasuisticaData } from '@/hooks/useCasuisticaData';
+import { useCasuisticaPeriod } from '@/hooks/useDataPeriod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DiagnosisChart } from '@/components/casuistica/DiagnosisChart';
 import { BIRADSChart } from '@/components/casuistica/BIRADSChart';
 import { DiagnosticosPanel } from '@/components/casuistica/DiagnosticosPanel';
+import { DataPeriodInfo } from '@/components/filters/DataPeriodInfo';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -25,6 +27,7 @@ function toLowerNoAccent(str: string) {
 export default function Casuistica() {
   const { signOut } = useAuth();
   const { data, loading, error, doctors, subgrupos } = useCasuisticaData();
+  const { minDate, maxDate, loading: periodLoading } = useCasuisticaPeriod();
   const [selectedDoctor, setSelectedDoctor] = useState<string>('todos');
   const [selectedSubgrupo, setSelectedSubgrupo] = useState<string>('todos');
 
@@ -146,10 +149,10 @@ export default function Casuistica() {
             <p className="text-muted-foreground text-lg">Análise de diagnósticos por médico e método</p>
           </div>
           <div className="flex gap-2">
-            <Button asChild variant="outline" aria-pressed={false} aria-label="Exibir Dashboard de Repasse">
+            <Button asChild variant="outline">
               <Link to="/">Repasse</Link>
             </Button>
-            <Button asChild variant="secondary" aria-pressed={true} aria-label="Exibir Dashboard de Casuística">
+            <Button asChild variant="default">
               <Link to="/casuistica">Casuística</Link>
             </Button>
             <Button asChild variant="outline">
@@ -172,7 +175,10 @@ export default function Casuistica() {
             <Card>
               <CardHeader>
                 <CardTitle>Filtros</CardTitle>
-                <CardDescription>Selecione o médico e o método (Subgrupo)</CardDescription>
+                <CardDescription className="flex items-center justify-between">
+                  <span>Selecione o médico e o método (Subgrupo)</span>
+                  <DataPeriodInfo minDate={minDate} maxDate={maxDate} loading={periodLoading} />
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
