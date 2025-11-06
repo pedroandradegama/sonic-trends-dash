@@ -267,29 +267,12 @@ async function extractTextFromPDF(fileId: string, accessToken: string): Promise<
   
   const pdfBytes = await response.arrayBuffer();
   
-  // Usar pdfjs-dist via CDN (compatível com Deno)
-  const pdfjsLib = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/+esm');
+  // Usar pdf-parse que é compatível com Deno Edge Functions
+  const pdfParse = (await import('npm:pdf-parse@1.1.1')).default;
   
-  // Configurar para não usar worker (compatibilidade com Deno)
-  const loadingTask = pdfjsLib.getDocument({ 
-    data: pdfBytes,
-    useWorkerFetch: false,
-    isEvalSupported: false,
-    useSystemFonts: true
-  });
-  const pdf = await loadingTask.promise;
+  const data = await pdfParse(Buffer.from(pdfBytes));
   
-  let fullText = '';
-  
-  // Extrair texto de cada página
-  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-    const page = await pdf.getPage(pageNum);
-    const textContent = await page.getTextContent();
-    const pageText = textContent.items.map((item: any) => item.str).join(' ');
-    fullText += pageText + '\n';
-  }
-  
-  return fullText;
+  return data.text;
 }
 
 async function getMapeamentoFromSheets(
