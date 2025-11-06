@@ -270,10 +270,13 @@ async function extractTextFromPDF(fileId: string, accessToken: string): Promise<
   // Usar pdfjs-dist via CDN (compatível com Deno)
   const pdfjsLib = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/+esm');
   
-  // Configurar worker
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-  
-  const loadingTask = pdfjsLib.getDocument({ data: pdfBytes });
+  // Configurar para não usar worker (compatibilidade com Deno)
+  const loadingTask = pdfjsLib.getDocument({ 
+    data: pdfBytes,
+    useWorkerFetch: false,
+    isEvalSupported: false,
+    useSystemFonts: true
+  });
   const pdf = await loadingTask.promise;
   
   let fullText = '';
