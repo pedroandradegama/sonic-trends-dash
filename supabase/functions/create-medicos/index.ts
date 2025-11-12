@@ -22,12 +22,15 @@ Deno.serve(async (req) => {
     });
 
     const medicos = [
-      { nome: 'MARIAH AUGUSTA DIAS VIANA', email: 'mariah@teste.com' },
-      { nome: 'PEDRO ANDRADE GAMA DE OLIVEIRA', email: 'pedro@teste.com' },
-      { nome: 'FILIPE DE AZEVEDO CABRAL BELEM RODRIGUES', email: 'filipe@teste.com' },
-      { nome: 'BELISA BARRETO GOMES DA SILVA', email: 'belisa@teste.com' },
-      { nome: 'BEATRIZ ALMEIDA BARP SANTOS', email: 'beatriz@teste.com' },
-      { nome: 'PRISCILLA CARDOSO LAMEIRA ANDRADE', email: 'priscilla@teste.com' },
+      { nome: 'MARIAH AUGUSTA DIAS VIANA', email: 'mariahadiasv@gmail.com' },
+      { nome: 'PEDRO ANDRADE GAMA DE OLIVEIRA', email: 'pedro.andrade@imagdiagnostico.com.br' },
+      { nome: 'FILIPE DE AZEVEDO CABRAL BELEM RODRIGUES', email: 'filipe_belem@hotmail.com' },
+      { nome: 'BELISA BARRETO GOMES DA SILVA', email: 'belisa_barreto@hotmail.com' },
+      { nome: 'BEATRIZ ALMEIDA BARP SANTOS', email: 'barpbeatriz@gmail.com' },
+      { nome: 'PRISCILLA CARDOSO LAMEIRA ANDRADE', email: 'cardoso.priscilla@hotmail.com' },
+      { nome: 'AMANDA SOUZA AVILA PESSOA', email: 'amandaavilapessoa@gmail.com' },
+      { nome: 'AFONSO ALVES DA SILVA NETO', email: 'afonsoneto741@gmail.com' },
+      { nome: 'THAIS MARTINS NAZARETH MACHADO', email: 'thaismachado.saude@gmail.com' },
     ];
 
     const results = [];
