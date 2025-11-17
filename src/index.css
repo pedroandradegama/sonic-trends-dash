@@ -52,6 +52,12 @@ All colors MUST be HSL.
     --imag-warning: 45 93% 47%;
     --imag-error: 0 72% 51%;
 
+    /* Medical/Chart Colors */
+    --medical-teal: 180 45% 35%; /* Azul petróleo para gráficos */
+    --medical-teal-light: 180 45% 70%;
+    --medical-blue: 210 85% 45%;
+    --medical-success: 142 69% 58%;
+
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(210 85% 45%), hsl(195 100% 70%));
     --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 20% 98%));
