@@ -9,8 +9,11 @@ import { DiagnosisChart } from '@/components/casuistica/DiagnosisChart';
 import { BIRADSChart } from '@/components/casuistica/BIRADSChart';
 import { DiagnosticosPanel } from '@/components/casuistica/DiagnosticosPanel';
 import { DataPeriodInfo } from '@/components/filters/DataPeriodInfo';
+import { PeriodFilter } from '@/components/filters/PeriodFilter';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
+import { parse, isValid, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, isAfter, isBefore } from 'date-fns';
 
 function normalize(str?: string | null) {
   if (!str) return '';
@@ -24,15 +27,38 @@ function toLowerNoAccent(str: string) {
     .toLowerCase();
 }
 
+function parseDate(dateStr: string | null | undefined): Date | null {
+  if (!dateStr) return null;
+  
+  try {
+    if (dateStr.includes('/')) {
+      const parsed = parse(dateStr, 'dd/MM/yyyy', new Date());
+      if (isValid(parsed)) return parsed;
+    }
+    
+    const parsed = new Date(dateStr);
+    if (isValid(parsed)) return parsed;
+  } catch {
+    return null;
+  }
+  
+  return null;
+}
+
 export default function Casuistica() {
   const { signOut } = useAuth();
-  const { data, loading, error, doctors, subgrupos } = useCasuisticaData();
+  const { data, loading, error, subgrupos } = useCasuisticaData();
   const { minDate, maxDate, loading: periodLoading } = useCasuisticaPeriod();
-  const [selectedDoctor, setSelectedDoctor] = useState<string>('todos');
   const [selectedSubgrupo, setSelectedSubgrupo] = useState<string>('todos');
+  const [period, setPeriod] = useState<'today' | '7d' | 'mtd' | 'ytd' | 'custom' | 'month'>('ytd');
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [customMonth, setCustomMonth] = useState<string>('');
+  const [showHistoricalAvg, setShowHistoricalAvg] = useState(false);
+  const [showReferenceValue, setShowReferenceValue] = useState(false);
+  const [applyPeriodFilter, setApplyPeriodFilter] = useState(false);
 
   useEffect(() => {
-    // SEO basics
     document.title = 'Casuística | Diagnósticos por Médico - Dashboard';
 
     const metaDesc = document.querySelector('meta[name="description"]');
@@ -57,12 +83,62 @@ export default function Casuistica() {
   }, []);
 
   const filtered = useMemo(() => {
-    return (data || []).filter((r) => {
-      const matchesDoctor = selectedDoctor === 'todos' || normalize(r['Médico Executante']) === selectedDoctor;
+    let result = (data || []).filter((r) => {
       const matchesSub = selectedSubgrupo === 'todos' || normalize(r['Subgrupo']) === selectedSubgrupo;
-      return matchesDoctor && matchesSub;
+      return matchesSub;
     });
-  }, [data, selectedDoctor, selectedSubgrupo]);
+
+    // Filtro de período
+    if (applyPeriodFilter && result.length > 0) {
+      const now = new Date();
+      let filterStartDate: Date | undefined;
+      let filterEndDate: Date | undefined;
+
+      switch (period) {
+        case 'today':
+          filterStartDate = startOfDay(now);
+          filterEndDate = endOfDay(now);
+          break;
+        case '7d':
+          filterStartDate = startOfDay(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000));
+          filterEndDate = endOfDay(now);
+          break;
+        case 'mtd':
+          filterStartDate = startOfMonth(now);
+          filterEndDate = endOfDay(now);
+          break;
+        case 'ytd':
+          filterStartDate = startOfYear(now);
+          filterEndDate = endOfDay(now);
+          break;
+        case 'custom':
+          if (startDate && endDate) {
+            filterStartDate = startOfDay(startDate);
+            filterEndDate = endOfDay(endDate);
+          }
+          break;
+        case 'month':
+          if (customMonth) {
+            const [year, month] = customMonth.split('-').map(Number);
+            const monthDate = new Date(year, month - 1, 1);
+            filterStartDate = startOfMonth(monthDate);
+            filterEndDate = endOfMonth(monthDate);
+          }
+          break;
+      }
+
+      if (filterStartDate && filterEndDate) {
+        result = result.filter((r) => {
+          const dateStr = r['Data do pedido'];
+          const rowDate = parseDate(dateStr);
+          if (!rowDate) return false;
+          return !isBefore(rowDate, filterStartDate!) && !isAfter(rowDate, filterEndDate!);
+        });
+      }
+    }
+
+    return result;
+  }, [data, selectedSubgrupo, period, startDate, endDate, customMonth, applyPeriodFilter]);
 
   const totalLaudos = filtered.length;
 
@@ -121,7 +197,7 @@ export default function Casuistica() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-medical-blue"></div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-medical-teal"></div>
           <p className="mt-4 text-muted-foreground">Carregando Casuística...</p>
         </div>
       </div>
@@ -140,13 +216,13 @@ export default function Casuistica() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-medical-blue/5 to-medical-success/5 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-medical-teal/5 to-medical-success/5 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-4xl font-bold text-foreground mb-2">Dashboard Casuística</h1>
-            <p className="text-muted-foreground text-lg">Análise de diagnósticos por médico e método</p>
+            <p className="text-muted-foreground text-lg">Análise de diagnósticos por método</p>
           </div>
           <div className="flex gap-2">
             <Button asChild variant="outline">
@@ -171,86 +247,121 @@ export default function Casuistica() {
 
           {/* Tab Casuística */}
           <TabsContent value="casuistica" className="space-y-6">
-            {/* Filtros */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Filtros</CardTitle>
-                <CardDescription className="flex items-center justify-between">
-                  <span>Selecione o médico e o método (Subgrupo)</span>
-                  <DataPeriodInfo minDate={minDate} maxDate={maxDate} loading={periodLoading} />
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-muted-foreground mb-2">Médico Executante</label>
-                    <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Filtrar por médico" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {doctors.map((m) => (
-                          <SelectItem key={m} value={m}>{m === 'todos' ? 'Todos' : m}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+            {/* Filtros e Total de Laudos no mesmo nível */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Filtros</CardTitle>
+                  <CardDescription className="flex items-center justify-between">
+                    <span>Selecione o período e o método (Subgrupo)</span>
+                    <DataPeriodInfo minDate={minDate} maxDate={maxDate} loading={periodLoading} />
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm text-muted-foreground mb-2">Período</label>
+                      <PeriodFilter
+                        period={period}
+                        onPeriodChange={(p) => setPeriod(p as any)}
+                        startDate={startDate}
+                        endDate={endDate}
+                        onDateRangeChange={(start, end) => {
+                          setStartDate(start);
+                          setEndDate(end);
+                        }}
+                        customMonth={customMonth}
+                        onCustomMonthChange={setCustomMonth}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-muted-foreground mb-2">Subgrupo (Método)</label>
+                      <Select value={selectedSubgrupo} onValueChange={setSelectedSubgrupo}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Filtrar por subgrupo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {subgrupos.map((s) => (
+                            <SelectItem key={s} value={s}>{s === 'todos' ? 'Todos' : s}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm text-muted-foreground mb-2">Subgrupo (Método)</label>
-                    <Select value={selectedSubgrupo} onValueChange={setSelectedSubgrupo}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Filtrar por subgrupo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {subgrupos.map((s) => (
-                          <SelectItem key={s} value={s}>{s === 'todos' ? 'Todos' : s}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            {/* Métricas rápidas */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Total de Laudos</CardTitle>
                   <CardDescription>Registros no filtro atual</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-medical-blue">{new Intl.NumberFormat('pt-BR').format(totalLaudos)}</div>
+                  <div className="text-3xl font-bold text-medical-teal">{new Intl.NumberFormat('pt-BR').format(totalLaudos)}</div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Gráficos */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Diagnósticos mais prevalentes</CardTitle>
-                  <CardDescription>Top diagnósticos em {selectedSubgrupo === 'todos' ? 'todos os métodos' : selectedSubgrupo}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <DiagnosisChart data={topDiagnosticos} />
-                </CardContent>
-              </Card>
+            {/* Controles de referência */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Opções de Visualização</CardTitle>
+                <CardDescription>Configure linhas de referência nos gráficos</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="historical-avg" 
+                      checked={showHistoricalAvg}
+                      onCheckedChange={(checked) => setShowHistoricalAvg(checked as boolean)}
+                    />
+                    <label htmlFor="historical-avg" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      Mostrar linha de média histórica nos gráficos
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="reference-value" 
+                      checked={showReferenceValue}
+                      onCheckedChange={(checked) => setShowReferenceValue(checked as boolean)}
+                    />
+                    <label htmlFor="reference-value" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      Mostrar valores de referência BI-RADS (literatura)
+                    </label>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Distribuição BI-RADS (Mama)</CardTitle>
-                  <CardDescription>Percentual por categoria (soma 100%)</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {biradsData.length > 0 ? (
-                    <BIRADSChart data={biradsData} />
-                  ) : (
-                    <p className="text-muted-foreground">Sem dados de BI-RADS no filtro atual.</p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+            {/* Gráficos alargados */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Diagnósticos mais prevalentes</CardTitle>
+                <CardDescription>Top diagnósticos em {selectedSubgrupo === 'todos' ? 'todos os métodos' : selectedSubgrupo}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <DiagnosisChart data={topDiagnosticos} showHistoricalAverage={showHistoricalAvg} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Distribuição BI-RADS (Mama)</CardTitle>
+                <CardDescription>Percentual por categoria (soma 100%)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {biradsData.length > 0 ? (
+                  <BIRADSChart 
+                    data={biradsData} 
+                    showHistoricalAverage={showHistoricalAvg}
+                    showReferenceValue={showReferenceValue}
+                  />
+                ) : (
+                  <p className="text-muted-foreground">Sem dados de BI-RADS no filtro atual.</p>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Referências (benchmarks) */}
             <Card>

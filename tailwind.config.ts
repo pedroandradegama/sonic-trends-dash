@@ -70,6 +70,10 @@ export default {
 					warning: 'hsl(var(--imag-warning))',
 					error: 'hsl(var(--imag-error))'
 				},
+				'medical-teal': 'hsl(var(--medical-teal))',
+				'medical-teal-light': 'hsl(var(--medical-teal-light))',
+				'medical-blue': 'hsl(var(--medical-blue))',
+				'medical-success': 'hsl(var(--medical-success))',
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
