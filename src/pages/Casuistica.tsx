@@ -155,15 +155,15 @@ export default function Casuistica() {
     return Array.from(map.values()).sort((a, b) => b.count - a.count).slice(0, 12);
   }, [filtered]);
 
-  const biradsData = useMemo(() => {
-    const isBreastRelated = (sg?: string | null) => {
-      const s = toLowerNoAccent(normalize(sg || ''));
-      return s.includes('mama') || s.includes('mamog') || (s.includes('ultra') && s.includes('mama'));
-    };
+    const biradsData = useMemo(() => {
+      const isBreastRelated = (sg?: string | null) => {
+        const s = toLowerNoAccent(normalize(sg || ''));
+        return s.includes('mama') || s.includes('mamog') || s.includes('ultra');
+      };
 
-    const rows = filtered.filter(r => isBreastRelated(r['Subgrupo']));
-    const counts = { '0': 0, '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 } as Record<string, number>;
-    let total = 0;
+      const rows = filtered.filter(r => isBreastRelated(r['Subgrupo']));
+      const counts = { '0': 0, '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 } as Record<string, number>;
+      let total = 0;
 
     const regex = /bi\s*[-\s]?rads\s*([0-5])/i;
 
@@ -196,7 +196,7 @@ export default function Casuistica() {
   const biradsExamType = useMemo<'mamografia' | 'ultrassom' | 'ambos'>(() => {
     const isBreastRelated = (sg?: string | null) => {
       const s = toLowerNoAccent(normalize(sg || ''));
-      return s.includes('mama') || s.includes('mamog') || (s.includes('ultra') && s.includes('mama'));
+      return s.includes('mama') || s.includes('mamog') || s.includes('ultra');
     };
 
     const rows = filtered.filter(r => isBreastRelated(r['Subgrupo']));
