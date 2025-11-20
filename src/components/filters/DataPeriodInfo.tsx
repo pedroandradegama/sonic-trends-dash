@@ -11,24 +11,24 @@ interface DataPeriodInfoProps {
 export function DataPeriodInfo({ minDate, maxDate, loading }: DataPeriodInfoProps) {
   if (loading) {
     return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <span className="flex items-center gap-2 text-sm text-muted-foreground">
         <Calendar className="h-4 w-4" />
         <span>Carregando período...</span>
-      </div>
+      </span>
     );
   }
 
   if (!minDate || !maxDate) {
     return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <span className="flex items-center gap-2 text-sm text-muted-foreground">
         <Calendar className="h-4 w-4" />
         <span>Período indisponível</span>
-      </div>
+      </span>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+    <span className="flex items-center gap-2 text-sm text-muted-foreground">
       <Calendar className="h-4 w-4" />
       <span>
         Dados disponíveis de{' '}
@@ -40,6 +40,6 @@ export function DataPeriodInfo({ minDate, maxDate, loading }: DataPeriodInfoProp
           {format(maxDate, 'dd/MM/yyyy', { locale: ptBR })}
         </span>
       </span>
-    </div>
+    </span>
   );
 }

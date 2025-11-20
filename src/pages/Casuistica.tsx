@@ -158,7 +158,7 @@ export default function Casuistica() {
   const biradsData = useMemo(() => {
     const isBreastRelated = (sg?: string | null) => {
       const s = toLowerNoAccent(normalize(sg || ''));
-      return s.includes('mama') || s.includes('mamog');
+      return s.includes('mama') || s.includes('mamog') || (s.includes('ultra') && s.includes('mama'));
     };
 
     const rows = filtered.filter(r => isBreastRelated(r['Subgrupo']));
@@ -196,7 +196,7 @@ export default function Casuistica() {
   const biradsExamType = useMemo<'mamografia' | 'ultrassom' | 'ambos'>(() => {
     const isBreastRelated = (sg?: string | null) => {
       const s = toLowerNoAccent(normalize(sg || ''));
-      return s.includes('mama') || s.includes('mamog');
+      return s.includes('mama') || s.includes('mamog') || (s.includes('ultra') && s.includes('mama'));
     };
 
     const rows = filtered.filter(r => isBreastRelated(r['Subgrupo']));
