@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import imagLogo from '@/assets/imag-logo.png';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -84,6 +85,9 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-medical-blue/5 to-medical-success/5 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
+          <div className="flex justify-center mb-6">
+            <img src={imagLogo} alt="IMAG - Medicina Diagnóstica" className="h-16" />
+          </div>
           <CardTitle className="text-2xl font-bold">
             {isLogin ? 'Entrar' : 'Criar Conta'}
           </CardTitle>

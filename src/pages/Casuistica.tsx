@@ -14,6 +14,7 @@ import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { parse, isValid, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, isAfter, isBefore } from 'date-fns';
+import imagLogo from '@/assets/imag-logo.png';
 
 function normalize(str?: string | null) {
   if (!str) return '';
@@ -242,9 +243,12 @@ export default function Casuistica() {
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">Dashboard Casuística</h1>
-            <p className="text-muted-foreground text-lg">Análise de diagnósticos por método</p>
+          <div className="flex items-center gap-4">
+            <img src={imagLogo} alt="IMAG - Medicina Diagnóstica" className="h-12" />
+            <div>
+              <h1 className="text-4xl font-bold text-foreground mb-2">Dashboard Casuística</h1>
+              <p className="text-muted-foreground text-lg">Análise de diagnósticos por método</p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button asChild variant="outline">

@@ -15,6 +15,7 @@ import { NPSConvenioCard } from '@/components/nps/NPSConvenioCard';
 import { startOfDay, endOfDay, subDays, startOfMonth, startOfYear, parse } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import imagLogo from '@/assets/imag-logo.png';
 
 export default function NPS() {
   const { signOut, user } = useAuth();
@@ -94,11 +95,14 @@ export default function NPS() {
     <div className="container mx-auto px-4 py-8 space-y-8">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">NPS por Médico</h1>
-          <p className="text-muted-foreground mt-1">
-            Olá, {user?.email}
-          </p>
+        <div className="flex items-center gap-4">
+          <img src={imagLogo} alt="IMAG - Medicina Diagnóstica" className="h-12" />
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">NPS por Médico</h1>
+            <p className="text-muted-foreground mt-1">
+              Olá, {user?.email}
+            </p>
+          </div>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
