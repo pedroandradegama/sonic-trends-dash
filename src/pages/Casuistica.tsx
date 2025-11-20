@@ -193,6 +193,28 @@ export default function Casuistica() {
     return arr;
   }, [filtered]);
 
+  const biradsExamType = useMemo<'mamografia' | 'ultrassom' | 'ambos'>(() => {
+    const isBreastRelated = (sg?: string | null) => {
+      const s = toLowerNoAccent(normalize(sg || ''));
+      return s.includes('mama') || s.includes('mamog');
+    };
+
+    const rows = filtered.filter(r => isBreastRelated(r['Subgrupo']));
+    let hasMamografia = false;
+    let hasUltrassom = false;
+
+    for (const r of rows) {
+      const sg = toLowerNoAccent(normalize(r['Subgrupo'] || ''));
+      if (sg.includes('mamog')) hasMamografia = true;
+      if (sg.includes('ultra') && sg.includes('mama')) hasUltrassom = true;
+    }
+
+    if (hasMamografia && hasUltrassom) return 'ambos';
+    if (hasMamografia) return 'mamografia';
+    if (hasUltrassom) return 'ultrassom';
+    return 'mamografia'; // default
+  }, [filtered]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -348,7 +370,7 @@ export default function Casuistica() {
             <Card>
               <CardHeader>
                 <CardTitle>Distribuição BI-RADS (Mama)</CardTitle>
-                <CardDescription>Percentual por categoria (soma 100%)</CardDescription>
+                <CardDescription>Percentual por categoria (soma 100%) - {biradsExamType === 'mamografia' ? 'Mamografia' : biradsExamType === 'ultrassom' ? 'Ultrassonografia' : 'Mamografia e Ultrassonografia'}</CardDescription>
               </CardHeader>
               <CardContent>
                 {biradsData.length > 0 ? (
@@ -356,6 +378,7 @@ export default function Casuistica() {
                     data={biradsData} 
                     showHistoricalAverage={showHistoricalAvg}
                     showReferenceValue={showReferenceValue}
+                    examType={biradsExamType}
                   />
                 ) : (
                   <p className="text-muted-foreground">Sem dados de BI-RADS no filtro atual.</p>
@@ -367,19 +390,53 @@ export default function Casuistica() {
             <Card>
               <CardHeader>
                 <CardTitle>Referências BI-RADS (benchmarks)</CardTitle>
-                <CardDescription>Valores de referência em rastreamento (literatura)</CardDescription>
+                <CardDescription>Valores de referência em rastreamento (literatura) - {biradsExamType === 'mamografia' ? 'Mamografia' : biradsExamType === 'ultrassom' ? 'Ultrassonografia' : 'Mamografia e Ultrassonografia'}</CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="list-disc pl-6 space-y-2 text-sm text-muted-foreground">
-                  <li>Taxa de recall (aprox. BI-RADS 0): recomendada ~5% a 12% em mamografia de rastreamento (ACR/BCSC).</li>
-                  <li>BI-RADS 1–2 (negativo/benigno): tipicamente a maioria dos exames (≈80%–90%).</li>
-                  <li>BI-RADS 3: geralmente baixo (≈0,5%–2%).</li>
-                  <li>BI-RADS 4–5: raros em rastreamento (≈0,3%–1%).</li>
-                </ul>
+                {biradsExamType === 'mamografia' && (
+                  <>
+                    <h4 className="font-semibold text-sm mb-2">Mamografia</h4>
+                    <ul className="list-disc pl-6 space-y-2 text-sm text-muted-foreground">
+                      <li>Taxa de recall (BI-RADS 0): recomendada ~8% a 12% em mamografia de rastreamento (ACR/BCSC).</li>
+                      <li>BI-RADS 1–2 (negativo/benigno): tipicamente a maioria dos exames (≈75%–85%).</li>
+                      <li>BI-RADS 3: geralmente baixo (≈3%–7%).</li>
+                      <li>BI-RADS 4–5: raros em rastreamento (≈2%–5%).</li>
+                    </ul>
+                  </>
+                )}
+                {biradsExamType === 'ultrassom' && (
+                  <>
+                    <h4 className="font-semibold text-sm mb-2">Ultrassonografia de Mamas</h4>
+                    <ul className="list-disc pl-6 space-y-2 text-sm text-muted-foreground">
+                      <li>Taxa de recall (BI-RADS 0): recomendada ~3% a 7% em ultrassom complementar.</li>
+                      <li>BI-RADS 1–2 (negativo/benigno): tipicamente a maioria dos exames (≈85%–95%).</li>
+                      <li>BI-RADS 3: geralmente baixo (≈1%–5%).</li>
+                      <li>BI-RADS 4–5: raros (≈0,5%–2,5%).</li>
+                    </ul>
+                  </>
+                )}
+                {biradsExamType === 'ambos' && (
+                  <>
+                    <h4 className="font-semibold text-sm mb-2">Mamografia</h4>
+                    <ul className="list-disc pl-6 space-y-2 text-sm text-muted-foreground mb-4">
+                      <li>Taxa de recall (BI-RADS 0): recomendada ~8% a 12% em mamografia de rastreamento (ACR/BCSC).</li>
+                      <li>BI-RADS 1–2 (negativo/benigno): tipicamente a maioria dos exames (≈75%–85%).</li>
+                      <li>BI-RADS 3: geralmente baixo (≈3%–7%).</li>
+                      <li>BI-RADS 4–5: raros em rastreamento (≈2%–5%).</li>
+                    </ul>
+                    <h4 className="font-semibold text-sm mb-2">Ultrassonografia de Mamas</h4>
+                    <ul className="list-disc pl-6 space-y-2 text-sm text-muted-foreground">
+                      <li>Taxa de recall (BI-RADS 0): recomendada ~3% a 7% em ultrassom complementar.</li>
+                      <li>BI-RADS 1–2 (negativo/benigno): tipicamente a maioria dos exames (≈85%–95%).</li>
+                      <li>BI-RADS 3: geralmente baixo (≈1%–5%).</li>
+                      <li>BI-RADS 4–5: raros (≈0,5%–2,5%).</li>
+                    </ul>
+                  </>
+                )}
                 <div className="mt-3 text-xs">
                   Fontes: 
-                  <a className="text-medical-blue underline ml-1" href="https://pubs.rsna.org/doi/10.1148/radiol.2016161174" target="_blank" rel="noreferrer">RSNA – BCSC Benchmarks</a>,
-                  <a className="text-medical-blue underline ml-2" href="https://radiologyassistant.nl/breast/bi-rads/bi-rads-for-mammography-and-ultrasound-2013" target="_blank" rel="noreferrer">Radiology Assistant (BI-RADS)</a>
+                  <a className="text-medical-teal underline ml-1" href="https://pubs.rsna.org/doi/10.1148/radiol.2016161174" target="_blank" rel="noreferrer">RSNA – BCSC Benchmarks</a>,
+                  <a className="text-medical-teal underline ml-2" href="https://radiologyassistant.nl/breast/bi-rads/bi-rads-for-mammography-and-ultrasound-2013" target="_blank" rel="noreferrer">Radiology Assistant (BI-RADS)</a>
                 </div>
               </CardContent>
             </Card>
