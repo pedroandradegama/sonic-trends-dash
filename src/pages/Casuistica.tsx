@@ -46,16 +46,80 @@ function parseDate(dateStr: string | null | undefined): Date | null {
   return null;
 }
 
+function categorizeDiagnostico(comentario: string | null | undefined): string {
+  if (!comentario) return 'outras';
+  
+  const text = toLowerNoAccent(normalize(comentario));
+  
+  // Cabeça & Pescoço
+  if (text.match(/ti\s*[-\s]?rads\s*[1-5]/i) || 
+      text.includes('cisto coloide') || 
+      text.includes('tireoidopatia parenquimatosa') || 
+      text.includes('tireoidopatia')) {
+    return 'cabeca-pescoco';
+  }
+  
+  // Mamas
+  if (text.match(/bi\s*[-\s]?rads\s*[0-6]/i)) {
+    return 'mamas';
+  }
+  
+  // Medicina Interna
+  if (text.includes('esteatose hepatica') || 
+      text.includes('cisto renal simples') || 
+      text.includes('cisto hepatico simples') || 
+      text.includes('colelítiase') || 
+      text.includes('colelitiase') || 
+      text.includes('colecistite aguda') ||
+      text.includes('polipo na vesicula biliar') ||
+      text.includes('angiomiolipoma') ||
+      text.includes('hemangioma')) {
+    return 'medicina-interna';
+  }
+  
+  // Ginecologia & Obstetrícia
+  if (text.includes('adenomiose') || 
+      text.includes('leiomioma') || 
+      text.includes('cisto ovariano unilocular') || 
+      text.includes('cisto ovariano funcional') || 
+      text.includes('polipo endometrial') ||
+      text.includes('cisto de naboth') ||
+      text.includes('polipo endocervical') ||
+      text.includes('sop') ||
+      text.includes('ovarios policisticos')) {
+    return 'ginecologia-obstetricia';
+  }
+  
+  // MSK
+  if (text.includes('tenossinovite') || 
+      text.includes('tendinopatia') || 
+      text.includes('cisto artrossinovial') ||
+      text.includes('fascite plantar') ||
+      text.includes('neuropatia')) {
+    return 'msk';
+  }
+  
+  // Vascular
+  if (text.includes('trombose venosa profunda') || 
+      text.includes('tromboflebite') || 
+      text.includes('insuficiencia femoral') || 
+      text.includes('insuficiencia safena')) {
+    return 'vascular';
+  }
+  
+  return 'outras';
+}
+
 export default function Casuistica() {
   const { signOut } = useAuth();
   const { data, loading, error, subgrupos } = useCasuisticaData();
   const { minDate, maxDate, loading: periodLoading } = useCasuisticaPeriod();
   const [selectedSubgrupo, setSelectedSubgrupo] = useState<string>('todos');
+  const [selectedSubespecialidade, setSelectedSubespecialidade] = useState<string>('todas');
   const [period, setPeriod] = useState<'today' | '7d' | 'mtd' | 'ytd' | 'custom' | 'month'>('ytd');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [customMonth, setCustomMonth] = useState<string>('');
-  const [showHistoricalAvg, setShowHistoricalAvg] = useState(false);
   const [showReferenceValue, setShowReferenceValue] = useState(false);
   const [applyPeriodFilter, setApplyPeriodFilter] = useState(false);
 
@@ -86,7 +150,9 @@ export default function Casuistica() {
   const filtered = useMemo(() => {
     let result = (data || []).filter((r) => {
       const matchesSub = selectedSubgrupo === 'todos' || normalize(r['Subgrupo']) === selectedSubgrupo;
-      return matchesSub;
+      const categoria = categorizeDiagnostico(r['Comentário']);
+      const matchesSubespecialidade = selectedSubespecialidade === 'todas' || categoria === selectedSubespecialidade;
+      return matchesSub && matchesSubespecialidade;
     });
 
     // Filtro de período
@@ -139,7 +205,7 @@ export default function Casuistica() {
     }
 
     return result;
-  }, [data, selectedSubgrupo, period, startDate, endDate, customMonth, applyPeriodFilter]);
+  }, [data, selectedSubgrupo, selectedSubespecialidade, period, startDate, endDate, customMonth, applyPeriodFilter]);
 
   const totalLaudos = filtered.length;
 
@@ -274,17 +340,17 @@ export default function Casuistica() {
           {/* Tab Casuística */}
           <TabsContent value="casuistica" className="space-y-6">
             {/* Filtros e Total de Laudos no mesmo nível */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-2">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              <Card className="lg:col-span-3">
                 <CardHeader>
                   <CardTitle>Filtros</CardTitle>
                   <CardDescription className="flex items-center justify-between">
-                    <span>Selecione o período e o método (Subgrupo)</span>
+                    <span>Selecione o período, método e subespecialidade</span>
                     <DataPeriodInfo minDate={minDate} maxDate={maxDate} loading={periodLoading} />
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm text-muted-foreground mb-2">Período</label>
                       <PeriodFilter
@@ -313,61 +379,62 @@ export default function Casuistica() {
                         </SelectContent>
                       </Select>
                     </div>
+                    <div>
+                      <label className="block text-sm text-muted-foreground mb-2">Subespecialidade</label>
+                      <Select value={selectedSubespecialidade} onValueChange={setSelectedSubespecialidade}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Filtrar por subespecialidade" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todas">Todas</SelectItem>
+                          <SelectItem value="cabeca-pescoco">Cabeça & Pescoço</SelectItem>
+                          <SelectItem value="mamas">Mamas</SelectItem>
+                          <SelectItem value="medicina-interna">Medicina Interna</SelectItem>
+                          <SelectItem value="ginecologia-obstetricia">Ginecologia & Obstetrícia</SelectItem>
+                          <SelectItem value="msk">MSK</SelectItem>
+                          <SelectItem value="vascular">Vascular</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Total de Laudos</CardTitle>
-                  <CardDescription>Registros no filtro atual</CardDescription>
+                  <CardTitle className="text-lg">Total de Laudos</CardTitle>
+                  <CardDescription className="text-xs">Registros no filtro</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-medical-teal">{new Intl.NumberFormat('pt-BR').format(totalLaudos)}</div>
+                  <div className="text-2xl font-bold text-medical-teal">{new Intl.NumberFormat('pt-BR').format(totalLaudos)}</div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Controles de referência */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Opções de Visualização</CardTitle>
-                <CardDescription>Configure linhas de referência nos gráficos</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="historical-avg" 
-                      checked={showHistoricalAvg}
-                      onCheckedChange={(checked) => setShowHistoricalAvg(checked as boolean)}
-                    />
-                    <label htmlFor="historical-avg" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Mostrar linha de média histórica nos gráficos
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="reference-value" 
-                      checked={showReferenceValue}
-                      onCheckedChange={(checked) => setShowReferenceValue(checked as boolean)}
-                    />
-                    <label htmlFor="reference-value" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Mostrar valores de referência BI-RADS (literatura)
-                    </label>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Gráficos alargados */}
             <Card>
               <CardHeader>
-                <CardTitle>Diagnósticos mais prevalentes</CardTitle>
-                <CardDescription>Top diagnósticos em {selectedSubgrupo === 'todos' ? 'todos os métodos' : selectedSubgrupo}</CardDescription>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle>Perfil dos Diagnósticos</CardTitle>
+                    <CardDescription>Top diagnósticos em {selectedSubgrupo === 'todos' ? 'todos os métodos' : selectedSubgrupo}</CardDescription>
+                  </div>
+                  {(selectedSubgrupo === 'Mamografia' || selectedSubgrupo === 'Ultrassonografia') && selectedSubespecialidade === 'mamas' && (
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="reference-value" 
+                        checked={showReferenceValue}
+                        onCheckedChange={(checked) => setShowReferenceValue(checked as boolean)}
+                      />
+                      <label htmlFor="reference-value" className="text-sm font-medium leading-none cursor-pointer">
+                        Mostrar valores de referência BI-RADS
+                      </label>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
-                <DiagnosisChart data={topDiagnosticos} showHistoricalAverage={showHistoricalAvg} />
+                <DiagnosisChart data={topDiagnosticos} showHistoricalAverage={false} />
               </CardContent>
             </Card>
 
@@ -380,7 +447,7 @@ export default function Casuistica() {
                 {biradsData.length > 0 ? (
                   <BIRADSChart 
                     data={biradsData} 
-                    showHistoricalAverage={showHistoricalAvg}
+                    showHistoricalAverage={false}
                     showReferenceValue={showReferenceValue}
                     examType={biradsExamType}
                   />
