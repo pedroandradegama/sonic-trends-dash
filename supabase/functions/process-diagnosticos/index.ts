@@ -89,30 +89,38 @@ serve(async (req) => {
     
     for (const file of files.slice(0, 10)) { // Limitar a 10 primeiros para teste
       try {
-        console.log(`Processando: ${file.name}`);
+        console.log(`\n========== PROCESSANDO: ${file.name} ==========`);
         
         // Baixar e extrair texto do PDF
         const pdfText = await extractTextFromPDF(file.id, accessToken);
-        console.log(`Texto extraído (primeiros 1000 chars): ${pdfText.substring(0, 1000)}`);
+        console.log(`✓ PDF extraído com sucesso. Total de caracteres: ${pdfText.length}`);
         
         // Extrair nome do paciente
         const paciente = extractPaciente(pdfText);
         if (!paciente) {
-          console.log(`Paciente não encontrado em ${file.name}`);
-          console.log(`Texto completo: ${pdfText}`);
+          console.log(`❌ Paciente não encontrado em ${file.name}`);
+          console.log(`Primeiros 2000 chars do texto:\n${pdfText.substring(0, 2000)}`);
           continue;
         }
+        console.log(`✓ Paciente extraído: "${paciente}"`);
 
         // Extrair diagnóstico
         const diagnostico = extractDiagnostico(pdfText);
         if (!diagnostico) {
-          console.log(`Diagnóstico não encontrado em ${file.name}`);
+          console.log(`❌ Diagnóstico não encontrado em ${file.name}`);
+          console.log(`Procurando por CONCLUSÃO no texto...`);
+          const conclusaoIndex = pdfText.indexOf('CONCLUS');
+          if (conclusaoIndex !== -1) {
+            console.log(`Trecho ao redor de CONCLUSÃO:\n${pdfText.substring(conclusaoIndex, conclusaoIndex + 500)}`);
+          }
           continue;
         }
+        console.log(`✓ Diagnóstico extraído: "${diagnostico}"`);
 
         // Fazer match com médico executante
         const pacienteNorm = normalizarTexto(paciente);
         const { medico, tipo } = findMedicoExecutante(pacienteNorm, mapeamento, LIMIAR_FUZZY);
+        console.log(`✓ Médico executante: ${medico} (match: ${tipo})`);
 
         resultados.push({
           arquivo: file.name,
@@ -126,8 +134,10 @@ serve(async (req) => {
           matchTipo: tipo,
           status: medico ? 'processado' : 'pendente'
         });
+        console.log(`========== FIM ${file.name} ==========\n`);
       } catch (err) {
-        console.error(`Erro ao processar ${file.name}:`, err);
+        console.error(`❌ Erro ao processar ${file.name}:`, err);
+        console.error(`Stack trace:`, err.stack);
       }
     }
 
@@ -270,7 +280,8 @@ async function extractTextFromPDF(fileId: string, accessToken: string): Promise<
   // Usar pdf-parse que é compatível com Deno Edge Functions
   const pdfParse = (await import('npm:pdf-parse@1.1.1')).default;
   
-  const data = await pdfParse(Buffer.from(pdfBytes));
+  // Converter ArrayBuffer para Uint8Array que o pdf-parse aceita no Deno
+  const data = await pdfParse(new Uint8Array(pdfBytes));
   
   return data.text;
 }
