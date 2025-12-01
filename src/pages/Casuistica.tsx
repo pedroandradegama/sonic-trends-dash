@@ -151,8 +151,10 @@ export default function Casuistica() {
   const { signOut } = useAuth();
   const { data, loading, error, subgrupos } = useCasuisticaData();
   const { minDate, maxDate, loading: periodLoading } = useCasuisticaPeriod();
+  const [filterMode, setFilterMode] = useState<'periodo' | 'diagnostico'>('periodo');
   const [selectedSubgrupo, setSelectedSubgrupo] = useState<string>('todos');
   const [selectedSubespecialidade, setSelectedSubespecialidade] = useState<string>('todas');
+  const [selectedDiagnostico, setSelectedDiagnostico] = useState<string>('');
   const [period, setPeriod] = useState<'today' | '7d' | 'mtd' | 'ytd' | 'custom' | 'month'>('ytd');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
@@ -184,15 +186,32 @@ export default function Casuistica() {
     }
   }, []);
 
+  // Lista de todos os diagnósticos disponíveis para o modo 'diagnostico'
+  const availableDiagnosticos = useMemo(() => {
+    const diagSet = new Set<string>();
+    for (const row of data || []) {
+      const raw = normalize(row['Comentário']);
+      if (raw) diagSet.add(raw);
+    }
+    return Array.from(diagSet).sort();
+  }, [data]);
+
   const filtered = useMemo(() => {
     let result = (data || []).filter((r) => {
+      // No modo 'diagnostico', filtrar apenas pelo diagnóstico selecionado
+      if (filterMode === 'diagnostico') {
+        if (!selectedDiagnostico) return false;
+        return normalize(r['Comentário']) === selectedDiagnostico;
+      }
+      
+      // No modo 'periodo', aplicar filtros de subgrupo e subespecialidade
       const matchesSub = selectedSubgrupo === 'todos' || normalize(r['Subgrupo']) === selectedSubgrupo;
       const categoria = categorizeDiagnostico(r['Comentário']);
       const matchesSubespecialidade = selectedSubespecialidade === 'todas' || categoria === selectedSubespecialidade;
       return matchesSub && matchesSubespecialidade;
     });
 
-    // Filtro de período
+    // Filtro de período (aplicável em ambos os modos)
     if (applyPeriodFilter && result.length > 0) {
       const now = new Date();
       let filterStartDate: Date | undefined;
@@ -242,7 +261,7 @@ export default function Casuistica() {
     }
 
     return result;
-  }, [data, selectedSubgrupo, selectedSubespecialidade, period, startDate, endDate, customMonth, applyPeriodFilter]);
+  }, [data, filterMode, selectedDiagnostico, selectedSubgrupo, selectedSubespecialidade, period, startDate, endDate, customMonth, applyPeriodFilter]);
 
   const totalLaudos = filtered.length;
 
@@ -392,64 +411,120 @@ export default function Casuistica() {
 
           {/* Tab Casuística */}
           <TabsContent value="casuistica" className="space-y-6">
+            {/* Seletor do modo de filtro */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Tipo de Visualização</CardTitle>
+                <CardDescription>Escolha como deseja visualizar os dados</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Select value={filterMode} onValueChange={(v) => setFilterMode(v as 'periodo' | 'diagnostico')}>
+                  <SelectTrigger className="w-full max-w-md">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="periodo">Filtro por Período</SelectItem>
+                    <SelectItem value="diagnostico">Filtro por Diagnóstico</SelectItem>
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
+
             {/* Filtros e Total de Laudos no mesmo nível */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
               <Card className="lg:col-span-3">
                 <CardHeader>
                   <CardTitle>Filtros</CardTitle>
                   <CardDescription className="flex items-center justify-between">
-                    <span>Selecione o período, método e subespecialidade</span>
+                    <span>
+                      {filterMode === 'periodo' 
+                        ? 'Selecione o período, método e subespecialidade'
+                        : 'Selecione o diagnóstico e o período de análise'}
+                    </span>
                     <DataPeriodInfo minDate={minDate} maxDate={maxDate} loading={periodLoading} />
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm text-muted-foreground mb-2">Período</label>
-                      <PeriodFilter
-                        period={period}
-                        onPeriodChange={(p) => setPeriod(p as any)}
-                        startDate={startDate}
-                        endDate={endDate}
-                        onDateRangeChange={(start, end) => {
-                          setStartDate(start);
-                          setEndDate(end);
-                        }}
-                        customMonth={customMonth}
-                        onCustomMonthChange={setCustomMonth}
-                      />
+                  {filterMode === 'periodo' ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm text-muted-foreground mb-2">Período</label>
+                        <PeriodFilter
+                          period={period}
+                          onPeriodChange={(p) => setPeriod(p as any)}
+                          startDate={startDate}
+                          endDate={endDate}
+                          onDateRangeChange={(start, end) => {
+                            setStartDate(start);
+                            setEndDate(end);
+                          }}
+                          customMonth={customMonth}
+                          onCustomMonthChange={setCustomMonth}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-muted-foreground mb-2">Subgrupo (Método)</label>
+                        <Select value={selectedSubgrupo} onValueChange={setSelectedSubgrupo}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Filtrar por subgrupo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {subgrupos.map((s) => (
+                              <SelectItem key={s} value={s}>{s === 'todos' ? 'Todos' : s}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="block text-sm text-muted-foreground mb-2">Subespecialidade</label>
+                        <Select value={selectedSubespecialidade} onValueChange={setSelectedSubespecialidade}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Filtrar por subespecialidade" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="todas">Todas</SelectItem>
+                            <SelectItem value="cabeca-pescoco">Cabeça & Pescoço</SelectItem>
+                            <SelectItem value="mamas">Mamas</SelectItem>
+                            <SelectItem value="medicina-interna">Medicina Interna</SelectItem>
+                            <SelectItem value="ginecologia-obstetricia">Ginecologia & Obstetrícia</SelectItem>
+                            <SelectItem value="msk">MSK</SelectItem>
+                            <SelectItem value="vascular">Vascular</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm text-muted-foreground mb-2">Subgrupo (Método)</label>
-                      <Select value={selectedSubgrupo} onValueChange={setSelectedSubgrupo}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Filtrar por subgrupo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {subgrupos.map((s) => (
-                            <SelectItem key={s} value={s}>{s === 'todos' ? 'Todos' : s}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm text-muted-foreground mb-2">Diagnóstico</label>
+                        <Select value={selectedDiagnostico} onValueChange={setSelectedDiagnostico}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecione um diagnóstico" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableDiagnosticos.map((diag) => (
+                              <SelectItem key={diag} value={diag}>{diag}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="block text-sm text-muted-foreground mb-2">Período</label>
+                        <PeriodFilter
+                          period={period}
+                          onPeriodChange={(p) => setPeriod(p as any)}
+                          startDate={startDate}
+                          endDate={endDate}
+                          onDateRangeChange={(start, end) => {
+                            setStartDate(start);
+                            setEndDate(end);
+                          }}
+                          customMonth={customMonth}
+                          onCustomMonthChange={setCustomMonth}
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm text-muted-foreground mb-2">Subespecialidade</label>
-                      <Select value={selectedSubespecialidade} onValueChange={setSelectedSubespecialidade}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Filtrar por subespecialidade" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="todas">Todas</SelectItem>
-                          <SelectItem value="cabeca-pescoco">Cabeça & Pescoço</SelectItem>
-                          <SelectItem value="mamas">Mamas</SelectItem>
-                          <SelectItem value="medicina-interna">Medicina Interna</SelectItem>
-                          <SelectItem value="ginecologia-obstetricia">Ginecologia & Obstetrícia</SelectItem>
-                          <SelectItem value="msk">MSK</SelectItem>
-                          <SelectItem value="vascular">Vascular</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -465,105 +540,136 @@ export default function Casuistica() {
             </div>
 
             {/* Gráficos alargados */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle>Perfil dos Diagnósticos</CardTitle>
-                    <CardDescription>Top diagnósticos em {selectedSubgrupo === 'todos' ? 'todos os métodos' : selectedSubgrupo}</CardDescription>
-                  </div>
-                  {(selectedSubgrupo === 'Mamografia' || selectedSubgrupo === 'Ultrassonografia') && selectedSubespecialidade === 'mamas' && (
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="reference-value" 
-                        checked={showReferenceValue}
-                        onCheckedChange={(checked) => setShowReferenceValue(checked as boolean)}
-                      />
-                      <label htmlFor="reference-value" className="text-sm font-medium leading-none cursor-pointer">
-                        Mostrar valores de referência BI-RADS
-                      </label>
+            {filterMode === 'periodo' ? (
+              <>
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle>Perfil dos Diagnósticos</CardTitle>
+                        <CardDescription>Top diagnósticos em {selectedSubgrupo === 'todos' ? 'todos os métodos' : selectedSubgrupo}</CardDescription>
+                      </div>
+                      {(selectedSubgrupo === 'Mamografia' || selectedSubgrupo === 'Ultrassonografia') && selectedSubespecialidade === 'mamas' && (
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="reference-value" 
+                            checked={showReferenceValue}
+                            onCheckedChange={(checked) => setShowReferenceValue(checked as boolean)}
+                          />
+                          <label htmlFor="reference-value" className="text-sm font-medium leading-none cursor-pointer">
+                            Mostrar valores de referência BI-RADS
+                          </label>
+                        </div>
+                      )}
                     </div>
+                  </CardHeader>
+                  <CardContent>
+                    <DiagnosisChart data={topDiagnosticos} showHistoricalAverage={false} />
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Distribuição BI-RADS (Mama)</CardTitle>
+                    <CardDescription>Percentual por categoria (soma 100%) - {biradsExamType === 'mamografia' ? 'Mamografia' : biradsExamType === 'ultrassom' ? 'Ultrassonografia' : 'Mamografia e Ultrassonografia'}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {biradsData.length > 0 ? (
+                      <BIRADSChart 
+                        data={biradsData} 
+                        showHistoricalAverage={false}
+                        showReferenceValue={showReferenceValue}
+                        examType={biradsExamType}
+                      />
+                    ) : (
+                      <p className="text-muted-foreground">Sem dados de BI-RADS no filtro atual.</p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Referências (benchmarks) */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Referências BI-RADS (benchmarks)</CardTitle>
+                    <CardDescription>Valores de referência em rastreamento (literatura) - {biradsExamType === 'mamografia' ? 'Mamografia' : biradsExamType === 'ultrassom' ? 'Ultrassonografia' : 'Mamografia e Ultrassonografia'}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {biradsExamType === 'mamografia' && (
+                      <>
+                        <h4 className="font-semibold text-sm mb-2">Mamografia</h4>
+                        <ul className="list-disc pl-6 space-y-2 text-sm text-muted-foreground">
+                          <li>Taxa de recall (BI-RADS 0): recomendada ~8% a 12% em mamografia de rastreamento (ACR/BCSC).</li>
+                          <li>BI-RADS 1–2 (negativo/benigno): tipicamente a maioria dos exames (≈75%–85%).</li>
+                          <li>BI-RADS 3: geralmente baixo (≈3%–7%).</li>
+                          <li>BI-RADS 4–5: raros em rastreamento (≈2%–5%).</li>
+                        </ul>
+                      </>
+                    )}
+                    {biradsExamType === 'ultrassom' && (
+                      <>
+                        <h4 className="font-semibold text-sm mb-2">Ultrassonografia de Mamas</h4>
+                        <ul className="list-disc pl-6 space-y-2 text-sm text-muted-foreground">
+                          <li>Taxa de recall (BI-RADS 0): recomendada ~3% a 7% em ultrassom complementar.</li>
+                          <li>BI-RADS 1–2 (negativo/benigno): tipicamente a maioria dos exames (≈85%–95%).</li>
+                          <li>BI-RADS 3: geralmente baixo (≈1%–5%).</li>
+                          <li>BI-RADS 4–5: raros (≈0,5%–2,5%).</li>
+                        </ul>
+                      </>
+                    )}
+                    {biradsExamType === 'ambos' && (
+                      <>
+                        <h4 className="font-semibold text-sm mb-2">Mamografia</h4>
+                        <ul className="list-disc pl-6 space-y-2 text-sm text-muted-foreground mb-4">
+                          <li>Taxa de recall (BI-RADS 0): recomendada ~8% a 12% em mamografia de rastreamento (ACR/BCSC).</li>
+                          <li>BI-RADS 1–2 (negativo/benigno): tipicamente a maioria dos exames (≈75%–85%).</li>
+                          <li>BI-RADS 3: geralmente baixo (≈3%–7%).</li>
+                          <li>BI-RADS 4–5: raros em rastreamento (≈2%–5%).</li>
+                        </ul>
+                        <h4 className="font-semibold text-sm mb-2">Ultrassonografia de Mamas</h4>
+                        <ul className="list-disc pl-6 space-y-2 text-sm text-muted-foreground">
+                          <li>Taxa de recall (BI-RADS 0): recomendada ~3% a 7% em ultrassom complementar.</li>
+                          <li>BI-RADS 1–2 (negativo/benigno): tipicamente a maioria dos exames (≈85%–95%).</li>
+                          <li>BI-RADS 3: geralmente baixo (≈1%–5%).</li>
+                          <li>BI-RADS 4–5: raros (≈0,5%–2,5%).</li>
+                        </ul>
+                      </>
+                    )}
+                    <div className="mt-3 text-xs">
+                      Fontes: 
+                      <a className="text-medical-teal underline ml-1" href="https://pubs.rsna.org/doi/10.1148/radiol.2016161174" target="_blank" rel="noreferrer">RSNA – BCSC Benchmarks</a>,
+                      <a className="text-medical-teal underline ml-2" href="https://radiologyassistant.nl/breast/bi-rads/bi-rads-for-mammography-and-ultrasound-2013" target="_blank" rel="noreferrer">Radiology Assistant (BI-RADS)</a>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Evolução do Diagnóstico</CardTitle>
+                  <CardDescription>
+                    {selectedDiagnostico 
+                      ? `Quantidade de "${selectedDiagnostico}" ao longo do tempo`
+                      : 'Selecione um diagnóstico para visualizar sua evolução'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {selectedDiagnostico ? (
+                    <div className="text-center py-8">
+                      <p className="text-2xl font-bold text-medical-teal mb-2">
+                        {new Intl.NumberFormat('pt-BR').format(totalLaudos)}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Total de diagnósticos no período selecionado
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-8">
+                      Selecione um diagnóstico para visualizar os dados
+                    </p>
                   )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <DiagnosisChart data={topDiagnosticos} showHistoricalAverage={false} />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Distribuição BI-RADS (Mama)</CardTitle>
-                <CardDescription>Percentual por categoria (soma 100%) - {biradsExamType === 'mamografia' ? 'Mamografia' : biradsExamType === 'ultrassom' ? 'Ultrassonografia' : 'Mamografia e Ultrassonografia'}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {biradsData.length > 0 ? (
-                  <BIRADSChart 
-                    data={biradsData} 
-                    showHistoricalAverage={false}
-                    showReferenceValue={showReferenceValue}
-                    examType={biradsExamType}
-                  />
-                ) : (
-                  <p className="text-muted-foreground">Sem dados de BI-RADS no filtro atual.</p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Referências (benchmarks) */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Referências BI-RADS (benchmarks)</CardTitle>
-                <CardDescription>Valores de referência em rastreamento (literatura) - {biradsExamType === 'mamografia' ? 'Mamografia' : biradsExamType === 'ultrassom' ? 'Ultrassonografia' : 'Mamografia e Ultrassonografia'}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {biradsExamType === 'mamografia' && (
-                  <>
-                    <h4 className="font-semibold text-sm mb-2">Mamografia</h4>
-                    <ul className="list-disc pl-6 space-y-2 text-sm text-muted-foreground">
-                      <li>Taxa de recall (BI-RADS 0): recomendada ~8% a 12% em mamografia de rastreamento (ACR/BCSC).</li>
-                      <li>BI-RADS 1–2 (negativo/benigno): tipicamente a maioria dos exames (≈75%–85%).</li>
-                      <li>BI-RADS 3: geralmente baixo (≈3%–7%).</li>
-                      <li>BI-RADS 4–5: raros em rastreamento (≈2%–5%).</li>
-                    </ul>
-                  </>
-                )}
-                {biradsExamType === 'ultrassom' && (
-                  <>
-                    <h4 className="font-semibold text-sm mb-2">Ultrassonografia de Mamas</h4>
-                    <ul className="list-disc pl-6 space-y-2 text-sm text-muted-foreground">
-                      <li>Taxa de recall (BI-RADS 0): recomendada ~3% a 7% em ultrassom complementar.</li>
-                      <li>BI-RADS 1–2 (negativo/benigno): tipicamente a maioria dos exames (≈85%–95%).</li>
-                      <li>BI-RADS 3: geralmente baixo (≈1%–5%).</li>
-                      <li>BI-RADS 4–5: raros (≈0,5%–2,5%).</li>
-                    </ul>
-                  </>
-                )}
-                {biradsExamType === 'ambos' && (
-                  <>
-                    <h4 className="font-semibold text-sm mb-2">Mamografia</h4>
-                    <ul className="list-disc pl-6 space-y-2 text-sm text-muted-foreground mb-4">
-                      <li>Taxa de recall (BI-RADS 0): recomendada ~8% a 12% em mamografia de rastreamento (ACR/BCSC).</li>
-                      <li>BI-RADS 1–2 (negativo/benigno): tipicamente a maioria dos exames (≈75%–85%).</li>
-                      <li>BI-RADS 3: geralmente baixo (≈3%–7%).</li>
-                      <li>BI-RADS 4–5: raros em rastreamento (≈2%–5%).</li>
-                    </ul>
-                    <h4 className="font-semibold text-sm mb-2">Ultrassonografia de Mamas</h4>
-                    <ul className="list-disc pl-6 space-y-2 text-sm text-muted-foreground">
-                      <li>Taxa de recall (BI-RADS 0): recomendada ~3% a 7% em ultrassom complementar.</li>
-                      <li>BI-RADS 1–2 (negativo/benigno): tipicamente a maioria dos exames (≈85%–95%).</li>
-                      <li>BI-RADS 3: geralmente baixo (≈1%–5%).</li>
-                      <li>BI-RADS 4–5: raros (≈0,5%–2,5%).</li>
-                    </ul>
-                  </>
-                )}
-                <div className="mt-3 text-xs">
-                  Fontes: 
-                  <a className="text-medical-teal underline ml-1" href="https://pubs.rsna.org/doi/10.1148/radiol.2016161174" target="_blank" rel="noreferrer">RSNA – BCSC Benchmarks</a>,
-                  <a className="text-medical-teal underline ml-2" href="https://radiologyassistant.nl/breast/bi-rads/bi-rads-for-mammography-and-ultrasound-2013" target="_blank" rel="noreferrer">Radiology Assistant (BI-RADS)</a>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Tab Diagnósticos Histopatológicos */}
