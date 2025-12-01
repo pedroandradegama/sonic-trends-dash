@@ -110,6 +110,43 @@ function categorizeDiagnostico(comentario: string | null | undefined): string {
   return 'outras';
 }
 
+function extractSpecificDiagnostico(comentario: string | null | undefined, subespecialidade: string): string[] {
+  if (!comentario) return [];
+  
+  const text = toLowerNoAccent(normalize(comentario));
+  const diagnosticos: string[] = [];
+  
+  // Medicina Interna - diagnósticos individuais
+  if (subespecialidade === 'medicina-interna') {
+    if (text.includes('esteatose hepatica leve')) diagnosticos.push('Esteatose hepática leve');
+    else if (text.includes('esteatose hepatica moderada')) diagnosticos.push('Esteatose hepática moderada');
+    else if (text.includes('esteatose hepatica acentuada')) diagnosticos.push('Esteatose hepática acentuada');
+    
+    if (text.includes('cisto renal simples')) diagnosticos.push('Cisto renal simples');
+    if (text.includes('cisto hepatico simples')) diagnosticos.push('Cisto hepático simples');
+    if (text.includes('colelitiase') || text.includes('colelítiase')) diagnosticos.push('Colelitíase');
+    if (text.includes('colecistite aguda')) diagnosticos.push('Colecistite aguda');
+    if (text.includes('polipo na vesicula biliar')) diagnosticos.push('Pólipo na vesícula biliar');
+    if (text.includes('angiomiolipoma')) diagnosticos.push('Angiomiolipoma');
+    if (text.includes('hemangioma')) diagnosticos.push('Hemangioma');
+  }
+  
+  // Ginecologia & Obstetrícia - diagnósticos individuais
+  if (subespecialidade === 'ginecologia-obstetricia') {
+    if (text.includes('adenomiose')) diagnosticos.push('Adenomiose');
+    if (text.includes('leiomioma')) diagnosticos.push('Leiomioma');
+    if (text.includes('cisto ovariano unilocular')) diagnosticos.push('Cisto ovariano unilocular');
+    if (text.includes('cisto ovariano funcional')) diagnosticos.push('Cisto ovariano funcional');
+    if (text.includes('polipo endometrial')) diagnosticos.push('Pólipo endometrial');
+    if (text.includes('cisto de naboth')) diagnosticos.push('Cisto de naboth');
+    if (text.includes('polipo endocervical')) diagnosticos.push('Pólipo endocervical');
+    if (text.includes('ovarios policisticos')) diagnosticos.push('Ovários policísticos');
+    else if (text.includes('sop')) diagnosticos.push('SOP');
+  }
+  
+  return diagnosticos;
+}
+
 export default function Casuistica() {
   const { signOut } = useAuth();
   const { data, loading, error, subgrupos } = useCasuisticaData();
@@ -211,16 +248,32 @@ export default function Casuistica() {
 
   const topDiagnosticos = useMemo(() => {
     const map = new Map<string, { diagnostico: string; count: number }>();
-    for (const row of filtered) {
-      const raw = normalize(row['Comentário']);
-      if (!raw) continue;
-      const key = raw.toUpperCase();
-      const prev = map.get(key);
-      if (prev) prev.count += 1;
-      else map.set(key, { diagnostico: raw, count: 1 });
+    
+    // Se filtrado por Medicina Interna ou Ginecologia & Obstetrícia, extrair diagnósticos específicos
+    if (selectedSubespecialidade === 'medicina-interna' || selectedSubespecialidade === 'ginecologia-obstetricia') {
+      for (const row of filtered) {
+        const diagnosticosEspecificos = extractSpecificDiagnostico(row['Comentário'], selectedSubespecialidade);
+        for (const diag of diagnosticosEspecificos) {
+          const key = diag.toUpperCase();
+          const prev = map.get(key);
+          if (prev) prev.count += 1;
+          else map.set(key, { diagnostico: diag, count: 1 });
+        }
+      }
+    } else {
+      // Para outras subespecialidades, usar o comentário completo como antes
+      for (const row of filtered) {
+        const raw = normalize(row['Comentário']);
+        if (!raw) continue;
+        const key = raw.toUpperCase();
+        const prev = map.get(key);
+        if (prev) prev.count += 1;
+        else map.set(key, { diagnostico: raw, count: 1 });
+      }
     }
+    
     return Array.from(map.values()).sort((a, b) => b.count - a.count).slice(0, 12);
-  }, [filtered]);
+  }, [filtered, selectedSubespecialidade]);
 
     const biradsData = useMemo(() => {
       const isBreastRelated = (sg?: string | null) => {
