@@ -36,8 +36,24 @@ export function DiagnosticosPanel() {
     setSummary(null);
 
     try {
+      // Buscar o perfil do usuário logado para filtrar por médico
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('medico_nome')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile?.medico_nome) {
+        throw new Error('Perfil do médico não encontrado');
+      }
+
       const { data, error } = await supabase.functions.invoke('process-diagnosticos', {
-        body: {}
+        body: { medicoNome: profile.medico_nome }
       });
 
       if (error) throw error;
