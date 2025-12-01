@@ -39,6 +39,13 @@ serve(async (req) => {
   }
 
   try {
+    // Receber o nome do médico do body para filtrar resultados
+    const { medicoNome } = await req.json();
+    if (!medicoNome) {
+      throw new Error('Nome do médico não fornecido');
+    }
+    console.log(`🔒 Filtrando resultados para médico: ${medicoNome}`);
+
     const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY');
     if (!serviceAccountKey) {
       throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY não configurada');
@@ -141,23 +148,31 @@ serve(async (req) => {
       }
     }
 
-    // 4. Gerar sumário por médico
-    const summary = generateSummary(resultados);
+    // 4. Filtrar resultados pelo médico logado
+    const resultadosFiltrados = resultados.filter(
+      r => r.medicoExecutante === medicoNome
+    );
+    console.log(`✓ Total processado: ${resultados.length} laudos`);
+    console.log(`✓ Filtrado para ${medicoNome}: ${resultadosFiltrados.length} laudos`);
 
-    // 5. Gravar no Sheets
+    // 5. Gerar sumário apenas do médico filtrado
+    const summary = generateSummary(resultadosFiltrados);
+
+    // 6. Gravar no Sheets (todos os resultados, não filtrados)
     await writeToSheets(
       SHEETS_SPREADSHEET_ID,
       SHEETS_TAB_SAIDA,
       resultados,
-      summary,
+      generateSummary(resultados), // Summary completo para o Sheets
       accessToken
     );
 
+    // 7. Retornar apenas os resultados filtrados para o médico
     return new Response(
       JSON.stringify({
         success: true,
-        processedCount: resultados.length,
-        results: resultados,
+        processedCount: resultadosFiltrados.length,
+        results: resultadosFiltrados,
         summary
       } as ProcessResult),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
