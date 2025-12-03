@@ -339,7 +339,18 @@ async function downloadImageAsBase64(fileId: string, accessToken: string): Promi
     }
     
     const imageBytes = await response.arrayBuffer();
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(imageBytes)));
+    const uint8Array = new Uint8Array(imageBytes);
+    
+    // Converter para base64 em chunks para evitar stack overflow
+    let binary = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.slice(i, i + chunkSize);
+      binary += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    
+    const base64 = btoa(binary);
+    console.log(`✓ Imagem ${fileId} convertida para base64 (${Math.round(base64.length / 1024)}KB)`);
     return `data:image/png;base64,${base64}`;
   } catch (error) {
     console.error(`Erro ao converter imagem ${fileId} para base64:`, error);
