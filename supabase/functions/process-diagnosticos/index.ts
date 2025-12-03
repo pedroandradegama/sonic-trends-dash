@@ -148,7 +148,7 @@ serve(async (req) => {
         console.log(`✓ Médico executante: ${medico} (match: ${tipo})`);
 
         // Buscar imagem correspondente (match exato ou fuzzy por nome do paciente)
-        const { imagemUrl, imagemFileId } = findImagemPaciente(pacienteNorm, imagensMap, LIMIAR_FUZZY);
+        const { imagemUrl, imagemFileId } = await findImagemPaciente(pacienteNorm, imagensMap, LIMIAR_FUZZY, accessToken);
         if (imagemUrl) {
           console.log(`✓ Imagem encontrada: ${imagemFileId}`);
         } else {
@@ -324,37 +324,66 @@ async function listDriveImages(folderId: string, accessToken: string) {
   return data.files || [];
 }
 
-function findImagemPaciente(
+async function downloadImageAsBase64(fileId: string, accessToken: string): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      }
+    );
+    
+    if (!response.ok) {
+      console.error(`Erro ao baixar imagem ${fileId}: ${response.status}`);
+      return null;
+    }
+    
+    const imageBytes = await response.arrayBuffer();
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(imageBytes)));
+    return `data:image/png;base64,${base64}`;
+  } catch (error) {
+    console.error(`Erro ao converter imagem ${fileId} para base64:`, error);
+    return null;
+  }
+}
+
+async function findImagemPaciente(
   pacienteNorm: string,
   imagensMap: Map<string, { id: string; name: string }>,
-  limiarFuzzy: number
-): { imagemUrl?: string; imagemFileId?: string } {
+  limiarFuzzy: number,
+  accessToken: string
+): Promise<{ imagemUrl?: string; imagemFileId?: string }> {
+  let matchedImg: { id: string; name: string } | null = null;
+  
   // Tentar match exato
   if (imagensMap.has(pacienteNorm)) {
-    const img = imagensMap.get(pacienteNorm)!;
-    return {
-      imagemUrl: `https://drive.google.com/uc?export=view&id=${img.id}`,
-      imagemFileId: img.id
-    };
-  }
-  
-  // Tentar match fuzzy
-  let bestMatch: { id: string; name: string } | null = null;
-  let bestScore = 0;
-  
-  for (const [imgPacienteNorm, img] of imagensMap.entries()) {
-    const score = similaridade(pacienteNorm, imgPacienteNorm);
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatch = img;
+    matchedImg = imagensMap.get(pacienteNorm)!;
+  } else {
+    // Tentar match fuzzy
+    let bestScore = 0;
+    
+    for (const [imgPacienteNorm, img] of imagensMap.entries()) {
+      const score = similaridade(pacienteNorm, imgPacienteNorm);
+      if (score > bestScore) {
+        bestScore = score;
+        matchedImg = img;
+      }
+    }
+    
+    if (bestScore < limiarFuzzy) {
+      matchedImg = null;
     }
   }
   
-  if (bestScore >= limiarFuzzy && bestMatch) {
-    return {
-      imagemUrl: `https://drive.google.com/uc?export=view&id=${bestMatch.id}`,
-      imagemFileId: bestMatch.id
-    };
+  if (matchedImg) {
+    // Baixar a imagem como base64
+    const base64Url = await downloadImageAsBase64(matchedImg.id, accessToken);
+    if (base64Url) {
+      return {
+        imagemUrl: base64Url,
+        imagemFileId: matchedImg.id
+      };
+    }
   }
   
   return {};
