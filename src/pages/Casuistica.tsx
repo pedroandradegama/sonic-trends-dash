@@ -13,7 +13,9 @@ import { PeriodFilter } from '@/components/filters/PeriodFilter';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { parse, isValid, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, isAfter, isBefore } from 'date-fns';
+import { parse, isValid, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, isAfter, isBefore, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import imagLogo from '@/assets/imag-logo.png';
 
 function normalize(str?: string | null) {
@@ -354,6 +356,34 @@ export default function Casuistica() {
     return 'mamografia'; // default
   }, [filtered]);
 
+  // Dados mensais para o modo 'diagnostico'
+  const monthlyDiagnosticoData = useMemo(() => {
+    if (filterMode !== 'diagnostico' || !selectedDiagnostico) return [];
+    
+    const monthCounts = new Map<string, number>();
+    
+    for (const row of filtered) {
+      const dateStr = row['Data do pedido'];
+      const rowDate = parseDate(dateStr);
+      if (!rowDate) continue;
+      
+      const monthKey = format(rowDate, 'yyyy-MM');
+      monthCounts.set(monthKey, (monthCounts.get(monthKey) || 0) + 1);
+    }
+    
+    // Ordenar por mês e formatar
+    return Array.from(monthCounts.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([monthKey, count]) => {
+        const [year, month] = monthKey.split('-');
+        const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+        return {
+          month: format(date, 'MMM/yy', { locale: ptBR }),
+          count
+        };
+      });
+  }, [filtered, filterMode, selectedDiagnostico]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -654,14 +684,55 @@ export default function Casuistica() {
                 </CardHeader>
                 <CardContent>
                   {selectedDiagnostico ? (
-                    <div className="text-center py-8">
-                      <p className="text-2xl font-bold text-medical-teal mb-2">
-                        {new Intl.NumberFormat('pt-BR').format(totalLaudos)}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Total de diagnósticos no período selecionado
-                      </p>
-                    </div>
+                    monthlyDiagnosticoData.length > 1 ? (
+                      <div className="space-y-4">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-medical-teal mb-1">
+                            {new Intl.NumberFormat('pt-BR').format(totalLaudos)}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Total no período
+                          </p>
+                        </div>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart data={monthlyDiagnosticoData}>
+                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                            <XAxis 
+                              dataKey="month" 
+                              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                            />
+                            <YAxis 
+                              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                              allowDecimals={false}
+                            />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: 'hsl(var(--card))',
+                                border: '1px solid hsl(var(--border))',
+                                borderRadius: '8px',
+                              }}
+                              labelStyle={{ color: 'hsl(var(--foreground))' }}
+                              formatter={(value: number) => [value, 'Diagnósticos']}
+                            />
+                            <Bar 
+                              dataKey="count" 
+                              fill="hsl(var(--medical-teal))" 
+                              radius={[4, 4, 0, 0]}
+                              name="Diagnósticos"
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-2xl font-bold text-medical-teal mb-2">
+                          {new Intl.NumberFormat('pt-BR').format(totalLaudos)}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Total de diagnósticos no período selecionado
+                        </p>
+                      </div>
+                    )
                   ) : (
                     <p className="text-muted-foreground text-center py-8">
                       Selecione um diagnóstico para visualizar os dados
