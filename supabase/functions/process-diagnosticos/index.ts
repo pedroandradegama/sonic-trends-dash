@@ -25,6 +25,8 @@ interface DiagnosticoDetalhado {
   medicoExecutante: string;
   matchTipo: 'exato' | 'fuzzy' | 'nao_encontrado';
   status: string;
+  imagemUrl?: string;
+  imagemFileId?: string;
 }
 
 interface MedicoSummary {
@@ -69,6 +71,7 @@ serve(async (req) => {
     
     // Configurações
     const DRIVE_FOLDER_ID = "1b-RPK9Vc3fyv8Oa3yBceqaXhRLDJS4y1";
+    const DRIVE_IMAGES_FOLDER_ID = "1mFq4vYQjCS4DDzHau8jsmSe5eYACpywI";
     const SHEETS_SPREADSHEET_ID = "1pwIssvgaBVvREC2vWHCCAeoo0DYHrddF2C9rqhaRzr0";
     const SHEETS_TAB_MAPEAMENTO = "teste";
     const SHEETS_TAB_SAIDA = "Diagnósticos por Médico";
@@ -82,7 +85,22 @@ serve(async (req) => {
     const files = await listDriveFiles(DRIVE_FOLDER_ID, accessToken);
     console.log(`Encontrados ${files.length} arquivos`);
 
-    // 2. Obter mapeamento do Sheets
+    // 2. Listar imagens PNG da pasta de imagens
+    console.log('Listando imagens do Drive...');
+    const images = await listDriveImages(DRIVE_IMAGES_FOLDER_ID, accessToken);
+    console.log(`Encontradas ${images.length} imagens`);
+
+    // Criar mapa de imagens por nome do paciente (normalizado)
+    const imagensMap = new Map<string, { id: string; name: string }>();
+    for (const img of images) {
+      // Nome do arquivo sem extensão = nome do paciente
+      const pacienteNome = img.name.replace(/\.png$/i, '');
+      const pacienteNorm = normalizarTexto(pacienteNome);
+      imagensMap.set(pacienteNorm, { id: img.id, name: img.name });
+    }
+    console.log(`Mapeadas ${imagensMap.size} imagens por paciente`);
+
+    // 3. Obter mapeamento do Sheets
     console.log('Obtendo mapeamento do Sheets...');
     const mapeamento = await getMapeamentoFromSheets(
       SHEETS_SPREADSHEET_ID,
@@ -91,7 +109,7 @@ serve(async (req) => {
     );
     console.log(`Carregados ${mapeamento.size} mapeamentos`);
 
-    // 3. Processar cada PDF
+    // 4. Processar cada PDF
     const resultados: DiagnosticoDetalhado[] = [];
     
     for (const file of files.slice(0, 10)) { // Limitar a 10 primeiros para teste
@@ -129,6 +147,14 @@ serve(async (req) => {
         const { medico, tipo } = findMedicoExecutante(pacienteNorm, mapeamento, LIMIAR_FUZZY);
         console.log(`✓ Médico executante: ${medico} (match: ${tipo})`);
 
+        // Buscar imagem correspondente (match exato ou fuzzy por nome do paciente)
+        const { imagemUrl, imagemFileId } = findImagemPaciente(pacienteNorm, imagensMap, LIMIAR_FUZZY);
+        if (imagemUrl) {
+          console.log(`✓ Imagem encontrada: ${imagemFileId}`);
+        } else {
+          console.log(`⚠ Imagem não encontrada para paciente: ${paciente}`);
+        }
+
         resultados.push({
           arquivo: file.name,
           fileId: file.id,
@@ -139,7 +165,9 @@ serve(async (req) => {
           diagnosticoNormalizado: normalizarTexto(diagnostico),
           medicoExecutante: medico,
           matchTipo: tipo,
-          status: medico ? 'processado' : 'pendente'
+          status: medico ? 'processado' : 'pendente',
+          imagemUrl,
+          imagemFileId
         });
         console.log(`========== FIM ${file.name} ==========\n`);
       } catch (err) {
@@ -148,17 +176,17 @@ serve(async (req) => {
       }
     }
 
-    // 4. Filtrar resultados pelo médico logado
+    // 5. Filtrar resultados pelo médico logado
     const resultadosFiltrados = resultados.filter(
       r => r.medicoExecutante === medicoNome
     );
     console.log(`✓ Total processado: ${resultados.length} laudos`);
     console.log(`✓ Filtrado para ${medicoNome}: ${resultadosFiltrados.length} laudos`);
 
-    // 5. Gerar sumário apenas do médico filtrado
+    // 6. Gerar sumário apenas do médico filtrado
     const summary = generateSummary(resultadosFiltrados);
 
-    // 6. Gravar no Sheets (todos os resultados, não filtrados)
+    // 7. Gravar no Sheets (todos os resultados, não filtrados)
     await writeToSheets(
       SHEETS_SPREADSHEET_ID,
       SHEETS_TAB_SAIDA,
@@ -167,7 +195,7 @@ serve(async (req) => {
       accessToken
     );
 
-    // 7. Retornar apenas os resultados filtrados para o médico
+    // 8. Retornar apenas os resultados filtrados para o médico
     return new Response(
       JSON.stringify({
         success: true,
@@ -274,6 +302,62 @@ async function listDriveFiles(folderId: string, accessToken: string) {
   console.log('Resposta da API do Drive:', JSON.stringify(data, null, 2));
   
   return data.files || [];
+}
+
+async function listDriveImages(folderId: string, accessToken: string) {
+  const query = `'${folderId}' in parents and mimeType='image/png' and trashed=false`;
+  const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,modifiedTime)`;
+  
+  console.log('Drive Images API URL:', url);
+  
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+  
+  const data = await response.json();
+  
+  if (!response.ok) {
+    console.error('Erro na API do Drive (imagens):', JSON.stringify(data, null, 2));
+    throw new Error(`Drive API error: ${data.error?.message || 'Unknown error'}`);
+  }
+  
+  return data.files || [];
+}
+
+function findImagemPaciente(
+  pacienteNorm: string,
+  imagensMap: Map<string, { id: string; name: string }>,
+  limiarFuzzy: number
+): { imagemUrl?: string; imagemFileId?: string } {
+  // Tentar match exato
+  if (imagensMap.has(pacienteNorm)) {
+    const img = imagensMap.get(pacienteNorm)!;
+    return {
+      imagemUrl: `https://drive.google.com/uc?export=view&id=${img.id}`,
+      imagemFileId: img.id
+    };
+  }
+  
+  // Tentar match fuzzy
+  let bestMatch: { id: string; name: string } | null = null;
+  let bestScore = 0;
+  
+  for (const [imgPacienteNorm, img] of imagensMap.entries()) {
+    const score = similaridade(pacienteNorm, imgPacienteNorm);
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = img;
+    }
+  }
+  
+  if (bestScore >= limiarFuzzy && bestMatch) {
+    return {
+      imagemUrl: `https://drive.google.com/uc?export=view&id=${bestMatch.id}`,
+      imagemFileId: bestMatch.id
+    };
+  }
+  
+  return {};
 }
 
 async function extractTextFromPDF(fileId: string, accessToken: string): Promise<string> {
