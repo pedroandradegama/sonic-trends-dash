@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNPSByMedico } from '@/hooks/useNPSByMedico';
 import { useNPSByConvenio } from '@/hooks/useNPSByConvenio';
+import { useNPSEvolution } from '@/hooks/useNPSEvolution';
 import { useNPSPeriod } from '@/hooks/useDataPeriod';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -12,9 +13,9 @@ import { NPSMedicoCard } from '@/components/nps/NPSMedicoCard';
 import { NPSChart } from '@/components/nps/NPSChart';
 import { NPSConvenioChart } from '@/components/nps/NPSConvenioChart';
 import { NPSConvenioCard } from '@/components/nps/NPSConvenioCard';
-import { startOfDay, endOfDay, subDays, startOfMonth, startOfYear, parse } from 'date-fns';
+import { NPSEvolutionChart } from '@/components/nps/NPSEvolutionChart';
+import { startOfDay, endOfDay, subDays, startOfMonth, startOfYear, parse, differenceInDays } from 'date-fns';
 import { Loader2 } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import imagLogo from '@/assets/imag-logo.png';
 
 export default function NPS() {
@@ -55,6 +56,13 @@ export default function NPS() {
 
   const { data, loading, error } = useNPSByMedico(dateRange?.start, dateRange?.end);
   const { data: convenioData, loading: convenioLoading, error: convenioError } = useNPSByConvenio(dateRange?.start, dateRange?.end);
+  const { data: evolutionData } = useNPSEvolution(dateRange?.start, dateRange?.end);
+
+  // Verificar se o período é maior que 1 mês (30 dias)
+  const isLongPeriod = useMemo(() => {
+    if (!dateRange?.start || !dateRange?.end) return false;
+    return differenceInDays(dateRange.end, dateRange.start) > 30;
+  }, [dateRange]);
 
   // Calcular NPS médio geral
   const npsGeral = useMemo(() => {
@@ -171,57 +179,33 @@ export default function NPS() {
         </Card>
       )}
 
-      {/* Tabs para Médico e Convênio */}
-      <Tabs defaultValue="medico" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="medico">Por Médico</TabsTrigger>
-          <TabsTrigger value="convenio">Por Convênio</TabsTrigger>
-        </TabsList>
-
-        {/* Tab Por Médico */}
-        <TabsContent value="medico" className="space-y-6">
+      {/* Curva evolutiva para períodos longos ou Tabs para períodos curtos */}
+      {isLongPeriod ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Evolução do NPS ao Longo do Tempo</CardTitle>
+            <CardDescription>
+              Acompanhe a evolução mensal do seu NPS
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {evolutionData.length > 0 ? (
+              <NPSEvolutionChart data={evolutionData} />
+            ) : (
+              <p className="text-center text-muted-foreground py-8">
+                Nenhum dado encontrado para o período selecionado.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <>
           {data.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Comparativo de NPS por Médico</CardTitle>
+                <CardTitle>NPS por Convênio</CardTitle>
                 <CardDescription>
-                  Visualização comparativa do NPS de cada médico
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <NPSChart data={data} />
-              </CardContent>
-            </Card>
-          )}
-
-          <div>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">
-              Detalhamento por Médico ({data.length})
-            </h2>
-            {data.length === 0 ? (
-              <Card>
-                <CardContent className="py-8 text-center text-muted-foreground">
-                  Nenhum dado encontrado para o período selecionado.
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {data.map((medico) => (
-                  <NPSMedicoCard key={medico.medico} data={medico} />
-                ))}
-              </div>
-            )}
-          </div>
-        </TabsContent>
-
-        {/* Tab Por Convênio */}
-        <TabsContent value="convenio" className="space-y-6">
-          {convenioData.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Comparativo de NPS por Convênio</CardTitle>
-                <CardDescription>
-                  Visualização comparativa do NPS de cada convênio
+                  Visualização do NPS estratificado por convênio
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -248,8 +232,8 @@ export default function NPS() {
               </div>
             )}
           </div>
-        </TabsContent>
-      </Tabs>
+        </>
+      )}
     </div>
   );
 }
