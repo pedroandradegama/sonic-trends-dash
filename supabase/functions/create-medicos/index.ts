@@ -5,6 +5,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Gerar senha forte aleatória
+function generateStrongPassword(length = 16): string {
+  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+  const numbers = '0123456789';
+  const special = '!@#$%&*';
+  const allChars = uppercase + lowercase + numbers + special;
+  
+  // Garantir pelo menos um de cada tipo
+  let password = '';
+  password += uppercase[Math.floor(Math.random() * uppercase.length)];
+  password += lowercase[Math.floor(Math.random() * lowercase.length)];
+  password += numbers[Math.floor(Math.random() * numbers.length)];
+  password += special[Math.floor(Math.random() * special.length)];
+  
+  // Preencher o resto
+  for (let i = password.length; i < length; i++) {
+    password += allChars[Math.floor(Math.random() * allChars.length)];
+  }
+  
+  // Embaralhar a senha
+  return password.split('').sort(() => Math.random() - 0.5).join('');
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -36,16 +60,19 @@ Deno.serve(async (req) => {
     const results = [];
 
     for (const medico of medicos) {
+      // Gerar senha forte (exceto para belisa@teste.com que não está na lista)
+      const password = generateStrongPassword(16);
+      
       // Criar usuário no Auth
       const { data: userData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email: medico.email,
-        password: '123456',
+        password: password,
         email_confirm: true,
       });
 
       if (authError) {
         console.error(`Erro ao criar usuário ${medico.email}:`, authError);
-        results.push({ medico: medico.nome, success: false, error: authError.message });
+        results.push({ medico: medico.nome, email: medico.email, success: false, error: authError.message });
         continue;
       }
 
@@ -60,9 +87,10 @@ Deno.serve(async (req) => {
 
       if (profileError) {
         console.error(`Erro ao criar perfil ${medico.email}:`, profileError);
-        results.push({ medico: medico.nome, success: false, error: profileError.message });
+        results.push({ medico: medico.nome, email: medico.email, success: false, error: profileError.message });
       } else {
-        results.push({ medico: medico.nome, success: true });
+        // Retornar a senha gerada para que possa ser compartilhada com o usuário
+        results.push({ medico: medico.nome, email: medico.email, password: password, success: true });
       }
     }
 
