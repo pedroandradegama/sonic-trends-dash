@@ -188,6 +188,13 @@ export default function Casuistica() {
     }
   }, []);
 
+  // Reset subespecialidade quando subgrupo for DENSITOMETRIA ou MAMOGRAFIA
+  useEffect(() => {
+    if (selectedSubgrupo === 'DENSITOMETRIA' || selectedSubgrupo === 'MAMOGRAFIA') {
+      setSelectedSubespecialidade('todas');
+    }
+  }, [selectedSubgrupo]);
+
   // Lista de todos os diagnósticos disponíveis para o modo 'diagnostico'
   const availableDiagnosticos = useMemo(() => {
     const diagSet = new Set<string>();
@@ -507,18 +514,30 @@ export default function Casuistica() {
                       </div>
                       <div>
                         <label className="block text-sm text-muted-foreground mb-2">Subespecialidade</label>
-                        <Select value={selectedSubespecialidade} onValueChange={setSelectedSubespecialidade}>
+                        <Select 
+                          value={selectedSubespecialidade} 
+                          onValueChange={setSelectedSubespecialidade}
+                          disabled={selectedSubgrupo === 'DENSITOMETRIA' || selectedSubgrupo === 'MAMOGRAFIA'}
+                        >
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Filtrar por subespecialidade" />
+                            <SelectValue placeholder={
+                              selectedSubgrupo === 'DENSITOMETRIA' || selectedSubgrupo === 'MAMOGRAFIA' 
+                                ? 'N/A' 
+                                : 'Filtrar por subespecialidade'
+                            } />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="todas">Todas</SelectItem>
-                            <SelectItem value="cabeca-pescoco">Cabeça & Pescoço</SelectItem>
-                            <SelectItem value="mamas">Mamas</SelectItem>
-                            <SelectItem value="medicina-interna">Medicina Interna</SelectItem>
-                            <SelectItem value="ginecologia-obstetricia">Ginecologia & Obstetrícia</SelectItem>
-                            <SelectItem value="msk">MSK</SelectItem>
-                            <SelectItem value="vascular">Vascular</SelectItem>
+                            {selectedSubgrupo !== 'DENSITOMETRIA' && selectedSubgrupo !== 'MAMOGRAFIA' && (
+                              <>
+                                <SelectItem value="todas">Todas</SelectItem>
+                                <SelectItem value="cabeca-pescoco">Cabeça & Pescoço</SelectItem>
+                                <SelectItem value="mamas">Mamas</SelectItem>
+                                <SelectItem value="medicina-interna">Medicina Interna</SelectItem>
+                                <SelectItem value="ginecologia-obstetricia">Ginecologia & Obstetrícia</SelectItem>
+                                <SelectItem value="msk">MSK</SelectItem>
+                                <SelectItem value="vascular">Vascular</SelectItem>
+                              </>
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
