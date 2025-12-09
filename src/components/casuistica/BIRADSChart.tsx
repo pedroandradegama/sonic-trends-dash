@@ -8,24 +8,24 @@ interface BIRADSChartProps {
 }
 
 export function BIRADSChart({ data, showHistoricalAverage = false, showReferenceValue = false, examType = 'ambos' }: BIRADSChartProps) {
-  // Valores de referência do BI-RADS para Mamografia (baseados em literatura)
+  // Valores de referência do BI-RADS para Mamografia
   const mamografiaRef: Record<string, number> = {
-    'BI-RADS 0': 10, // 8-12% média para mamografia
-    'BI-RADS 1': 35, // parte dos 75-85%
-    'BI-RADS 2': 45, // parte dos 75-85%
-    'BI-RADS 3': 5, // 3-7%
-    'BI-RADS 4': 3, // 2-4%
-    'BI-RADS 5': 2, // 1-3%
+    'BI-RADS 0': 7.5,  // 5-10%
+    'BI-RADS 1': 50,   // 40-60%
+    'BI-RADS 2': 25,   // 20-30%
+    'BI-RADS 3': 7.5,  // 5-10%
+    'BI-RADS 4': 1.5,  // 1-2%
+    'BI-RADS 5': 0.5,  // <0,5%
   };
 
-  // Valores de referência do BI-RADS para Ultrassonografia de Mamas (baseados em literatura fornecida)
+  // Valores de referência do BI-RADS para Ultrassonografia de Mamas
   const ultrassomRef: Record<string, number> = {
-    'BI-RADS 0': 0,
-    'BI-RADS 1': 72.5, // 70-75%
-    'BI-RADS 2': 72.5, // 70-75%
-    'BI-RADS 3': 21.5, // 20-23%
-    'BI-RADS 4': 5.5,  // 5-6%
-    'BI-RADS 5': 0.1,  // <0,1%
+    'BI-RADS 0': 0.5,  // <1%
+    'BI-RADS 1': 32.5, // 30-35%
+    'BI-RADS 2': 27.5, // 25-30%
+    'BI-RADS 3': 22.5, // 20-25%
+    'BI-RADS 4': 7.5,  // 5-10%
+    'BI-RADS 5': 1.5,  // 1-2%
   };
 
   const referenceValues = examType === 'mamografia' ? mamografiaRef : examType === 'ultrassom' ? ultrassomRef : mamografiaRef;
