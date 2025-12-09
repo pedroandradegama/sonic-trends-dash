@@ -595,18 +595,6 @@ export default function Casuistica() {
                         <CardTitle>Perfil dos Diagnósticos</CardTitle>
                         <CardDescription>Top diagnósticos em {selectedSubgrupo === 'todos' ? 'todos os métodos' : selectedSubgrupo}</CardDescription>
                       </div>
-                      {(selectedSubgrupo === 'Mamografia' || selectedSubgrupo === 'Ultrassonografia') && selectedSubespecialidade === 'mamas' && (
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="reference-value" 
-                            checked={showReferenceValue}
-                            onCheckedChange={(checked) => setShowReferenceValue(checked as boolean)}
-                          />
-                          <label htmlFor="reference-value" className="text-sm font-medium leading-none cursor-pointer">
-                            Mostrar valores de referência BI-RADS
-                          </label>
-                        </div>
-                      )}
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -616,8 +604,24 @@ export default function Casuistica() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Distribuição BI-RADS (Mama)</CardTitle>
-                    <CardDescription>Percentual por categoria (soma 100%) - {biradsExamType === 'mamografia' ? 'Mamografia' : biradsExamType === 'ultrassom' ? 'Ultrassonografia' : 'Mamografia e Ultrassonografia'}</CardDescription>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle>Distribuição BI-RADS (Mama)</CardTitle>
+                        <CardDescription>Percentual por categoria (soma 100%) - {biradsExamType === 'mamografia' ? 'Mamografia' : biradsExamType === 'ultrassom' ? 'Ultrassonografia' : 'Mamografia e Ultrassonografia'}</CardDescription>
+                      </div>
+                      {(selectedSubgrupo === 'MAMOGRAFIA' || (selectedSubgrupo === 'ULTRASSONOGRAFIA' && selectedSubespecialidade === 'mamas')) && biradsData.length > 0 && (
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="reference-value" 
+                            checked={showReferenceValue}
+                            onCheckedChange={(checked) => setShowReferenceValue(checked as boolean)}
+                          />
+                          <label htmlFor="reference-value" className="text-sm font-medium leading-none cursor-pointer">
+                            Mostrar valores de referência
+                          </label>
+                        </div>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {biradsData.length > 0 ? (
