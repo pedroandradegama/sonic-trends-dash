@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DiagnosisChart } from '@/components/casuistica/DiagnosisChart';
 import { BIRADSChart } from '@/components/casuistica/BIRADSChart';
+import { BIRADSConvergenceAnalysis } from '@/components/casuistica/BIRADSConvergenceAnalysis';
 import { DiagnosticosPanel } from '@/components/casuistica/DiagnosticosPanel';
 import { DataPeriodInfo } from '@/components/filters/DataPeriodInfo';
 import { PeriodFilter } from '@/components/filters/PeriodFilter';
@@ -636,6 +637,24 @@ export default function Casuistica() {
                     )}
                   </CardContent>
                 </Card>
+
+                {/* Análise de Convergência BI-RADS */}
+                {(selectedSubgrupo === 'MAMOGRAFIA' || (selectedSubgrupo === 'ULTRASSONOGRAFIA' && selectedSubespecialidade === 'mamas')) && biradsData.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Análise de Convergência BI-RADS</CardTitle>
+                      <CardDescription>
+                        Comparação dos seus diagnósticos com os valores de referência - {biradsExamType === 'mamografia' ? 'Mamografia' : 'Ultrassonografia'}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <BIRADSConvergenceAnalysis 
+                        data={biradsData} 
+                        examType={biradsExamType}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* Referências (benchmarks) */}
                 <Card>
