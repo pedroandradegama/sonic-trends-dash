@@ -55,7 +55,11 @@ export function useIntegratedDashboard(filters: DashboardFilters = {}) {
 
   // Filter data based on filters
   const filteredRepasse = useMemo(() => {
-    let filtered = repasseData;
+    // First, exclude items with zero repasse value
+    let filtered = repasseData.filter(row => {
+      const repasseValue = parseNumericValue(row["Vl. Repasse"]);
+      return repasseValue > 0;
+    });
 
     // Filter by medico
     if (filters.medicoNome) {
