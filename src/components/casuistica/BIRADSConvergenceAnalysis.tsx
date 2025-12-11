@@ -15,6 +15,7 @@ interface ConvergenceResult {
   value: number;
   range: ReferenceRange;
   status: 'convergente' | 'abaixo' | 'acima';
+  difference: number;
 }
 
 export function BIRADSConvergenceAnalysis({ data, examType }: BIRADSConvergenceAnalysisProps) {
@@ -44,30 +45,37 @@ export function BIRADSConvergenceAnalysis({ data, examType }: BIRADSConvergenceA
   const provBenignos = getPercent('BI-RADS 3');
   const suspeitos = getPercent('BI-RADS 4') + getPercent('BI-RADS 5');
 
-  const getStatus = (value: number, range: ReferenceRange): 'convergente' | 'abaixo' | 'acima' => {
-    if (value < range.min) return 'abaixo';
-    if (value > range.max) return 'acima';
-    return 'convergente';
+  const getStatusAndDifference = (value: number, range: ReferenceRange): { status: 'convergente' | 'abaixo' | 'acima'; difference: number } => {
+    if (value < range.min) return { status: 'abaixo', difference: range.min - value };
+    if (value > range.max) return { status: 'acima', difference: value - range.max };
+    return { status: 'convergente', difference: 0 };
   };
+
+  const benignosResult = getStatusAndDifference(benignos, ranges.benignos);
+  const provBenignosResult = getStatusAndDifference(provBenignos, ranges.provBenignos);
+  const suspeitosResult = getStatusAndDifference(suspeitos, ranges.suspeitos);
 
   const results: ConvergenceResult[] = [
     {
       label: 'Diagnósticos Benignos (BI-RADS 1 + 2)',
       value: benignos,
       range: ranges.benignos,
-      status: getStatus(benignos, ranges.benignos),
+      status: benignosResult.status,
+      difference: benignosResult.difference,
     },
     {
       label: 'Provavelmente Benignos (BI-RADS 3)',
       value: provBenignos,
       range: ranges.provBenignos,
-      status: getStatus(provBenignos, ranges.provBenignos),
+      status: provBenignosResult.status,
+      difference: provBenignosResult.difference,
     },
     {
       label: 'Diagnósticos Suspeitos (BI-RADS 4 + 5)',
       value: suspeitos,
       range: ranges.suspeitos,
-      status: getStatus(suspeitos, ranges.suspeitos),
+      status: suspeitosResult.status,
+      difference: suspeitosResult.difference,
     },
   ];
 
@@ -84,14 +92,14 @@ export function BIRADSConvergenceAnalysis({ data, examType }: BIRADSConvergenceA
     }
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: string, difference: number) => {
     switch (status) {
       case 'convergente':
         return 'Dentro do esperado';
       case 'abaixo':
-        return 'Abaixo do esperado';
+        return `${difference.toFixed(1)} p.p. abaixo`;
       case 'acima':
-        return 'Acima do esperado';
+        return `${difference.toFixed(1)} p.p. acima`;
       default:
         return '';
     }
@@ -133,7 +141,7 @@ export function BIRADSConvergenceAnalysis({ data, examType }: BIRADSConvergenceA
             </div>
             <div className="flex items-center gap-2">
               {getStatusIcon(result.status)}
-              <span className="text-sm font-medium">{getStatusText(result.status)}</span>
+              <span className="text-sm font-medium">{getStatusText(result.status, result.difference)}</span>
             </div>
           </div>
         </div>

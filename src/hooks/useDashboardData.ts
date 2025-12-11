@@ -32,7 +32,13 @@ export function useDashboardData() {
 
       if (error) throw error;
 
-      setData(dashboardData || []);
+      // Filter out items with zero repasse value
+      const filteredData = (dashboardData || []).filter(row => {
+        const repasseValue = parseFloat(row['Vl. Repasse']?.replace(/[^\d.,]/g, '').replace(',', '.') || '0');
+        return repasseValue > 0;
+      });
+
+      setData(filteredData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
     } finally {
