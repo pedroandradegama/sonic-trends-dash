@@ -68,6 +68,63 @@ export type Database = {
         }
         Relationships: []
       }
+      Exames: {
+        Row: {
+          Atendimento: number | null
+          "Dt. Digitação": string | null
+          "Dt. Pedido": string | null
+          Empresa: string | null
+          Exame: string | null
+          Laudo: number | null
+          "Local de atendimento": string | null
+          "Médico executante": string | null
+          "Médico solicitante": string | null
+          Paciente: string | null
+          Pedido: number | null
+          "Prefixo ate.": string | null
+          "Previsão de entrega": string | null
+          Prontuário: number | null
+          SLA: string | null
+          Status: string | null
+        }
+        Insert: {
+          Atendimento?: number | null
+          "Dt. Digitação"?: string | null
+          "Dt. Pedido"?: string | null
+          Empresa?: string | null
+          Exame?: string | null
+          Laudo?: number | null
+          "Local de atendimento"?: string | null
+          "Médico executante"?: string | null
+          "Médico solicitante"?: string | null
+          Paciente?: string | null
+          Pedido?: number | null
+          "Prefixo ate."?: string | null
+          "Previsão de entrega"?: string | null
+          Prontuário?: number | null
+          SLA?: string | null
+          Status?: string | null
+        }
+        Update: {
+          Atendimento?: number | null
+          "Dt. Digitação"?: string | null
+          "Dt. Pedido"?: string | null
+          Empresa?: string | null
+          Exame?: string | null
+          Laudo?: number | null
+          "Local de atendimento"?: string | null
+          "Médico executante"?: string | null
+          "Médico solicitante"?: string | null
+          Paciente?: string | null
+          Pedido?: number | null
+          "Prefixo ate."?: string | null
+          "Previsão de entrega"?: string | null
+          Prontuário?: number | null
+          SLA?: string | null
+          Status?: string | null
+        }
+        Relationships: []
+      }
       NPS: {
         Row: {
           "Agendamento do exame": string | null
