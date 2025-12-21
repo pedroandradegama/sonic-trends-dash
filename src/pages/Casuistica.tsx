@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCasuisticaData } from '@/hooks/useCasuisticaData';
 import { useCasuisticaPeriod } from '@/hooks/useDataPeriod';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { useCorrelacaoAxial } from '@/hooks/useCorrelacaoAxial';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,6 +11,7 @@ import { DiagnosisChart } from '@/components/casuistica/DiagnosisChart';
 import { BIRADSChart } from '@/components/casuistica/BIRADSChart';
 import { BIRADSConvergenceAnalysis } from '@/components/casuistica/BIRADSConvergenceAnalysis';
 import { DiagnosticosPanel } from '@/components/casuistica/DiagnosticosPanel';
+import { CorrelacaoAxialPanel } from '@/components/casuistica/CorrelacaoAxialPanel';
 import { DataPeriodInfo } from '@/components/filters/DataPeriodInfo';
 import { PeriodFilter } from '@/components/filters/PeriodFilter';
 import { Link } from 'react-router-dom';
@@ -154,6 +157,8 @@ export default function Casuistica() {
   const { signOut } = useAuth();
   const { data, loading, error, subgrupos } = useCasuisticaData();
   const { minDate, maxDate, loading: periodLoading } = useCasuisticaPeriod();
+  const { profile } = useUserProfile();
+  const { correlacoes, stats, loading: correlacaoLoading, error: correlacaoError } = useCorrelacaoAxial(profile?.medico_nome || null);
   const [filterMode, setFilterMode] = useState<'periodo' | 'diagnostico'>('periodo');
   const [selectedSubgrupo, setSelectedSubgrupo] = useState<string>('todos');
   const [selectedSubespecialidade, setSelectedSubespecialidade] = useState<string>('todas');
@@ -442,9 +447,10 @@ export default function Casuistica() {
 
         {/* Tabs principais */}
         <Tabs defaultValue="casuistica" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-lg grid-cols-3">
             <TabsTrigger value="casuistica">Casuística Geral</TabsTrigger>
             <TabsTrigger value="diagnosticos">Diagnósticos Histo</TabsTrigger>
+            <TabsTrigger value="correlacao">Correlação Axial</TabsTrigger>
           </TabsList>
 
           {/* Tab Casuística */}
@@ -785,6 +791,28 @@ export default function Casuistica() {
           {/* Tab Diagnósticos Histopatológicos */}
           <TabsContent value="diagnosticos" className="space-y-6">
             <DiagnosticosPanel />
+          </TabsContent>
+
+          {/* Tab Correlação Métodos Axiais */}
+          <TabsContent value="correlacao" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Correlação Métodos Axiais</CardTitle>
+                <CardDescription>
+                  Pacientes que realizaram exames de RM ou TC após exame de USG realizado por você. 
+                  Esta análise identifica casos em que métodos axiais (Ressonância Magnética ou Tomografia Computadorizada) 
+                  foram solicitados em data posterior ao seu exame de Ultrassonografia.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CorrelacaoAxialPanel 
+                  correlacoes={correlacoes}
+                  stats={stats}
+                  loading={correlacaoLoading}
+                  error={correlacaoError}
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
