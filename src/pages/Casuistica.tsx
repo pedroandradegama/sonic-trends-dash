@@ -12,6 +12,7 @@ import { BIRADSChart } from '@/components/casuistica/BIRADSChart';
 import { BIRADSConvergenceAnalysis } from '@/components/casuistica/BIRADSConvergenceAnalysis';
 import { DiagnosticosPanel } from '@/components/casuistica/DiagnosticosPanel';
 import { CorrelacaoAxialPanel } from '@/components/casuistica/CorrelacaoAxialPanel';
+import { SubspecialtyIcon } from '@/components/casuistica/SubspecialtyIcon';
 import { DataPeriodInfo } from '@/components/filters/DataPeriodInfo';
 import { PeriodFilter } from '@/components/filters/PeriodFilter';
 import { Link } from 'react-router-dom';
@@ -20,6 +21,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { parse, isValid, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, isAfter, isBefore, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { Menu, X } from 'lucide-react';
 import imagLogo from '@/assets/imag-logo.png';
 
 function normalize(str?: string | null) {
@@ -169,6 +171,7 @@ export default function Casuistica() {
   const [customMonth, setCustomMonth] = useState<string>('');
   const [showReferenceValue, setShowReferenceValue] = useState(false);
   const [applyPeriodFilter, setApplyPeriodFilter] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     document.title = 'Casuística | Diagnósticos por Médico - Dashboard';
@@ -420,38 +423,74 @@ export default function Casuistica() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-medical-teal/5 to-medical-success/5 p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <img src={imagLogo} alt="IMAG - Medicina Diagnóstica" className="h-12" />
-            <div>
-              <h1 className="text-4xl font-bold text-foreground mb-2">Dashboard Casuística</h1>
-              <p className="text-muted-foreground text-lg">Análise de diagnósticos por método</p>
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-medical-success/5 relative overflow-hidden">
+      {/* Decorative background elements */}
+      <div className="decorative-blob decorative-blob-1" />
+      <div className="decorative-blob decorative-blob-2" />
+      <div className="decorative-blob decorative-blob-3" />
+      <div className="absolute inset-0 bg-pattern-dots opacity-30 pointer-events-none" />
+      
+      <div className="relative z-10 p-4 md:p-6">
+        <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex items-center gap-3 md:gap-4">
+              <img src={imagLogo} alt="IMAG - Medicina Diagnóstica" className="h-10 md:h-12" />
+              <div>
+                <h1 className="text-2xl md:text-4xl font-bold text-foreground mb-1 md:mb-2">Dashboard Casuística</h1>
+                <p className="text-sm md:text-lg text-muted-foreground">Análise de diagnósticos por método</p>
+              </div>
+            </div>
+            
+            {/* Mobile menu button */}
+            <div className="sm:hidden">
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
+            </div>
+            
+            {/* Desktop nav */}
+            <div className="hidden sm:flex gap-2">
+              <Button asChild variant="outline">
+                <Link to="/">Repasse</Link>
+              </Button>
+              <Button asChild variant="default">
+                <Link to="/casuistica">Casuística</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/nps">NPS</Link>
+              </Button>
+              <Button onClick={signOut} variant="outline">Sair</Button>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button asChild variant="outline">
-              <Link to="/">Repasse</Link>
-            </Button>
-            <Button asChild variant="default">
-              <Link to="/casuistica">Casuística</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link to="/nps">NPS</Link>
-            </Button>
-            <Button onClick={signOut} variant="outline">Sair</Button>
-          </div>
-        </div>
+          
+          {/* Mobile nav */}
+          {mobileMenuOpen && (
+            <div className="sm:hidden flex flex-col gap-2 p-4 bg-card rounded-xl border shadow-lg">
+              <Button asChild variant="outline" className="w-full justify-start">
+                <Link to="/">Repasse</Link>
+              </Button>
+              <Button asChild variant="default" className="w-full justify-start">
+                <Link to="/casuistica">Casuística</Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full justify-start">
+                <Link to="/nps">NPS</Link>
+              </Button>
+              <Button onClick={signOut} variant="outline" className="w-full justify-start">Sair</Button>
+            </div>
+          )}
 
-        {/* Tabs principais */}
-        <Tabs defaultValue="casuistica" className="w-full">
-          <TabsList className="grid w-full max-w-lg grid-cols-3">
-            <TabsTrigger value="casuistica">Casuística Geral</TabsTrigger>
-            <TabsTrigger value="diagnosticos">Diagnósticos Histo</TabsTrigger>
-            <TabsTrigger value="correlacao">Correlação Axial</TabsTrigger>
-          </TabsList>
+          {/* Tabs principais */}
+          <Tabs defaultValue="casuistica" className="w-full">
+            <TabsList className="grid w-full max-w-2xl grid-cols-2 md:grid-cols-4 h-auto">
+              <TabsTrigger value="casuistica" className="text-xs md:text-sm py-2">Casuística Geral</TabsTrigger>
+              <TabsTrigger value="correlacao" className="text-xs md:text-sm py-2">Correlação Axial</TabsTrigger>
+              <TabsTrigger value="diagnosticos" className="text-xs md:text-sm py-2">Correlação Anatomopatológica</TabsTrigger>
+            </TabsList>
 
           {/* Tab Casuística */}
           <TabsContent value="casuistica" className="space-y-6">
@@ -475,7 +514,7 @@ export default function Casuistica() {
             </Card>
 
             {/* Filtros e Total de Laudos no mesmo nível */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
               <Card className="lg:col-span-3">
                 <CardHeader>
                   <CardTitle>Filtros</CardTitle>
@@ -595,13 +634,16 @@ export default function Casuistica() {
             {/* Gráficos alargados */}
             {filterMode === 'periodo' ? (
               <>
-                <Card>
+                <Card className="relative overflow-hidden">
                   <CardHeader>
-                    <div className="flex items-start justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                       <div>
                         <CardTitle>Perfil dos Diagnósticos</CardTitle>
                         <CardDescription>Top diagnósticos em {selectedSubgrupo === 'todos' ? 'todos os métodos' : selectedSubgrupo}</CardDescription>
                       </div>
+                      {selectedSubespecialidade !== 'todas' && (
+                        <SubspecialtyIcon subspecialty={selectedSubespecialidade} />
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -815,6 +857,7 @@ export default function Casuistica() {
             </Card>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </div>
   );

@@ -65,72 +65,72 @@ export function CorrelacaoAxialPanel({ correlacoes, stats, loading, error }: Cor
   return (
     <div className="space-y-6">
       {/* Cards de estatísticas */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <Users className="h-5 w-5 text-blue-500" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+        <Card className="rounded-xl">
+          <CardContent className="pt-4 md:pt-6">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="p-1.5 md:p-2 rounded-lg bg-blue-500/10">
+                <Users className="h-4 w-4 md:h-5 md:w-5 text-blue-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.totalPacientes}</p>
-                <p className="text-xs text-muted-foreground">Pacientes</p>
+                <p className="text-lg md:text-2xl font-bold">{stats.totalPacientes}</p>
+                <p className="text-[10px] md:text-xs text-muted-foreground">Pacientes</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-500/10">
-                <Activity className="h-5 w-5 text-purple-500" />
+        <Card className="rounded-xl">
+          <CardContent className="pt-4 md:pt-6">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="p-1.5 md:p-2 rounded-lg bg-purple-500/10">
+                <Activity className="h-4 w-4 md:h-5 md:w-5 text-purple-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.totalCorrelacoes}</p>
-                <p className="text-xs text-muted-foreground">Correlações</p>
+                <p className="text-lg md:text-2xl font-bold">{stats.totalCorrelacoes}</p>
+                <p className="text-[10px] md:text-xs text-muted-foreground">Correlações</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/10">
-                <Magnet className="h-5 w-5 text-emerald-500" />
+        <Card className="rounded-xl">
+          <CardContent className="pt-4 md:pt-6">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="p-1.5 md:p-2 rounded-lg bg-emerald-500/10">
+                <Magnet className="h-4 w-4 md:h-5 md:w-5 text-emerald-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.totalRM}</p>
-                <p className="text-xs text-muted-foreground">Exames RM</p>
+                <p className="text-lg md:text-2xl font-bold">{stats.totalRM}</p>
+                <p className="text-[10px] md:text-xs text-muted-foreground">Exames RM</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-500/10">
-                <Scan className="h-5 w-5 text-amber-500" />
+        <Card className="rounded-xl">
+          <CardContent className="pt-4 md:pt-6">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="p-1.5 md:p-2 rounded-lg bg-amber-500/10">
+                <Scan className="h-4 w-4 md:h-5 md:w-5 text-amber-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.totalTC}</p>
-                <p className="text-xs text-muted-foreground">Exames TC</p>
+                <p className="text-lg md:text-2xl font-bold">{stats.totalTC}</p>
+                <p className="text-[10px] md:text-xs text-muted-foreground">Exames TC</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-rose-500/10">
-                <Clock className="h-5 w-5 text-rose-500" />
+        <Card className="rounded-xl col-span-2 sm:col-span-1">
+          <CardContent className="pt-4 md:pt-6">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="p-1.5 md:p-2 rounded-lg bg-rose-500/10">
+                <Clock className="h-4 w-4 md:h-5 md:w-5 text-rose-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.avgDiasAteAxial}</p>
-                <p className="text-xs text-muted-foreground">Média dias</p>
+                <p className="text-lg md:text-2xl font-bold">{stats.avgDiasAteAxial}</p>
+                <p className="text-[10px] md:text-xs text-muted-foreground">Média dias</p>
               </div>
             </div>
           </CardContent>
@@ -138,17 +138,17 @@ export function CorrelacaoAxialPanel({ correlacoes, stats, loading, error }: Cor
       </div>
 
       {/* Filtro e tabela */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
+      <Card className="rounded-xl">
+        <CardHeader className="pb-3 md:pb-6">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
             <div>
-              <CardTitle>Lista de Correlações</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-base md:text-lg">Lista de Correlações</CardTitle>
+              <CardDescription className="text-xs md:text-sm">
                 Pacientes que realizaram RM/TC após exame de USG realizado por você
               </CardDescription>
             </div>
             <Select value={filterTipo} onValueChange={(v) => setFilterTipo(v as 'todos' | 'RM' | 'TC')}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-40">
                 <SelectValue placeholder="Filtrar tipo" />
               </SelectTrigger>
               <SelectContent>
@@ -160,47 +160,47 @@ export function CorrelacaoAxialPanel({ correlacoes, stats, loading, error }: Cor
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Paciente</TableHead>
-                  <TableHead>Exame USG</TableHead>
-                  <TableHead>Data USG</TableHead>
-                  <TableHead>Exame Axial</TableHead>
-                  <TableHead>Data Axial</TableHead>
-                  <TableHead className="text-center">Tipo</TableHead>
-                  <TableHead className="text-right">Intervalo</TableHead>
+                  <TableHead className="min-w-[150px]">Paciente</TableHead>
+                  <TableHead className="min-w-[120px] hidden md:table-cell">Exame USG</TableHead>
+                  <TableHead className="min-w-[90px]">Data USG</TableHead>
+                  <TableHead className="min-w-[120px] hidden md:table-cell">Exame Axial</TableHead>
+                  <TableHead className="min-w-[90px]">Data Axial</TableHead>
+                  <TableHead className="text-center min-w-[60px]">Tipo</TableHead>
+                  <TableHead className="text-right min-w-[80px]">Intervalo</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {displayedCorrelacoes.map((item, idx) => (
                   <TableRow key={`${item.paciente}-${idx}`}>
-                    <TableCell className="font-medium max-w-[200px] truncate" title={item.paciente}>
+                    <TableCell className="font-medium max-w-[150px] md:max-w-[200px] truncate text-xs md:text-sm" title={item.paciente}>
                       {item.paciente}
                     </TableCell>
-                    <TableCell className="max-w-[150px] truncate" title={item.usgExame}>
+                    <TableCell className="max-w-[150px] truncate text-xs md:text-sm hidden md:table-cell" title={item.usgExame}>
                       {item.usgExame}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {format(item.usgData, 'dd/MM/yyyy', { locale: ptBR })}
+                    <TableCell className="text-muted-foreground text-xs md:text-sm">
+                      {format(item.usgData, 'dd/MM/yy', { locale: ptBR })}
                     </TableCell>
-                    <TableCell className="max-w-[150px] truncate" title={item.axialExame}>
+                    <TableCell className="max-w-[150px] truncate text-xs md:text-sm hidden md:table-cell" title={item.axialExame}>
                       {item.axialExame}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {format(item.axialData, 'dd/MM/yyyy', { locale: ptBR })}
+                    <TableCell className="text-muted-foreground text-xs md:text-sm">
+                      {format(item.axialData, 'dd/MM/yy', { locale: ptBR })}
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge 
                         variant={item.axialTipo === 'RM' ? 'default' : 'secondary'}
-                        className={item.axialTipo === 'RM' ? 'bg-emerald-500' : 'bg-amber-500'}
+                        className={`text-xs ${item.axialTipo === 'RM' ? 'bg-emerald-500' : 'bg-amber-500'}`}
                       >
                         {item.axialTipo}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
-                      {item.diasDiferenca} dias
+                    <TableCell className="text-right text-xs md:text-sm">
+                      {item.diasDiferenca}d
                     </TableCell>
                   </TableRow>
                 ))}
