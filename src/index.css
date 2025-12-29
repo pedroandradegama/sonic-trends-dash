@@ -62,11 +62,17 @@ All colors MUST be HSL.
     --gradient-primary: linear-gradient(135deg, hsl(210 85% 45%), hsl(195 100% 70%));
     --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 20% 98%));
     --gradient-subtle: linear-gradient(180deg, hsl(210 20% 98%), hsl(210 15% 96%));
+    --gradient-page: linear-gradient(135deg, hsl(195 46% 27% / 0.03) 0%, hsl(180 45% 35% / 0.05) 50%, hsl(142 69% 58% / 0.03) 100%);
 
     /* Shadows */
     --shadow-card: 0 4px 6px -1px hsl(210 20% 85% / 0.1), 0 2px 4px -1px hsl(210 20% 85% / 0.06);
     --shadow-elevated: 0 10px 15px -3px hsl(210 20% 85% / 0.1), 0 4px 6px -2px hsl(210 20% 85% / 0.05);
     --shadow-medical: 0 4px 20px hsl(210 85% 45% / 0.1);
+    
+    /* Background decorative elements */
+    --bg-dot-pattern: radial-gradient(circle, hsl(195 46% 27% / 0.08) 1px, transparent 1px);
+    --bg-grid-pattern: linear-gradient(hsl(195 46% 27% / 0.03) 1px, transparent 1px),
+                       linear-gradient(to right, hsl(195 46% 27% / 0.03) 1px, transparent 1px);
 
     --radius: 0.75rem;
 
@@ -134,4 +140,48 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Background decorative patterns */
+.bg-pattern-dots {
+  background-image: var(--bg-dot-pattern);
+  background-size: 24px 24px;
+}
+
+.bg-pattern-grid {
+  background-image: var(--bg-grid-pattern);
+  background-size: 48px 48px;
+}
+
+/* Decorative shapes */
+.decorative-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.decorative-blob-1 {
+  background: hsl(195 46% 27% / 0.15);
+  width: 400px;
+  height: 400px;
+  top: -100px;
+  right: -100px;
+}
+
+.decorative-blob-2 {
+  background: hsl(142 69% 58% / 0.1);
+  width: 300px;
+  height: 300px;
+  bottom: 10%;
+  left: -50px;
+}
+
+.decorative-blob-3 {
+  background: hsl(180 45% 35% / 0.1);
+  width: 250px;
+  height: 250px;
+  top: 40%;
+  right: 5%;
 }

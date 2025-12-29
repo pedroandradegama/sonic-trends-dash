@@ -27,10 +27,19 @@ function parseDate(dateStr: string | null | undefined): Date | null {
   if (!dateStr) return null;
   
   try {
-    // Try dd/MM/yyyy format first
+    // Handle d/M/yyyy or dd/MM/yyyy format (flexible day/month without leading zeros)
     if (dateStr.includes('/')) {
-      const parsed = parse(dateStr, 'dd/MM/yyyy', new Date());
-      if (isValid(parsed)) return parsed;
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+        const year = parseInt(parts[2], 10);
+        
+        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+          const date = new Date(year, month, day);
+          if (isValid(date)) return date;
+        }
+      }
     }
     
     // Try ISO format
