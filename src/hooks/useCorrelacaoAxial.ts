@@ -96,17 +96,23 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
   // Process the correlation data
   const correlacoes = useMemo((): CorrelacaoItem[] => {
     if (!medicoNome || data.length === 0) {
+      console.log('[CorrelacaoAxial] Sem dados ou médico:', { medicoNome, dataLength: data.length });
       return [];
     }
 
     const normalizedMedicoNome = normalize(medicoNome);
+    console.log('[CorrelacaoAxial] Buscando correlações para:', normalizedMedicoNome);
 
     // 1. Filter USG exams performed by the logged-in doctor
     const usgExames = data.filter((exame) => {
       const exameName = normalize(exame.Exame || '');
       const medicoExecutante = normalize(exame["Médico executante"] || '');
-      return exameName.startsWith('USG') && medicoExecutante.includes(normalizedMedicoNome);
+      const isUSG = exameName.startsWith('USG');
+      const isMedico = medicoExecutante.includes(normalizedMedicoNome);
+      return isUSG && isMedico;
     });
+
+    console.log('[CorrelacaoAxial] Total USG exames do médico:', usgExames.length);
 
     // 2. Create a map of patients who had USG exams
     const pacientesUSG = new Map<string, { exame: ExameRow; data: Date }[]>();
@@ -115,13 +121,18 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
       const pacienteNome = normalize(usg.Paciente || '');
       const usgDate = parseDate(usg["Dt. Pedido"]);
       
-      if (!pacienteNome || !usgDate) continue;
+      if (!pacienteNome || !usgDate) {
+        console.log('[CorrelacaoAxial] USG sem paciente ou data:', { paciente: usg.Paciente, dtPedido: usg["Dt. Pedido"] });
+        continue;
+      }
       
       if (!pacientesUSG.has(pacienteNome)) {
         pacientesUSG.set(pacienteNome, []);
       }
       pacientesUSG.get(pacienteNome)!.push({ exame: usg, data: usgDate });
     }
+
+    console.log('[CorrelacaoAxial] Pacientes com USG:', pacientesUSG.size);
 
     // 3. Find RM and TC exams for these patients after their USG dates
     const results: CorrelacaoItem[] = [];
@@ -133,6 +144,8 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
       const isTC = exameName.startsWith('TC') || exameName.includes('TOMOGRAFIA');
       return isRM || isTC;
     });
+
+    console.log('[CorrelacaoAxial] Total RM/TC exames:', rmTcExames.length);
     
     for (const exame of rmTcExames) {
       const exameName = normalize(exame.Exame || '');
@@ -148,12 +161,24 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
       const usgList = pacientesUSG.get(pacienteNome);
       if (!usgList) continue;
       
+      console.log('[CorrelacaoAxial] Paciente com USG e RM/TC:', { paciente: exame.Paciente, exameDate: exame["Dt. Pedido"], usgCount: usgList.length });
+      
       // Find USG exams that happened before this RM/TC
       for (const usgItem of usgList) {
-        if (isAfter(exameDate, usgItem.data)) {
-          const diasDiferenca = Math.floor(
-            (exameDate.getTime() - usgItem.data.getTime()) / (1000 * 60 * 60 * 24)
-          );
+        const rmTcTime = exameDate.getTime();
+        const usgTime = usgItem.data.getTime();
+        const isAfterUSG = rmTcTime > usgTime;
+        
+        console.log('[CorrelacaoAxial] Comparando datas:', { 
+          usgData: usgItem.data.toISOString(), 
+          axialData: exameDate.toISOString(), 
+          isAfterUSG,
+          rmTcTime,
+          usgTime
+        });
+        
+        if (isAfterUSG) {
+          const diasDiferenca = Math.floor((rmTcTime - usgTime) / (1000 * 60 * 60 * 24));
           
           results.push({
             paciente: exame.Paciente || '',
@@ -168,6 +193,8 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
         }
       }
     }
+
+    console.log('[CorrelacaoAxial] Total correlações encontradas:', results.length);
 
     // Sort by most recent axial exam first
     return results.sort((a, b) => b.axialData.getTime() - a.axialData.getTime());
