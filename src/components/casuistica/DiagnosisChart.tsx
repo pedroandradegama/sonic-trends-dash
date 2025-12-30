@@ -1,17 +1,33 @@
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ReferenceLine } from 'recharts';
 
+// Subspecialty color mapping (matches SubspecialtyIcon.tsx)
+const subspecialtyColors: Record<string, string> = {
+  'cabeca-pescoco': '#a855f7', // purple-500
+  'mamas': '#ec4899', // pink-500
+  'medicina-interna': '#3b82f6', // blue-500
+  'ginecologia-obstetricia': '#f43f5e', // rose-500
+  'msk': '#f97316', // orange-500
+  'vascular': '#ef4444', // red-500
+};
+
 interface DiagnosisChartProps {
   data: Array<{ diagnostico: string; count: number }>;
   showHistoricalAverage?: boolean;
+  subspecialty?: string;
 }
 
-export function DiagnosisChart({ data, showHistoricalAverage = false }: DiagnosisChartProps) {
+export function DiagnosisChart({ data, showHistoricalAverage = false, subspecialty }: DiagnosisChartProps) {
   const chartData = data.map(d => ({ diagnostico: d.diagnostico, count: d.count }));
   
   // Calcular média histórica
   const average = chartData.length > 0 
     ? chartData.reduce((sum, item) => sum + item.count, 0) / chartData.length 
     : 0;
+
+  // Get the bar color based on subspecialty
+  const barColor = subspecialty && subspecialtyColors[subspecialty] 
+    ? subspecialtyColors[subspecialty] 
+    : 'hsl(var(--medical-teal))';
 
   return (
     <div className="h-[350px] w-full">
@@ -43,7 +59,7 @@ export function DiagnosisChart({ data, showHistoricalAverage = false }: Diagnosi
           <Legend />
           <Bar 
             dataKey="count" 
-            fill="hsl(var(--medical-teal))" 
+            fill={barColor} 
             name="Diagnósticos"
             radius={[4, 4, 0, 0]}
           />

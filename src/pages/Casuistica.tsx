@@ -647,7 +647,11 @@ export default function Casuistica() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <DiagnosisChart data={topDiagnosticos} showHistoricalAverage={false} />
+                    <DiagnosisChart 
+                      data={topDiagnosticos} 
+                      showHistoricalAverage={false} 
+                      subspecialty={selectedSubespecialidade !== 'todas' ? selectedSubespecialidade : undefined}
+                    />
                   </CardContent>
                 </Card>
 

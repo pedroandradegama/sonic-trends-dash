@@ -26,24 +26,26 @@ export interface CorrelacaoItem {
 function parseDate(dateStr: string | null | undefined): Date | null {
   if (!dateStr) return null;
   
+  const trimmed = dateStr.trim();
+  
   try {
     // Handle d/M/yyyy or dd/MM/yyyy format (flexible day/month without leading zeros)
-    if (dateStr.includes('/')) {
-      const parts = dateStr.split('/');
+    if (trimmed.includes('/')) {
+      const parts = trimmed.split('/');
       if (parts.length === 3) {
         const day = parseInt(parts[0], 10);
         const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
         const year = parseInt(parts[2], 10);
         
-        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-          const date = new Date(year, month, day);
+        if (!isNaN(day) && !isNaN(month) && !isNaN(year) && day >= 1 && day <= 31 && month >= 0 && month <= 11 && year >= 1900) {
+          const date = new Date(year, month, day, 12, 0, 0); // Use noon to avoid timezone issues
           if (isValid(date)) return date;
         }
       }
     }
     
     // Try ISO format
-    const parsed = new Date(dateStr);
+    const parsed = new Date(trimmed);
     if (isValid(parsed)) return parsed;
   } catch {
     return null;
@@ -94,12 +96,10 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
   // Process the correlation data
   const correlacoes = useMemo((): CorrelacaoItem[] => {
     if (!medicoNome || data.length === 0) {
-      console.log('[CorrelacaoAxial] Sem dados ou medicoNome:', { medicoNome, dataLength: data.length });
       return [];
     }
 
     const normalizedMedicoNome = normalize(medicoNome);
-    console.log('[CorrelacaoAxial] Processando para médico:', normalizedMedicoNome);
 
     // 1. Filter USG exams performed by the logged-in doctor
     const usgExames = data.filter((exame) => {
@@ -107,8 +107,6 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
       const medicoExecutante = normalize(exame["Médico executante"] || '');
       return exameName.startsWith('USG') && medicoExecutante.includes(normalizedMedicoNome);
     });
-
-    console.log('[CorrelacaoAxial] USG exames encontrados:', usgExames.length);
 
     // 2. Create a map of patients who had USG exams
     const pacientesUSG = new Map<string, { exame: ExameRow; data: Date }[]>();
@@ -125,8 +123,6 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
       pacientesUSG.get(pacienteNome)!.push({ exame: usg, data: usgDate });
     }
 
-    console.log('[CorrelacaoAxial] Pacientes únicos com USG:', pacientesUSG.size);
-
     // 3. Find RM and TC exams for these patients after their USG dates
     const results: CorrelacaoItem[] = [];
     
@@ -137,8 +133,6 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
       const isTC = exameName.startsWith('TC') || exameName.includes('TOMOGRAFIA');
       return isRM || isTC;
     });
-    
-    console.log('[CorrelacaoAxial] Total RM/TC exames na base:', rmTcExames.length);
     
     for (const exame of rmTcExames) {
       const exameName = normalize(exame.Exame || '');
@@ -153,8 +147,6 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
       // Check if this patient had a USG before this exam
       const usgList = pacientesUSG.get(pacienteNome);
       if (!usgList) continue;
-      
-      console.log('[CorrelacaoAxial] Paciente com RM/TC que teve USG:', pacienteNome);
       
       // Find USG exams that happened before this RM/TC
       for (const usgItem of usgList) {
@@ -176,8 +168,6 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
         }
       }
     }
-
-    console.log('[CorrelacaoAxial] Correlações encontradas:', results.length);
 
     // Sort by most recent axial exam first
     return results.sort((a, b) => b.axialData.getTime() - a.axialData.getTime());
