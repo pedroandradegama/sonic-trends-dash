@@ -128,32 +128,32 @@ export function DiagnosticosPanel() {
         </CardContent>
       </Card>
 
-      {/* Sumário por médico */}
+      {/* Sumário geral */}
       {summary && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5" />
-              Sumário por Médico Executante
+              Sumário de Diagnósticos
             </CardTitle>
             <CardDescription>
-              Distribuição de laudos por médico
+              Distribuição de laudos processados
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {Object.entries(summary).map(([medico, stats]) => {
+              {Object.entries(summary).map(([_, stats], index) => {
                 const topDiags = Object.entries(stats.topDiagnosticos)
                   .sort(([, a], [, b]) => b - a)
                   .slice(0, 3);
 
                 return (
                   <div
-                    key={medico}
+                    key={index}
                     className="border rounded-lg p-4 space-y-2 bg-card"
                   >
                     <div className="flex justify-between items-start">
-                      <h3 className="font-semibold text-lg">{medico}</h3>
+                      <h3 className="font-semibold text-lg">Resumo</h3>
                       <div className="text-right">
                         <div className="text-2xl font-bold text-medical-blue">
                           {stats.qtdLaudos}
@@ -269,10 +269,6 @@ export function DiagnosticosPanel() {
                       </div>
 
                       <div className="flex items-center gap-4 text-sm pt-2 border-t">
-                        <div>
-                          <span className="text-muted-foreground">Médico: </span>
-                          <span className="font-medium">{r.medicoExecutante}</span>
-                        </div>
                         <div>
                           <span className="text-muted-foreground">Data: </span>
                           <span className="font-medium">
