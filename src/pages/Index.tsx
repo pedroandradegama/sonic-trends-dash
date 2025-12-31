@@ -119,14 +119,9 @@ export default function Index() {
           <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex items-center gap-4">
               <img src={imagLogo} alt="IMAG - Medicina Diagnóstica" className="h-12" />
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-1">
-                  Dashboard IMAG
-                </h1>
-                <p className="text-muted-foreground">
-                  Bem-vindo, {user?.email}
-                </p>
-              </div>
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+                Dashboard IMAG
+              </h1>
             </div>
             <div className="flex gap-2">
               <Button asChild variant="default" size="sm">
