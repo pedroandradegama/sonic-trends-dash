@@ -83,9 +83,11 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
       setLoading(true);
       setError(null);
       
+      // Fetch all exams - need to handle Supabase's default 1000 row limit
       const { data: exames, error: err } = await supabase
         .from("Exames")
-        .select("*");
+        .select("Exame, Paciente, Prontuário, \"Dt. Pedido\", \"Médico executante\", Laudo, Pedido")
+        .limit(10000);
 
       if (err) throw err;
       setData((exames as ExameRow[]) || []);
