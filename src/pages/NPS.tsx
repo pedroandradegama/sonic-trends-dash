@@ -105,12 +105,7 @@ export default function NPS() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
           <img src={imagLogo} alt="IMAG - Medicina Diagnóstica" className="h-12" />
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">NPS por Médico</h1>
-            <p className="text-muted-foreground mt-1">
-              Olá, {user?.email}
-            </p>
-          </div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">NPS por Médico</h1>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
