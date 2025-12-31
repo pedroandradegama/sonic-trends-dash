@@ -6,6 +6,7 @@ export interface ExameRow {
   [key: string]: any;
   Exame?: string | null;
   Paciente?: string | null;
+  Prontuário?: number | null;
   "Dt. Pedido"?: string | null;
   "Médico executante"?: string | null;
   Laudo?: number | null;
@@ -14,6 +15,7 @@ export interface ExameRow {
 
 export interface CorrelacaoItem {
   paciente: string;
+  prontuario: number;
   usgExame: string;
   usgData: Date;
   usgMedico: string;
@@ -109,76 +111,66 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
     const normalizedMedicoNome = normalize(medicoNome);
     console.log('[CorrelacaoAxial] Buscando correlações para:', normalizedMedicoNome);
 
-    // 1. Filter USG exams performed by the logged-in doctor
+    // 1. Filter USG exams performed by the logged-in doctor (using Prontuário as unique patient ID)
     const usgExames = data.filter((exame) => {
       const exameName = normalize(exame.Exame || '');
       const medicoExecutante = normalize(exame["Médico executante"] || '');
       const isUSG = exameName.startsWith('USG');
       const isMedico = medicoExecutante.includes(normalizedMedicoNome);
-      return isUSG && isMedico;
+      return isUSG && isMedico && exame.Prontuário;
     });
 
     console.log('[CorrelacaoAxial] Total USG exames do médico:', usgExames.length);
 
-    // 2. Create a map of patients who had USG exams
-    const pacientesUSG = new Map<string, { exame: ExameRow; data: Date }[]>();
+    // 2. Create a map of Prontuário -> USG exam info
+    const pacientesUSG = new Map<number, { exame: ExameRow; data: Date }[]>();
     
     for (const usg of usgExames) {
-      const pacienteNome = normalize(usg.Paciente || '');
+      const prontuario = usg.Prontuário;
       const usgDate = parseDate(usg["Dt. Pedido"]);
       
-      if (!pacienteNome || !usgDate) {
-        console.log('[CorrelacaoAxial] USG sem paciente ou data:', { paciente: usg.Paciente, dtPedido: usg["Dt. Pedido"] });
-        continue;
-      }
+      if (!prontuario || !usgDate) continue;
       
-      if (!pacientesUSG.has(pacienteNome)) {
-        pacientesUSG.set(pacienteNome, []);
+      if (!pacientesUSG.has(prontuario)) {
+        pacientesUSG.set(prontuario, []);
       }
-      pacientesUSG.get(pacienteNome)!.push({ exame: usg, data: usgDate });
+      pacientesUSG.get(prontuario)!.push({ exame: usg, data: usgDate });
     }
 
-    console.log('[CorrelacaoAxial] Pacientes com USG:', pacientesUSG.size);
+    console.log('[CorrelacaoAxial] Pacientes com USG (por Prontuário):', pacientesUSG.size);
+    console.log('[CorrelacaoAxial] Lista de Prontuários USG:', Array.from(pacientesUSG.keys()).slice(0, 10));
 
     // 3. Find RM and TC exams for these patients after their USG dates
     const results: CorrelacaoItem[] = [];
     
-    // Log all USG patients for debugging
-    const usgPacientesList = Array.from(pacientesUSG.keys());
-    console.log('[CorrelacaoAxial] Lista de pacientes USG (normalizado):', usgPacientesList.slice(0, 5));
-    
-    // First, find all RM/TC exams in the data
+    // Find all RM/TC exams that have a Prontuário
     const rmTcExames = data.filter((exame) => {
       const exameName = normalize(exame.Exame || '');
       const isRM = exameName.startsWith('RM') || exameName.includes('RESSONANCIA') || exameName.includes('RESONANCIA');
       const isTC = exameName.startsWith('TC') || exameName.includes('TOMOGRAFIA');
-      return isRM || isTC;
+      return (isRM || isTC) && exame.Prontuário;
     });
 
     console.log('[CorrelacaoAxial] Total RM/TC exames:', rmTcExames.length);
-    
-    // Log some RM/TC patient names for comparison
-    const rmTcPacientes = rmTcExames.slice(0, 10).map(e => normalize(e.Paciente || ''));
-    console.log('[CorrelacaoAxial] Amostra pacientes RM/TC (normalizado):', rmTcPacientes);
+    console.log('[CorrelacaoAxial] Amostra Prontuários RM/TC:', rmTcExames.slice(0, 10).map(e => e.Prontuário));
     
     let matchCount = 0;
     
     for (const exame of rmTcExames) {
-      const exameName = normalize(exame.Exame || '');
-      const pacienteNome = normalize(exame.Paciente || '');
+      const prontuario = exame.Prontuário;
+      if (!prontuario) continue;
+      
       const exameDate = parseDate(exame["Dt. Pedido"]);
+      if (!exameDate) continue;
       
-      if (!pacienteNome || !exameDate) continue;
-      
-      // Check if it's an RM or TC exam
-      const isRM = exameName.startsWith('RM') || exameName.includes('RESSONANCIA') || exameName.includes('RESONANCIA');
-      
-      // Check if this patient had a USG before this exam
-      const usgList = pacientesUSG.get(pacienteNome);
+      // Check if this patient (by Prontuário) had a USG before this exam
+      const usgList = pacientesUSG.get(prontuario);
       if (!usgList) continue;
       
       matchCount++;
-      console.log('[CorrelacaoAxial] Match encontrado! Paciente:', exame.Paciente, 'USG count:', usgList.length);
+      
+      const exameName = normalize(exame.Exame || '');
+      const isRM = exameName.startsWith('RM') || exameName.includes('RESSONANCIA') || exameName.includes('RESONANCIA');
       
       // Find USG exams that happened before this RM/TC
       for (const usgItem of usgList) {
@@ -186,19 +178,12 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
         const usgTime = usgItem.data.getTime();
         const isAfterUSG = rmTcTime > usgTime;
         
-        console.log('[CorrelacaoAxial] Comparando datas:', { 
-          usgData: usgItem.data.toISOString(), 
-          axialData: exameDate.toISOString(), 
-          isAfterUSG,
-          rmTcTime,
-          usgTime
-        });
-        
         if (isAfterUSG) {
           const diasDiferenca = Math.floor((rmTcTime - usgTime) / (1000 * 60 * 60 * 24));
           
           results.push({
             paciente: exame.Paciente || '',
+            prontuario,
             usgExame: usgItem.exame.Exame || '',
             usgData: usgItem.data,
             usgMedico: usgItem.exame["Médico executante"] || '',
@@ -211,7 +196,7 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
       }
     }
 
-    console.log('[CorrelacaoAxial] Total matches de pacientes:', matchCount);
+    console.log('[CorrelacaoAxial] Total matches (por Prontuário):', matchCount);
     console.log('[CorrelacaoAxial] Total correlações encontradas:', results.length);
 
     // Sort by most recent axial exam first
