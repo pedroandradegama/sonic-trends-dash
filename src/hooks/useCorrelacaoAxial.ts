@@ -56,7 +56,13 @@ function parseDate(dateStr: string | null | undefined): Date | null {
 
 function normalize(str?: string | null): string {
   if (!str) return '';
-  return String(str).trim().replace(/\s+/g, ' ').toUpperCase();
+  // Normalize: trim, collapse spaces, uppercase, and remove accents for better matching
+  return String(str)
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, ''); // Remove diacritics/accents
 }
 
 export function useCorrelacaoAxial(medicoNome: string | null) {
@@ -137,6 +143,10 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
     // 3. Find RM and TC exams for these patients after their USG dates
     const results: CorrelacaoItem[] = [];
     
+    // Log all USG patients for debugging
+    const usgPacientesList = Array.from(pacientesUSG.keys());
+    console.log('[CorrelacaoAxial] Lista de pacientes USG (normalizado):', usgPacientesList.slice(0, 5));
+    
     // First, find all RM/TC exams in the data
     const rmTcExames = data.filter((exame) => {
       const exameName = normalize(exame.Exame || '');
@@ -146,6 +156,12 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
     });
 
     console.log('[CorrelacaoAxial] Total RM/TC exames:', rmTcExames.length);
+    
+    // Log some RM/TC patient names for comparison
+    const rmTcPacientes = rmTcExames.slice(0, 10).map(e => normalize(e.Paciente || ''));
+    console.log('[CorrelacaoAxial] Amostra pacientes RM/TC (normalizado):', rmTcPacientes);
+    
+    let matchCount = 0;
     
     for (const exame of rmTcExames) {
       const exameName = normalize(exame.Exame || '');
@@ -161,7 +177,8 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
       const usgList = pacientesUSG.get(pacienteNome);
       if (!usgList) continue;
       
-      console.log('[CorrelacaoAxial] Paciente com USG e RM/TC:', { paciente: exame.Paciente, exameDate: exame["Dt. Pedido"], usgCount: usgList.length });
+      matchCount++;
+      console.log('[CorrelacaoAxial] Match encontrado! Paciente:', exame.Paciente, 'USG count:', usgList.length);
       
       // Find USG exams that happened before this RM/TC
       for (const usgItem of usgList) {
@@ -194,6 +211,7 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
       }
     }
 
+    console.log('[CorrelacaoAxial] Total matches de pacientes:', matchCount);
     console.log('[CorrelacaoAxial] Total correlações encontradas:', results.length);
 
     // Sort by most recent axial exam first
