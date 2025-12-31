@@ -83,14 +83,31 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
       setLoading(true);
       setError(null);
       
-      // Fetch all exams - need to handle Supabase's default 1000 row limit
-      const { data: exames, error: err } = await supabase
-        .from("Exames")
-        .select("Exame, Paciente, Prontuário, \"Dt. Pedido\", \"Médico executante\", Laudo, Pedido")
-        .limit(10000);
+      // Fetch all exams using pagination to avoid Supabase's 1000 row limit
+      const allExames: ExameRow[] = [];
+      let offset = 0;
+      const pageSize = 1000;
+      let hasMore = true;
+      
+      while (hasMore) {
+        const { data: exames, error: err } = await supabase
+          .from("Exames")
+          .select("Exame, Paciente, Prontuário, \"Dt. Pedido\", \"Médico executante\", Laudo, Pedido")
+          .range(offset, offset + pageSize - 1);
 
-      if (err) throw err;
-      setData((exames as ExameRow[]) || []);
+        if (err) throw err;
+        
+        if (exames && exames.length > 0) {
+          allExames.push(...(exames as ExameRow[]));
+          offset += pageSize;
+          hasMore = exames.length === pageSize;
+        } else {
+          hasMore = false;
+        }
+      }
+      
+      console.log('[CorrelacaoAxial] Total exames carregados:', allExames.length);
+      setData(allExames);
     } catch (err: any) {
       console.error("Erro ao buscar Exames:", err?.message || err);
       setError(err?.message || "Erro ao carregar dados de exames");
