@@ -2,3 +2,12 @@ project_id = "emxgbizhkhujyoyyfpxj"
 
 [functions.process-diagnosticos]
 verify_jwt = false
+
+[functions.create-medicos]
+verify_jwt = false
+
+[functions.check-authorized-email]
+verify_jwt = false
+
+[functions.register-doctor]
+verify_jwt = false
