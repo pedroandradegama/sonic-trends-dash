@@ -40,8 +40,7 @@ export function useRepassePeriod(): DataPeriod {
       try {
         const { data, error } = await (supabase as any)
           .from('Repasse')
-          .select('"Dt. Atendimento"')
-          .order('"Dt. Atendimento"', { ascending: true });
+          .select('"Dt. Atendimento"');
 
         if (error) throw error;
 
@@ -51,9 +50,14 @@ export function useRepassePeriod(): DataPeriod {
             .filter((d: Date | null) => d !== null) as Date[];
 
           if (dates.length > 0) {
+            // Calculate min and max properly
+            const timestamps = dates.map(d => d.getTime());
+            const minTime = Math.min(...timestamps);
+            const maxTime = Math.max(...timestamps);
+            
             setPeriod({
-              minDate: dates[0],
-              maxDate: dates[dates.length - 1],
+              minDate: new Date(minTime),
+              maxDate: new Date(maxTime),
               loading: false,
             });
             return;
@@ -85,8 +89,7 @@ export function useCasuisticaPeriod(): DataPeriod {
       try {
         const { data, error } = await (supabase as any)
           .from('Casuistica')
-          .select('"Data do pedido"')
-          .order('"Data do pedido"', { ascending: true });
+          .select('"Data do pedido"');
 
         if (error) throw error;
 
@@ -96,9 +99,14 @@ export function useCasuisticaPeriod(): DataPeriod {
             .filter((d: Date | null) => d !== null) as Date[];
 
           if (dates.length > 0) {
+            // Calculate min and max properly
+            const timestamps = dates.map(d => d.getTime());
+            const minTime = Math.min(...timestamps);
+            const maxTime = Math.max(...timestamps);
+            
             setPeriod({
-              minDate: dates[0],
-              maxDate: dates[dates.length - 1],
+              minDate: new Date(minTime),
+              maxDate: new Date(maxTime),
               loading: false,
             });
             return;
@@ -130,8 +138,7 @@ export function useNPSPeriod(): DataPeriod {
       try {
         const { data, error } = await (supabase as any)
           .from('NPS')
-          .select('data_atendimento')
-          .order('data_atendimento', { ascending: true });
+          .select('data_atendimento');
 
         if (error) throw error;
 
@@ -147,9 +154,14 @@ export function useNPSPeriod(): DataPeriod {
             .filter((d: Date | null) => d !== null) as Date[];
 
           if (dates.length > 0) {
+            // Calculate min and max properly
+            const timestamps = dates.map(d => d.getTime());
+            const minTime = Math.min(...timestamps);
+            const maxTime = Math.max(...timestamps);
+            
             setPeriod({
-              minDate: dates[0],
-              maxDate: dates[dates.length - 1],
+              minDate: new Date(minTime),
+              maxDate: new Date(maxTime),
               loading: false,
             });
             return;
