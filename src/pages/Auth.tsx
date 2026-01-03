@@ -122,6 +122,35 @@ export default function Auth() {
     setLoading(true);
 
     try {
+      // First check if email is authorized
+      const { data: authCheck, error: checkError } = await supabase
+        .from('authorized_doctors')
+        .select('id, is_active')
+        .eq('email', email.toLowerCase().trim())
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (!authCheck) {
+        toast({
+          title: "Acesso negado",
+          description: "Este email não está cadastrado na plataforma. Contate o administrador.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (!authCheck.is_active) {
+        toast({
+          title: "Acesso desativado",
+          description: "Seu acesso foi desativado. Contate o administrador.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       const { error } = await signIn(email, password);
 
       if (error) {
@@ -130,6 +159,12 @@ export default function Auth() {
           description: error.message,
           variant: "destructive",
         });
+      } else {
+        // Update last login timestamp
+        await supabase
+          .from('authorized_doctors')
+          .update({ last_login_at: new Date().toISOString() })
+          .eq('id', authCheck.id);
       }
     } catch (error: any) {
       toast({

@@ -20,6 +20,7 @@ export type Database = {
           email: string
           id: string
           is_active: boolean
+          last_login_at: string | null
           nome: string
           registered_at: string | null
           updated_at: string
@@ -29,6 +30,7 @@ export type Database = {
           email: string
           id?: string
           is_active?: boolean
+          last_login_at?: string | null
           nome: string
           registered_at?: string | null
           updated_at?: string
@@ -38,6 +40,7 @@ export type Database = {
           email?: string
           id?: string
           is_active?: boolean
+          last_login_at?: string | null
           nome?: string
           registered_at?: string | null
           updated_at?: string
