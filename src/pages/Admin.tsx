@@ -9,7 +9,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Plus, UserCheck, UserX, Trash2, Users, Shield } from 'lucide-react';
+import { ArrowLeft, Plus, UserCheck, UserX, Trash2, Users, Shield, Clock } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import imagLogo from '@/assets/imag-logo.png';
 
 interface AuthorizedDoctor {
@@ -19,6 +21,7 @@ interface AuthorizedDoctor {
   is_active: boolean;
   created_at: string;
   registered_at: string | null;
+  last_login_at: string | null;
 }
 
 export default function Admin() {
@@ -271,7 +274,7 @@ export default function Admin() {
                     }`}
                   >
                     <div className="flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h3 className={`font-medium ${!doctor.is_active && 'text-muted-foreground'}`}>
                           {doctor.nome}
                         </h3>
@@ -293,6 +296,12 @@ export default function Admin() {
                       <p className={`text-sm ${doctor.is_active ? 'text-muted-foreground' : 'text-muted-foreground/60'}`}>
                         {doctor.email}
                       </p>
+                      {doctor.last_login_at && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                          <Clock className="h-3 w-3" />
+                          Último acesso: {format(new Date(doctor.last_login_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
