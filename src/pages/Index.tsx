@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useIntegratedDashboard } from '@/hooks/useIntegratedDashboard';
 import { useRepassePeriod } from '@/hooks/useDataPeriod';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { KPICard } from '@/components/kpis/KPICard';
 import { PeriodFilter, PeriodType } from '@/components/filters/PeriodFilter';
 import { DataPeriodInfo } from '@/components/filters/DataPeriodInfo';
@@ -20,6 +21,7 @@ import imagLogo from '@/assets/imag-logo.png';
 
 export default function Index() {
   const { signOut, user } = useAuth();
+  const { profile } = useUserProfile();
   const { minDate, maxDate, loading: periodLoading } = useRepassePeriod();
   const [period, setPeriod] = useState<PeriodType>('mtd');
   const [startDate, setStartDate] = useState<Date>();
@@ -120,9 +122,16 @@ export default function Index() {
           <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex items-center gap-4">
               <img src={imagLogo} alt="IMAG - Medicina Diagnóstica" className="h-12" />
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-                Dashboard IMAG
-              </h1>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                  Portal Analítico | Médico Radiologista
+                </h1>
+                {profile?.medico_nome && (
+                  <p className="text-muted-foreground mt-1">
+                    Olá, <span className="font-medium text-foreground">{profile.medico_nome.split(' ')[0]}</span>
+                  </p>
+                )}
+              </div>
             </div>
             <div className="flex gap-2">
               <Button asChild variant="default" size="sm">
