@@ -13,7 +13,7 @@ import { Link } from 'react-router-dom';
 import { Activity, DollarSign, TrendingUp, PieChart } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { startOfDay, endOfDay, subDays, startOfMonth, startOfYear, parse } from 'date-fns';
-import { TimeSeriesChart } from '@/components/dashboard/TimeSeriesChart';
+import { TimeSeriesChart, ChartMetric } from '@/components/dashboard/TimeSeriesChart';
 import { ProductChart } from '@/components/dashboard/ProductChart';
 import { ConvenioChart } from '@/components/dashboard/ConvenioChart';
 import imagLogo from '@/assets/imag-logo.png';
@@ -27,6 +27,7 @@ export default function Index() {
   const [customMonth, setCustomMonth] = useState<string>();
   const [selectedExams, setSelectedExams] = useState<string[]>([]);
   const [selectedConvenios, setSelectedConvenios] = useState<string[]>([]);
+  const [selectedChartMetric, setSelectedChartMetric] = useState<ChartMetric>('repasse');
 
   // Calculate date range based on period
   const dateRange = useMemo(() => {
@@ -196,51 +197,77 @@ export default function Index() {
             <>
               {/* KPI Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <KPICard
-                  title="Exames"
-                  value={formatNumber(kpis.totalExames)}
-                  subtitle="Total no período"
-                  trend={{
-                    value: kpis.totalExamesVariation,
-                    isPositive: kpis.totalExamesVariation >= 0
-                  }}
-                  icon={<Activity className="h-5 w-5 text-imag-primary" />}
-                  tooltip="Total de exames realizados no período selecionado"
-                />
-                <KPICard
-                  title="Repasse Total"
-                  value={formatCurrency(kpis.repasseTotal)}
-                  trend={{
-                    value: kpis.repasseTotalVariation,
-                    isPositive: kpis.repasseTotalVariation >= 0
-                  }}
-                  icon={<DollarSign className="h-5 w-5 text-imag-primary" />}
-                  tooltip="Soma total dos repasses recebidos no período"
-                />
-                <KPICard
-                  title="Ticket Médio"
-                  value={formatCurrency(kpis.ticketMedio)}
-                  subtitle="Por exame"
-                  icon={<TrendingUp className="h-5 w-5 text-imag-primary" />}
-                  tooltip="Valor médio de repasse por exame (Repasse Total ÷ Total de Exames)"
-                />
-                <KPICard
-                  title="Particular"
-                  value={`${kpis.percentualParticular.toFixed(1)}%`}
-                  subtitle={`${kpis.percentualParticularRepasse.toFixed(1)}% em R$`}
-                  icon={<PieChart className="h-5 w-5 text-imag-primary" />}
-                  tooltip="Percentual de exames particulares por volume e por valor de repasse"
-                />
+                <div 
+                  onClick={() => setSelectedChartMetric('exames')} 
+                  className={`cursor-pointer transition-all ${selectedChartMetric === 'exames' ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                >
+                  <KPICard
+                    title="Exames"
+                    value={formatNumber(kpis.totalExames)}
+                    subtitle={selectedChartMetric === 'exames' ? '✓ Exibindo no gráfico' : 'Clique para exibir no gráfico'}
+                    trend={{
+                      value: kpis.totalExamesVariation,
+                      isPositive: kpis.totalExamesVariation >= 0
+                    }}
+                    icon={<Activity className="h-5 w-5 text-imag-primary" />}
+                    tooltip="Total de exames realizados no período selecionado"
+                  />
+                </div>
+                <div 
+                  onClick={() => setSelectedChartMetric('repasse')} 
+                  className={`cursor-pointer transition-all ${selectedChartMetric === 'repasse' ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                >
+                  <KPICard
+                    title="Repasse Total"
+                    value={formatCurrency(kpis.repasseTotal)}
+                    subtitle={selectedChartMetric === 'repasse' ? '✓ Exibindo no gráfico' : 'Clique para exibir no gráfico'}
+                    trend={{
+                      value: kpis.repasseTotalVariation,
+                      isPositive: kpis.repasseTotalVariation >= 0
+                    }}
+                    icon={<DollarSign className="h-5 w-5 text-imag-primary" />}
+                    tooltip="Soma total dos repasses recebidos no período"
+                  />
+                </div>
+                <div 
+                  onClick={() => setSelectedChartMetric('ticketMedio')} 
+                  className={`cursor-pointer transition-all ${selectedChartMetric === 'ticketMedio' ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                >
+                  <KPICard
+                    title="Ticket Médio"
+                    value={formatCurrency(kpis.ticketMedio)}
+                    subtitle={selectedChartMetric === 'ticketMedio' ? '✓ Exibindo no gráfico' : 'Clique para exibir no gráfico'}
+                    icon={<TrendingUp className="h-5 w-5 text-imag-primary" />}
+                    tooltip="Valor médio de repasse por exame (Repasse Total ÷ Total de Exames)"
+                  />
+                </div>
+                <div 
+                  onClick={() => setSelectedChartMetric('percentualParticular')} 
+                  className={`cursor-pointer transition-all ${selectedChartMetric === 'percentualParticular' ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                >
+                  <KPICard
+                    title="Particular"
+                    value={`${kpis.percentualParticular.toFixed(1)}%`}
+                    subtitle={selectedChartMetric === 'percentualParticular' ? '✓ Exibindo no gráfico' : 'Clique para exibir no gráfico'}
+                    icon={<PieChart className="h-5 w-5 text-imag-primary" />}
+                    tooltip="Percentual de exames particulares por volume e por valor de repasse"
+                  />
+                </div>
               </div>
 
               {/* Evolução Temporal */}
               <Card className="bg-card border-border shadow-card">
                 <CardHeader>
                   <CardTitle className="text-foreground">Evolução Temporal</CardTitle>
-                  <CardDescription>Exames e Repasse ao longo do tempo</CardDescription>
+                  <CardDescription>
+                    {selectedChartMetric === 'repasse' && 'Repasse Total ao longo do tempo'}
+                    {selectedChartMetric === 'exames' && 'Quantidade de Exames ao longo do tempo'}
+                    {selectedChartMetric === 'ticketMedio' && 'Ticket Médio ao longo do tempo'}
+                    {selectedChartMetric === 'percentualParticular' && '% Particular ao longo do tempo'}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <TimeSeriesChart data={timeSeriesData} />
+                  <TimeSeriesChart data={timeSeriesData} selectedMetric={selectedChartMetric} />
                 </CardContent>
               </Card>
 

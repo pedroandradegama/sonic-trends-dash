@@ -97,7 +97,7 @@ export function ConvenioChart({ data }: ConvenioChartProps) {
             ) : (
               <Bar 
                 dataKey="valor" 
-                fill="hsl(var(--chart-2))" 
+                fill="hsl(var(--primary))" 
                 name="Valor"
                 radius={[4, 4, 0, 0]}
               />
