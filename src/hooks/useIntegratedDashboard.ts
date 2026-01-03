@@ -299,17 +299,22 @@ export function useIntegratedDashboard(filters: DashboardFilters = {}) {
 
   // Time series data (monthly aggregation)
   const timeSeriesData = useMemo(() => {
-    const monthlyData = new Map<string, { exames: number; repasse: number }>();
+    const monthlyData = new Map<string, { exames: number; repasse: number; examesParticular: number }>();
     
     filteredRepasse.forEach(row => {
       const date = parseDate(row["Dt. Atendimento"]);
       if (!date) return;
       
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const current = monthlyData.get(monthKey) || { exames: 0, repasse: 0 };
+      const current = monthlyData.get(monthKey) || { exames: 0, repasse: 0, examesParticular: 0 };
       
-      current.exames += parseNumericValue(row["Qtde"]);
+      const qtde = parseNumericValue(row["Qtde"]);
+      current.exames += qtde;
       current.repasse += parseNumericValue(row["Vl. Repasse"]);
+      
+      if (row["Convênio"]?.toLowerCase().includes("particular")) {
+        current.examesParticular += qtde;
+      }
       
       monthlyData.set(monthKey, current);
     });
@@ -319,7 +324,8 @@ export function useIntegratedDashboard(filters: DashboardFilters = {}) {
         month: month.replace('-', '/'),
         exames: data.exames,
         repasse: data.repasse,
-        ticketMedio: data.exames > 0 ? data.repasse / data.exames : 0
+        ticketMedio: data.exames > 0 ? data.repasse / data.exames : 0,
+        percentualParticular: data.exames > 0 ? (data.examesParticular / data.exames) * 100 : 0
       }))
       .sort((a, b) => a.month.localeCompare(b.month));
   }, [filteredRepasse]);

@@ -153,7 +153,7 @@ export default function Auth() {
   // Choose step - main entry point
   if (step === 'choose') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-medical-blue/5 to-medical-success/5 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-medical-success/5 p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-6">
@@ -167,10 +167,10 @@ export default function Auth() {
           <CardContent className="space-y-4">
             <button
               onClick={() => setStep('first-access-email')}
-              className="w-full p-6 rounded-xl border-2 border-border hover:border-medical-blue hover:bg-medical-blue/5 transition-all duration-200 text-left group"
+              className="w-full p-6 rounded-xl border-2 border-border hover:border-primary hover:bg-primary/5 transition-all duration-200 text-left group"
             >
               <div className="flex flex-col items-center text-center gap-2">
-                <UserPlus className="h-8 w-8 text-medical-blue group-hover:scale-110 transition-transform" />
+                <UserPlus className="h-8 w-8 text-primary group-hover:scale-110 transition-transform" />
                 <div>
                   <h3 className="font-semibold text-lg">Primeiro acesso</h3>
                   <p className="text-sm text-muted-foreground">Criar minha senha</p>
@@ -180,7 +180,7 @@ export default function Auth() {
 
             <button
               onClick={() => setStep('login')}
-              className="w-full p-6 rounded-xl border-2 border-medical-blue bg-medical-blue text-white hover:bg-medical-blue/90 transition-all duration-200 text-left group"
+              className="w-full p-6 rounded-xl border-2 border-primary bg-primary text-white hover:bg-primary/90 transition-all duration-200 text-left group"
             >
               <div className="flex flex-col items-center text-center gap-2">
                 <LogIn className="h-8 w-8 group-hover:scale-110 transition-transform" />
@@ -199,7 +199,7 @@ export default function Auth() {
   // First access - email verification
   if (step === 'first-access-email') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-medical-blue/5 to-medical-success/5 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-medical-success/5 p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-6">
@@ -237,7 +237,7 @@ export default function Auth() {
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
-                <Button type="submit" className="flex-1 bg-medical-blue hover:bg-medical-blue/90" disabled={loading}>
+                <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90" disabled={loading}>
                   {loading ? 'Verificando...' : 'Continuar'}
                 </Button>
               </div>
@@ -251,7 +251,7 @@ export default function Auth() {
   // First access - password creation
   if (step === 'first-access-password') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-medical-blue/5 to-medical-success/5 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-medical-success/5 p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-6">
@@ -296,7 +296,7 @@ export default function Auth() {
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
-                <Button type="submit" className="flex-1 bg-medical-blue hover:bg-medical-blue/90" disabled={loading}>
+                <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90" disabled={loading}>
                   {loading ? 'Criando...' : 'Criar Conta'}
                 </Button>
               </div>
@@ -309,7 +309,7 @@ export default function Auth() {
 
   // Login step
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-medical-blue/5 to-medical-success/5 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-medical-success/5 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-6">
@@ -354,7 +354,7 @@ export default function Auth() {
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <Button type="submit" className="flex-1 bg-medical-blue hover:bg-medical-blue/90" disabled={loading}>
+              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90" disabled={loading}>
                 {loading ? 'Entrando...' : 'Entrar'}
               </Button>
             </div>

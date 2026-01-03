@@ -66,8 +66,9 @@ export function ProductChart({ data }: ProductChartProps) {
               type="category"
               dataKey="exame" 
               className="text-muted-foreground"
-              tick={{ fontSize: 11 }}
-              width={140}
+              tick={{ fontSize: 10 }}
+              width={180}
+              tickFormatter={(value) => value.length > 30 ? value.substring(0, 30) + '...' : value}
             />
             <RechartsTooltip 
               contentStyle={{
