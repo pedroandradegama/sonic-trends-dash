@@ -67,6 +67,78 @@ function normalize(str?: string | null): string {
     .replace(/[\u0300-\u036f]/g, ''); // Remove diacritics/accents
 }
 
+// Extrai a região anatômica do nome do exame para correlação
+function extractBodyRegion(exameName: string): string | null {
+  const normalized = normalize(exameName);
+  
+  // Mapeamento de regiões anatômicas
+  const regions: Array<{ keywords: string[]; region: string }> = [
+    // Pelve / Ginecologia
+    { keywords: ['PELVE', 'PELVIC', 'TRANSVAGINAL', 'ENDOVAGINAL'], region: 'PELVE' },
+    // Ombro
+    { keywords: ['OMBRO', 'SHOULDER'], region: 'OMBRO' },
+    // Joelho
+    { keywords: ['JOELHO', 'KNEE'], region: 'JOELHO' },
+    // Quadril
+    { keywords: ['QUADRIL', 'HIP'], region: 'QUADRIL' },
+    // Tornozelo / Pé
+    { keywords: ['TORNOZELO', 'PE ', ' PE', 'ANKLE', 'FOOT'], region: 'PE_TORNOZELO' },
+    // Punho / Mão
+    { keywords: ['PUNHO', 'MAO ', ' MAO', 'WRIST', 'HAND'], region: 'PUNHO_MAO' },
+    // Cotovelo
+    { keywords: ['COTOVELO', 'ELBOW'], region: 'COTOVELO' },
+    // Coluna
+    { keywords: ['COLUNA', 'LOMBAR', 'CERVICAL', 'TORACICA', 'SPINE', 'VERTEBRAL'], region: 'COLUNA' },
+    // Abdome
+    { keywords: ['ABDOME', 'ABDOMINAL', 'ABDOMEN', 'FIGADO', 'HEPATICO', 'VIAS BILIARES', 'PANCREAS', 'BACO', 'RINS', 'RENAL'], region: 'ABDOME' },
+    // Mama
+    { keywords: ['MAMA', 'BREAST', 'MAMAS', 'MAMARIA'], region: 'MAMA' },
+    // Tireoide / Pescoço
+    { keywords: ['TIREOIDE', 'THYROID', 'CERVICAL', 'PESCOCO'], region: 'PESCOCO' },
+    // Crânio / Encéfalo
+    { keywords: ['CRANIO', 'ENCEFALO', 'CEREBRO', 'BRAIN', 'HEAD', 'CABECA'], region: 'CRANIO' },
+    // Torax
+    { keywords: ['TORAX', 'TORACIC', 'CHEST', 'PULMAO', 'PULMONAR'], region: 'TORAX' },
+    // Vascular membros inferiores
+    { keywords: ['MEMBRO INFERIOR', 'MMII', 'VENOSO DE MEMBRO', 'ARTERIAL DE MEMBRO'], region: 'MMII' },
+    // Aparelho urinário específico (não deve correlacionar com ortopédico)
+    { keywords: ['APARELHO URINARIO', 'URINARIO', 'BEXIGA', 'PROSTATA'], region: 'URINARIO' },
+  ];
+  
+  for (const { keywords, region } of regions) {
+    for (const keyword of keywords) {
+      if (normalized.includes(keyword)) {
+        return region;
+      }
+    }
+  }
+  
+  return null;
+}
+
+// Verifica se duas regiões são compatíveis para correlação
+function areRegionsCompatible(usgRegion: string | null, axialRegion: string | null): boolean {
+  if (!usgRegion || !axialRegion) return false;
+  
+  // Mesma região exata
+  if (usgRegion === axialRegion) return true;
+  
+  // Regiões compatíveis (ex: abdome pode correlacionar com pelve em alguns casos)
+  const compatiblePairs: Array<[string, string]> = [
+    ['ABDOME', 'PELVE'], // USG abdome pode levar a TC/RM de pelve
+    ['PELVE', 'ABDOME'], // USG pélvico pode levar a TC abdome total
+  ];
+  
+  for (const [region1, region2] of compatiblePairs) {
+    if ((usgRegion === region1 && axialRegion === region2) ||
+        (usgRegion === region2 && axialRegion === region1)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
 export function useCorrelacaoAxial(medicoNome: string | null) {
   const [data, setData] = useState<ExameRow[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -192,12 +264,22 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
       const isRM = exameName.startsWith('RM') || exameName.includes('RESSONANCIA') || exameName.includes('RESONANCIA');
       
       // Find USG exams that happened before this RM/TC
+      // Filter by anatomical region compatibility
+      const axialRegion = extractBodyRegion(exame.Exame || '');
+      
       for (const usgItem of usgList) {
         const rmTcTime = exameDate.getTime();
         const usgTime = usgItem.data.getTime();
         const isAfterUSG = rmTcTime > usgTime;
         
         if (isAfterUSG) {
+          // Check if the USG and axial exams are for compatible body regions
+          const usgRegion = extractBodyRegion(usgItem.exame.Exame || '');
+          
+          if (!areRegionsCompatible(usgRegion, axialRegion)) {
+            continue; // Skip non-matching regions
+          }
+          
           const diasDiferenca = Math.floor((rmTcTime - usgTime) / (1000 * 60 * 60 * 24));
           
           results.push({

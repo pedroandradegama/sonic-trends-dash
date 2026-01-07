@@ -4,6 +4,7 @@ import { useCasuisticaData } from '@/hooks/useCasuisticaData';
 import { useCasuisticaPeriod } from '@/hooks/useDataPeriod';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useCorrelacaoAxial } from '@/hooks/useCorrelacaoAxial';
+import { useIMAGBiradsReference } from '@/hooks/useIMAGBiradsReference';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,6 +19,8 @@ import { PeriodFilter } from '@/components/filters/PeriodFilter';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { parse, isValid, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, isAfter, isBefore, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -161,6 +164,7 @@ export default function Casuistica() {
   const { minDate, maxDate, loading: periodLoading } = useCasuisticaPeriod();
   const { profile } = useUserProfile();
   const { correlacoes, stats, loading: correlacaoLoading, error: correlacaoError } = useCorrelacaoAxial(profile?.medico_nome || null);
+  const { mamografia: imagMamografiaRef, ultrassom: imagUltrassomRef, loading: imagRefLoading } = useIMAGBiradsReference();
   const [filterMode, setFilterMode] = useState<'periodo' | 'diagnostico'>('periodo');
   const [selectedSubgrupo, setSelectedSubgrupo] = useState<string>('todos');
   const [selectedSubespecialidade, setSelectedSubespecialidade] = useState<string>('todas');
@@ -170,6 +174,7 @@ export default function Casuistica() {
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [customMonth, setCustomMonth] = useState<string>('');
   const [showReferenceValue, setShowReferenceValue] = useState(false);
+  const [referenceType, setReferenceType] = useState<'literatura' | 'imag'>('literatura');
   const [applyPeriodFilter, setApplyPeriodFilter] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -657,21 +662,42 @@ export default function Casuistica() {
 
                 <Card>
                   <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle>Distribuição BI-RADS (Mama)</CardTitle>
-                        <CardDescription>Percentual por categoria (soma 100%) - {biradsExamType === 'mamografia' ? 'Mamografia' : biradsExamType === 'ultrassom' ? 'Ultrassonografia' : 'Mamografia e Ultrassonografia'}</CardDescription>
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <CardTitle>Distribuição BI-RADS (Mama)</CardTitle>
+                          <CardDescription>Percentual por categoria (soma 100%) - {biradsExamType === 'mamografia' ? 'Mamografia' : biradsExamType === 'ultrassom' ? 'Ultrassonografia' : 'Mamografia e Ultrassonografia'}</CardDescription>
+                        </div>
+                        {(selectedSubgrupo === 'MAMOGRAFIA' || (selectedSubgrupo === 'ULTRASSONOGRAFIA' && selectedSubespecialidade === 'mamas')) && biradsData.length > 0 && (
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id="reference-value" 
+                              checked={showReferenceValue}
+                              onCheckedChange={(checked) => setShowReferenceValue(checked as boolean)}
+                            />
+                            <label htmlFor="reference-value" className="text-sm font-medium leading-none cursor-pointer">
+                              Comparar com referência
+                            </label>
+                          </div>
+                        )}
                       </div>
-                      {(selectedSubgrupo === 'MAMOGRAFIA' || (selectedSubgrupo === 'ULTRASSONOGRAFIA' && selectedSubespecialidade === 'mamas')) && biradsData.length > 0 && (
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="reference-value" 
-                            checked={showReferenceValue}
-                            onCheckedChange={(checked) => setShowReferenceValue(checked as boolean)}
-                          />
-                          <label htmlFor="reference-value" className="text-sm font-medium leading-none cursor-pointer">
-                            Mostrar valores de referência
-                          </label>
+                      {showReferenceValue && (selectedSubgrupo === 'MAMOGRAFIA' || (selectedSubgrupo === 'ULTRASSONOGRAFIA' && selectedSubespecialidade === 'mamas')) && biradsData.length > 0 && (
+                        <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                          <span className="text-sm font-medium text-muted-foreground">Tipo de referência:</span>
+                          <RadioGroup 
+                            value={referenceType} 
+                            onValueChange={(value) => setReferenceType(value as 'literatura' | 'imag')}
+                            className="flex gap-4"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="literatura" id="ref-literatura" />
+                              <Label htmlFor="ref-literatura" className="cursor-pointer text-sm">Literatura</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="imag" id="ref-imag" />
+                              <Label htmlFor="ref-imag" className="cursor-pointer text-sm">Casuística IMAG</Label>
+                            </div>
+                          </RadioGroup>
                         </div>
                       )}
                     </div>
@@ -683,6 +709,8 @@ export default function Casuistica() {
                         showHistoricalAverage={false}
                         showReferenceValue={showReferenceValue}
                         examType={biradsExamType}
+                        referenceType={referenceType}
+                        imagReferences={biradsExamType === 'mamografia' ? imagMamografiaRef : imagUltrassomRef}
                       />
                     ) : (
                       <p className="text-muted-foreground">Sem dados de BI-RADS no filtro atual.</p>
