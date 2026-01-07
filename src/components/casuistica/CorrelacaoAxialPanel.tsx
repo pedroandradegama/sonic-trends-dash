@@ -164,31 +164,31 @@ export function CorrelacaoAxialPanel({ correlacoes, stats, loading, error }: Cor
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="min-w-[150px]">Paciente</TableHead>
-                  <TableHead className="min-w-[120px] hidden md:table-cell">Exame USG</TableHead>
-                  <TableHead className="min-w-[90px]">Data USG</TableHead>
-                  <TableHead className="min-w-[120px] hidden md:table-cell">Exame Axial</TableHead>
-                  <TableHead className="min-w-[90px]">Data Axial</TableHead>
-                  <TableHead className="text-center min-w-[60px]">Tipo</TableHead>
-                  <TableHead className="text-right min-w-[80px]">Intervalo</TableHead>
+                  <TableHead className="w-[140px] min-w-[140px]">Paciente</TableHead>
+                  <TableHead className="w-[200px] min-w-[200px]">Exame USG</TableHead>
+                  <TableHead className="w-[85px] min-w-[85px]">Data USG</TableHead>
+                  <TableHead className="w-[200px] min-w-[200px]">Exame Axial</TableHead>
+                  <TableHead className="w-[85px] min-w-[85px]">Data Axial</TableHead>
+                  <TableHead className="text-center w-[50px] min-w-[50px]">Tipo</TableHead>
+                  <TableHead className="text-right w-[70px] min-w-[70px]">Intervalo</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {displayedCorrelacoes.map((item, idx) => (
                   <TableRow key={`${item.paciente}-${idx}`}>
-                    <TableCell className="font-medium max-w-[150px] md:max-w-[200px] truncate text-xs md:text-sm" title={item.paciente}>
-                      {item.paciente}
+                    <TableCell className="font-medium text-xs" title={item.paciente}>
+                      <div className="truncate max-w-[140px]">{item.paciente}</div>
                     </TableCell>
-                    <TableCell className="max-w-[150px] truncate text-xs md:text-sm hidden md:table-cell" title={item.usgExame}>
-                      {item.usgExame}
+                    <TableCell className="text-xs" title={item.usgExame}>
+                      <div className="truncate max-w-[200px]">{item.usgExame}</div>
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-xs md:text-sm">
+                    <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
                       {format(item.usgData, 'dd/MM/yy', { locale: ptBR })}
                     </TableCell>
-                    <TableCell className="max-w-[150px] truncate text-xs md:text-sm hidden md:table-cell" title={item.axialExame}>
-                      {item.axialExame}
+                    <TableCell className="text-xs" title={item.axialExame}>
+                      <div className="truncate max-w-[200px]">{item.axialExame}</div>
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-xs md:text-sm">
+                    <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
                       {format(item.axialData, 'dd/MM/yy', { locale: ptBR })}
                     </TableCell>
                     <TableCell className="text-center">
@@ -199,7 +199,7 @@ export function CorrelacaoAxialPanel({ correlacoes, stats, loading, error }: Cor
                         {item.axialTipo}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right text-xs md:text-sm">
+                    <TableCell className="text-right text-xs whitespace-nowrap">
                       {item.diasDiferenca}d
                     </TableCell>
                   </TableRow>
