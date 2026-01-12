@@ -5,6 +5,7 @@ export interface NPSRow {
   nota_real?: number | null;
   prestador_nome?: string | null;
   data_atendimento?: string | null;
+  convenio?: string | null;
   [key: string]: any;
 }
 
@@ -19,7 +20,7 @@ export function useNPSData() {
       setError(null);
       const { data, error } = await (supabase as any)
         .from("NPS")
-        .select("nota_real, prestador_nome, data_atendimento");
+        .select("nota_real, prestador_nome, data_atendimento, convenio");
 
       if (error) throw error;
       setData((data as NPSRow[]) || []);

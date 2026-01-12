@@ -13,16 +13,21 @@ export interface MedicoNPS {
   notaMedia: number;
 }
 
-export function useNPSByMedico(startDate?: Date, endDate?: Date) {
+export function useNPSByMedico(startDate?: Date, endDate?: Date, medicoNome?: string) {
   const { data, loading, error } = useNPSData();
 
   const medicoNPSData = useMemo(() => {
     if (!data || data.length === 0) return [];
 
-    // Filtrar por data se fornecido
+    // Filtrar por médico se fornecido
     let filteredData = data;
+    if (medicoNome) {
+      filteredData = filteredData.filter((row) => row.prestador_nome === medicoNome);
+    }
+
+    // Filtrar por data se fornecido
     if (startDate || endDate) {
-      filteredData = data.filter((row) => {
+      filteredData = filteredData.filter((row) => {
         if (!row.data_atendimento) return false;
         const dataAtendimento = new Date(row.data_atendimento);
         if (startDate && dataAtendimento < startDate) return false;
@@ -75,7 +80,7 @@ export function useNPSByMedico(startDate?: Date, endDate?: Date) {
 
     // Ordenar por NPS (maior primeiro)
     return results.sort((a, b) => b.nps - a.nps);
-  }, [data, startDate, endDate]);
+  }, [data, startDate, endDate, medicoNome]);
 
   return { data: medicoNPSData, loading, error };
 }

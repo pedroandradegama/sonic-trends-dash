@@ -9,14 +9,20 @@ export interface NPSEvolutionData {
   notaMedia: number;
 }
 
-export function useNPSEvolution(startDate?: Date, endDate?: Date) {
+export function useNPSEvolution(startDate?: Date, endDate?: Date, medicoNome?: string) {
   const { data: rawData, loading, error } = useNPSData();
 
   const evolutionData = useMemo(() => {
     if (!rawData || rawData.length === 0) return [];
 
+    // Filtrar por médico se fornecido
+    let filteredData = rawData;
+    if (medicoNome) {
+      filteredData = filteredData.filter((item) => item.prestador_nome === medicoNome);
+    }
+
     // Filtrar por período
-    const filteredData = rawData.filter((item) => {
+    filteredData = filteredData.filter((item) => {
       if (!item.data_atendimento || item.nota_real === null || item.nota_real === undefined) return false;
       
       const itemDate = parseISO(item.data_atendimento);
@@ -65,7 +71,7 @@ export function useNPSEvolution(startDate?: Date, endDate?: Date) {
 
     // Ordenar por mês
     return result.sort((a, b) => a.month.localeCompare(b.month));
-  }, [rawData, startDate, endDate]);
+  }, [rawData, startDate, endDate, medicoNome]);
 
   return { data: evolutionData, loading, error };
 }
