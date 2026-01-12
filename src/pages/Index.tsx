@@ -3,11 +3,13 @@ import { useIntegratedDashboard } from '@/hooks/useIntegratedDashboard';
 import { useRepassePeriod } from '@/hooks/useDataPeriod';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useDoctorsList } from '@/hooks/useDoctorsList';
 import { KPICard } from '@/components/kpis/KPICard';
 import { PeriodFilter, PeriodType } from '@/components/filters/PeriodFilter';
 import { DataPeriodInfo } from '@/components/filters/DataPeriodInfo';
 import { ExamFilter } from '@/components/filters/ExamFilter';
 import { ConvenioFilter } from '@/components/filters/ConvenioFilter';
+import { DoctorSelector } from '@/components/filters/DoctorSelector';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
@@ -22,6 +24,8 @@ import imagLogo from '@/assets/imag-logo.png';
 export default function Index() {
   const { signOut, user } = useAuth();
   const { profile } = useUserProfile();
+  const { doctors, loading: doctorsLoading, isMasterAdmin } = useDoctorsList();
+  const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
   const { minDate, maxDate, loading: periodLoading } = useRepassePeriod();
   const [period, setPeriod] = useState<PeriodType>('mtd');
   const [startDate, setStartDate] = useState<Date>();
@@ -60,12 +64,21 @@ export default function Index() {
     }
   }, [period, startDate, endDate, customMonth]);
 
+  // Determine which doctor's data to show
+  const effectiveMedicoNome = useMemo(() => {
+    if (isMasterAdmin) {
+      return selectedDoctor || undefined; // null means all doctors
+    }
+    return profile?.medico_nome;
+  }, [isMasterAdmin, selectedDoctor, profile?.medico_nome]);
+
   const filters = useMemo(() => ({
     startDate: dateRange?.start,
     endDate: dateRange?.end,
     exames: selectedExams.length > 0 ? selectedExams : undefined,
     convenios: selectedConvenios.length > 0 ? selectedConvenios : undefined,
-  }), [dateRange, selectedExams, selectedConvenios]);
+    medicoNome: effectiveMedicoNome,
+  }), [dateRange, selectedExams, selectedConvenios, effectiveMedicoNome]);
 
   const { 
     loading, 
@@ -123,16 +136,25 @@ export default function Index() {
             <div className="flex items-center gap-4">
               <img src={imagLogo} alt="IMAG - Medicina Diagnóstica" className="h-12" />
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-                  Portal Analítico | Médico Radiologista
-                </h1>
-                {profile?.medico_nome && (
-                  <p className="text-muted-foreground mt-1">
-                    Olá, <span className="font-medium text-foreground">{profile.medico_nome.split(' ')[0]}</span>
-                  </p>
-                )}
-              </div>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                Portal Analítico | Médico Radiologista
+              </h1>
+              {profile?.medico_nome && (
+                <p className="text-muted-foreground mt-1">
+                  Olá, <span className="font-medium text-foreground">{profile.medico_nome.split(' ')[0]}</span>
+                </p>
+              )}
             </div>
+          </div>
+          <div className="flex flex-col md:flex-row gap-3 items-end">
+            {isMasterAdmin && (
+              <DoctorSelector
+                doctors={doctors}
+                selectedDoctor={selectedDoctor}
+                onDoctorChange={setSelectedDoctor}
+                currentUserName={profile?.medico_nome}
+              />
+            )}
             <div className="flex gap-2">
               <Button asChild variant="default" size="sm">
                 <Link to="/">Repasse</Link>
@@ -147,7 +169,8 @@ export default function Index() {
                 Sair
               </Button>
             </div>
-          </header>
+          </div>
+        </header>
 
           {/* Filters */}
           <Card>
