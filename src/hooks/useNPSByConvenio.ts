@@ -15,14 +15,19 @@ export interface ConvenioNPS {
   notaMedia: number;
 }
 
-export function useNPSByConvenio(startDate?: Date, endDate?: Date) {
+export function useNPSByConvenio(startDate?: Date, endDate?: Date, medicoNome?: string) {
   const { data, loading, error } = useNPSData();
 
   const convenioNPSData = useMemo(() => {
     if (!data || data.length === 0) return [];
 
-    // Filtrar por data se fornecido
+    // Filtrar por médico se fornecido
     let filteredData = data;
+    if (medicoNome) {
+      filteredData = filteredData.filter((row) => row.prestador_nome === medicoNome);
+    }
+
+    // Filtrar por data se fornecido
     if (startDate || endDate) {
       filteredData = data.filter((row) => {
         const dateValue = row.data_atendimento;
@@ -102,7 +107,7 @@ export function useNPSByConvenio(startDate?: Date, endDate?: Date) {
 
     // Ordenar por NPS decrescente
     return result.sort((a, b) => b.nps - a.nps);
-  }, [data, startDate, endDate]);
+  }, [data, startDate, endDate, medicoNome]);
 
   return { data: convenioNPSData, loading, error };
 }

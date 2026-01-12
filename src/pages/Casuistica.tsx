@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCasuisticaData } from '@/hooks/useCasuisticaData';
 import { useCasuisticaPeriod } from '@/hooks/useDataPeriod';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useDoctorsList } from '@/hooks/useDoctorsList';
 import { useCorrelacaoAxial } from '@/hooks/useCorrelacaoAxial';
 import { useIMAGBiradsReference } from '@/hooks/useIMAGBiradsReference';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +17,7 @@ import { CorrelacaoAxialPanel } from '@/components/casuistica/CorrelacaoAxialPan
 import { SubspecialtyIcon } from '@/components/casuistica/SubspecialtyIcon';
 import { DataPeriodInfo } from '@/components/filters/DataPeriodInfo';
 import { PeriodFilter } from '@/components/filters/PeriodFilter';
+import { DoctorSelector } from '@/components/filters/DoctorSelector';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -163,6 +165,8 @@ export default function Casuistica() {
   const { data, loading, error, subgrupos } = useCasuisticaData();
   const { minDate, maxDate, loading: periodLoading } = useCasuisticaPeriod();
   const { profile } = useUserProfile();
+  const { doctors, loading: doctorsLoading, isMasterAdmin } = useDoctorsList();
+  const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
   const { correlacoes, stats, loading: correlacaoLoading, error: correlacaoError } = useCorrelacaoAxial(profile?.medico_nome || null);
   const { mamografia: imagMamografiaRef, ultrassom: imagUltrassomRef, loading: imagRefLoading } = useIMAGBiradsReference();
   const [filterMode, setFilterMode] = useState<'periodo' | 'diagnostico'>('periodo');
@@ -219,8 +223,22 @@ export default function Casuistica() {
     return Array.from(diagSet).sort();
   }, [data]);
 
+  // Determine which doctor's data to show
+  const effectiveMedicoNome = useMemo(() => {
+    if (isMasterAdmin) {
+      return selectedDoctor || undefined; // null means all doctors
+    }
+    return profile?.medico_nome;
+  }, [isMasterAdmin, selectedDoctor, profile?.medico_nome]);
+
   const filtered = useMemo(() => {
     let result = (data || []).filter((r) => {
+      // Filtro por médico
+      if (effectiveMedicoNome) {
+        const medicoExecutante = normalize(r['Médico Executante']);
+        if (medicoExecutante !== effectiveMedicoNome) return false;
+      }
+
       // No modo 'diagnostico', filtrar apenas pelo diagnóstico selecionado
       if (filterMode === 'diagnostico') {
         if (!selectedDiagnostico) return false;
@@ -284,7 +302,7 @@ export default function Casuistica() {
     }
 
     return result;
-  }, [data, filterMode, selectedDiagnostico, selectedSubgrupo, selectedSubespecialidade, period, startDate, endDate, customMonth, applyPeriodFilter]);
+  }, [data, filterMode, selectedDiagnostico, selectedSubgrupo, selectedSubespecialidade, period, startDate, endDate, customMonth, applyPeriodFilter, effectiveMedicoNome]);
 
   const totalLaudos = filtered.length;
 
@@ -443,7 +461,11 @@ export default function Casuistica() {
               <img src={imagLogo} alt="IMAG - Medicina Diagnóstica" className="h-10 md:h-12" />
               <div>
                 <h1 className="text-2xl md:text-4xl font-bold text-foreground mb-1 md:mb-2">Dashboard Casuística</h1>
-                <p className="text-sm md:text-lg text-muted-foreground">Análise de diagnósticos por método</p>
+                {profile?.medico_nome && (
+                  <p className="text-sm md:text-lg text-muted-foreground">
+                    Olá, <span className="font-medium text-foreground">{profile.medico_nome.split(' ')[0]}</span>
+                  </p>
+                )}
               </div>
             </div>
             
@@ -459,23 +481,41 @@ export default function Casuistica() {
             </div>
             
             {/* Desktop nav */}
-            <div className="hidden sm:flex gap-2">
-              <Button asChild variant="outline">
-                <Link to="/">Repasse</Link>
-              </Button>
-              <Button asChild variant="default">
-                <Link to="/casuistica">Casuística</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link to="/nps">NPS</Link>
-              </Button>
-              <Button onClick={signOut} variant="outline">Sair</Button>
+            <div className="hidden sm:flex flex-col md:flex-row gap-3 items-end">
+              {isMasterAdmin && (
+                <DoctorSelector
+                  doctors={doctors}
+                  selectedDoctor={selectedDoctor}
+                  onDoctorChange={setSelectedDoctor}
+                  currentUserName={profile?.medico_nome}
+                />
+              )}
+              <div className="flex gap-2">
+                <Button asChild variant="outline">
+                  <Link to="/">Repasse</Link>
+                </Button>
+                <Button asChild variant="default">
+                  <Link to="/casuistica">Casuística</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link to="/nps">NPS</Link>
+                </Button>
+                <Button onClick={signOut} variant="outline">Sair</Button>
+              </div>
             </div>
           </div>
           
           {/* Mobile nav */}
           {mobileMenuOpen && (
             <div className="sm:hidden flex flex-col gap-2 p-4 bg-card rounded-xl border shadow-lg">
+              {isMasterAdmin && (
+                <DoctorSelector
+                  doctors={doctors}
+                  selectedDoctor={selectedDoctor}
+                  onDoctorChange={setSelectedDoctor}
+                  currentUserName={profile?.medico_nome}
+                />
+              )}
               <Button asChild variant="outline" className="w-full justify-start">
                 <Link to="/">Repasse</Link>
               </Button>
