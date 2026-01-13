@@ -147,6 +147,9 @@ export default function NPS() {
             <Button variant="default" asChild>
               <Link to="/nps">NPS</Link>
             </Button>
+            <Button variant="outline" asChild>
+              <Link to="/institucional">Institucional</Link>
+            </Button>
             <Button variant="outline" onClick={signOut}>
               Sair
             </Button>

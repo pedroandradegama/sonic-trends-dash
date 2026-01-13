@@ -19,7 +19,7 @@ import { startOfDay, endOfDay, subDays, startOfMonth, startOfYear, parse } from 
 import { TimeSeriesChart, ChartMetric } from '@/components/dashboard/TimeSeriesChart';
 import { ProductChart } from '@/components/dashboard/ProductChart';
 import { ConvenioChart } from '@/components/dashboard/ConvenioChart';
-import InstitucionalPanel from '@/components/institucional/InstitucionalPanel';
+
 import imagLogo from '@/assets/imag-logo.png';
 
 export default function Index() {
@@ -165,6 +165,9 @@ export default function Index() {
               </Button>
               <Button asChild variant="outline" size="sm">
                 <Link to="/nps">NPS</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/institucional">Institucional</Link>
               </Button>
               <Button onClick={signOut} variant="outline" size="sm">
                 Sair
@@ -326,8 +329,6 @@ export default function Index() {
                 </CardContent>
               </Card>
 
-              {/* Institucional */}
-              <InstitucionalPanel />
             </>
           )}
         </div>

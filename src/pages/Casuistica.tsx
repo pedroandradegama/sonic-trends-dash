@@ -500,6 +500,9 @@ export default function Casuistica() {
                 <Button asChild variant="outline">
                   <Link to="/nps">NPS</Link>
                 </Button>
+                <Button asChild variant="outline">
+                  <Link to="/institucional">Institucional</Link>
+                </Button>
                 <Button onClick={signOut} variant="outline">Sair</Button>
               </div>
             </div>
@@ -524,6 +527,9 @@ export default function Casuistica() {
               </Button>
               <Button asChild variant="outline" className="w-full justify-start">
                 <Link to="/nps">NPS</Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full justify-start">
+                <Link to="/institucional">Institucional</Link>
               </Button>
               <Button onClick={signOut} variant="outline" className="w-full justify-start">Sair</Button>
             </div>
