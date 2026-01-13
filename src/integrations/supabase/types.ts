@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      agenda_comunicacoes: {
+        Row: {
+          comentarios: string | null
+          created_at: string
+          data_agenda: string
+          horario_fim: string | null
+          horario_inicio: string
+          id: string
+          medico_nome: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comentarios?: string | null
+          created_at?: string
+          data_agenda: string
+          horario_fim?: string | null
+          horario_inicio: string
+          id?: string
+          medico_nome: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comentarios?: string | null
+          created_at?: string
+          data_agenda?: string
+          horario_fim?: string | null
+          horario_inicio?: string
+          id?: string
+          medico_nome?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       authorized_doctors: {
         Row: {
           created_at: string
