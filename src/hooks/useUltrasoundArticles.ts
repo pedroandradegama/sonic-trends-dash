@@ -119,8 +119,19 @@ export function useTrackArticleClick() {
         .from('article_clicks')
         .insert({ article_id: articleId, user_id: user.id });
 
-      // Increment click count
-      await supabase.rpc('increment_article_clicks', { article_id: articleId });
+      // Increment click count directly
+      const { data: article } = await supabase
+        .from('ultrasound_articles')
+        .select('click_count')
+        .eq('id', articleId)
+        .single();
+      
+      if (article) {
+        await supabase
+          .from('ultrasound_articles')
+          .update({ click_count: (article.click_count || 0) + 1 })
+          .eq('id', articleId);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ultrasound-articles'] });
