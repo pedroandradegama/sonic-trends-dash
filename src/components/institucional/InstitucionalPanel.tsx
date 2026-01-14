@@ -1,6 +1,7 @@
 import { Building2 } from "lucide-react";
 import RadioburgerCard from "./RadioburgerCard";
 import AgendaCard from "./AgendaCard";
+import RadarArtigosCard from "./RadarArtigosCard";
 
 const InstitucionalPanel = () => {
   // Data do próximo Radioburger - pode ser atualizada conforme necessário
@@ -17,6 +18,9 @@ const InstitucionalPanel = () => {
         <RadioburgerCard nextDate={nextRadioburgerDate} />
         <AgendaCard />
       </div>
+
+      {/* Radar de Artigos - Full Width */}
+      <RadarArtigosCard />
     </div>
   );
 };
