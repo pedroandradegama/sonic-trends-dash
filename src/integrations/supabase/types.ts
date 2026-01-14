@@ -50,6 +50,35 @@ export type Database = {
         }
         Relationships: []
       }
+      article_clicks: {
+        Row: {
+          article_id: string
+          clicked_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          article_id: string
+          clicked_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          article_id?: string
+          clicked_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "article_clicks_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "ultrasound_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       authorized_doctors: {
         Row: {
           created_at: string
@@ -368,6 +397,54 @@ export type Database = {
           Produto?: string | null
           Qtde?: string | null
           "Vl. Repasse"?: string | null
+        }
+        Relationships: []
+      }
+      ultrasound_articles: {
+        Row: {
+          click_count: number
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          is_highlighted: boolean
+          publication_date: string | null
+          source: string
+          subgroup: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          click_count?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_highlighted?: boolean
+          publication_date?: string | null
+          source: string
+          subgroup?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          click_count?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_highlighted?: boolean
+          publication_date?: string | null
+          source?: string
+          subgroup?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          url?: string
         }
         Relationships: []
       }

@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.register-doctor]
 verify_jwt = false
+
+[functions.fetch-pubmed-articles]
+verify_jwt = false
