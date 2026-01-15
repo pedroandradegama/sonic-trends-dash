@@ -3,7 +3,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCasuisticaData } from '@/hooks/useCasuisticaData';
 import { useCasuisticaPeriod } from '@/hooks/useDataPeriod';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { useDoctorsList } from '@/hooks/useDoctorsList';
 import { useCorrelacaoAxial } from '@/hooks/useCorrelacaoAxial';
 import { useIMAGBiradsReference } from '@/hooks/useIMAGBiradsReference';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +16,6 @@ import { CorrelacaoAxialPanel } from '@/components/casuistica/CorrelacaoAxialPan
 import { SubspecialtyIcon } from '@/components/casuistica/SubspecialtyIcon';
 import { DataPeriodInfo } from '@/components/filters/DataPeriodInfo';
 import { PeriodFilter } from '@/components/filters/PeriodFilter';
-import { DoctorSelector } from '@/components/filters/DoctorSelector';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -165,8 +163,6 @@ export default function Casuistica() {
   const { data, loading, error, subgrupos } = useCasuisticaData();
   const { minDate, maxDate, loading: periodLoading } = useCasuisticaPeriod();
   const { profile } = useUserProfile();
-  const { doctors, loading: doctorsLoading, isMasterAdmin } = useDoctorsList();
-  const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
   const { correlacoes, stats, loading: correlacaoLoading, error: correlacaoError } = useCorrelacaoAxial(profile?.medico_nome || null);
   const { mamografia: imagMamografiaRef, ultrassom: imagUltrassomRef, loading: imagRefLoading } = useIMAGBiradsReference();
   const [filterMode, setFilterMode] = useState<'periodo' | 'diagnostico'>('periodo');
@@ -223,13 +219,10 @@ export default function Casuistica() {
     return Array.from(diagSet).sort();
   }, [data]);
 
-  // Determine which doctor's data to show
+  // Cada médico vê apenas seus próprios dados
   const effectiveMedicoNome = useMemo(() => {
-    if (isMasterAdmin) {
-      return selectedDoctor || undefined; // null means all doctors
-    }
     return profile?.medico_nome;
-  }, [isMasterAdmin, selectedDoctor, profile?.medico_nome]);
+  }, [profile?.medico_nome]);
 
   const filtered = useMemo(() => {
     let result = (data || []).filter((r) => {
@@ -482,14 +475,6 @@ export default function Casuistica() {
             
             {/* Desktop nav */}
             <div className="hidden sm:flex flex-col md:flex-row gap-3 items-end">
-              {isMasterAdmin && (
-                <DoctorSelector
-                  doctors={doctors}
-                  selectedDoctor={selectedDoctor}
-                  onDoctorChange={setSelectedDoctor}
-                  currentUserName={profile?.medico_nome}
-                />
-              )}
               <div className="flex gap-2">
                 <Button asChild variant="outline">
                   <Link to="/">Repasse</Link>
@@ -511,14 +496,6 @@ export default function Casuistica() {
           {/* Mobile nav */}
           {mobileMenuOpen && (
             <div className="sm:hidden flex flex-col gap-2 p-4 bg-card rounded-xl border shadow-lg">
-              {isMasterAdmin && (
-                <DoctorSelector
-                  doctors={doctors}
-                  selectedDoctor={selectedDoctor}
-                  onDoctorChange={setSelectedDoctor}
-                  currentUserName={profile?.medico_nome}
-                />
-              )}
               <Button asChild variant="outline" className="w-full justify-start">
                 <Link to="/">Repasse</Link>
               </Button>

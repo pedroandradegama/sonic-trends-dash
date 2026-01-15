@@ -12,7 +12,8 @@ import {
   Star,
   Calendar,
   Tag,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import { 
   useUltrasoundArticles, 
@@ -22,6 +23,8 @@ import {
   UltrasoundArticle 
 } from '@/hooks/useUltrasoundArticles';
 import { differenceInDays } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const SUBGROUPS = [
   { value: 'todos', label: 'Todos os Subgrupos' },
@@ -121,8 +124,10 @@ export default function RadarArtigosCard() {
   const [days, setDays] = useState('0');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [isLoadingPubmed, setIsLoadingPubmed] = useState(false);
+  const { toast } = useToast();
 
-  const { data: articles, isLoading } = useUltrasoundArticles({
+  const { data: articles, isLoading, refetch } = useUltrasoundArticles({
     subgroup: subgroup !== 'todos' ? subgroup : undefined,
     source: source !== 'todos' ? source : undefined,
     days: days !== '0' ? parseInt(days) : undefined,
@@ -133,6 +138,38 @@ export default function RadarArtigosCard() {
   const { data: tags } = useArticleTags();
   const trackClick = useTrackArticleClick();
 
+  // Fetch articles from PubMed
+  const handleFetchPubmed = async () => {
+    setIsLoadingPubmed(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-pubmed-articles', {
+        body: { 
+          action: 'fetch',
+          searchTerm: 'ultrasound radiology',
+          maxResults: 20 
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Artigos atualizados',
+        description: `${data?.inserted || 0} novos artigos importados do PubMed.`,
+      });
+      
+      refetch();
+    } catch (error) {
+      console.error('Erro ao buscar artigos:', error);
+      toast({
+        title: 'Erro ao buscar artigos',
+        description: 'Não foi possível buscar artigos do PubMed.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingPubmed(false);
+    }
+  };
+
   return (
     <Card className="col-span-full">
       <CardHeader className="pb-3">
@@ -141,15 +178,31 @@ export default function RadarArtigosCard() {
             <BookOpen className="h-5 w-5 text-primary" />
             Radar de Artigos – Ultrassonografia
           </CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowFilters(!showFilters)}
-            className="gap-1"
-          >
-            <Filter className="h-4 w-4" />
-            Filtros
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleFetchPubmed}
+              disabled={isLoadingPubmed}
+              className="gap-1"
+            >
+              {isLoadingPubmed ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Atualizar PubMed
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+              className="gap-1"
+            >
+              <Filter className="h-4 w-4" />
+              Filtros
+            </Button>
+          </div>
         </div>
       </CardHeader>
       
@@ -239,7 +292,20 @@ export default function RadarArtigosCard() {
             <div className="text-center py-8 text-muted-foreground">
               <BookOpen className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p>Nenhum artigo encontrado</p>
-              <p className="text-sm">Tente ajustar os filtros ou aguarde a próxima atualização</p>
+              <p className="text-sm mb-4">Clique em "Atualizar PubMed" para buscar artigos</p>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleFetchPubmed}
+                disabled={isLoadingPubmed}
+              >
+                {isLoadingPubmed ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                )}
+                Buscar Artigos
+              </Button>
             </div>
           )}
         </div>
