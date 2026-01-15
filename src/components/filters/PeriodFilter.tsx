@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { format, startOfDay, endOfDay, subDays, startOfMonth, startOfYear, isAfter, isBefore, isWithinInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export type PeriodType = 'today' | '7d' | 'mtd' | 'ytd' | 'custom' | 'month';
@@ -17,6 +17,8 @@ interface PeriodFilterProps {
   onDateRangeChange?: (start: Date, end: Date) => void;
   customMonth?: string;
   onCustomMonthChange?: (month: string) => void;
+  dataMinDate?: Date | null;
+  dataMaxDate?: Date | null;
 }
 
 export function PeriodFilter({ 
@@ -26,7 +28,9 @@ export function PeriodFilter({
   endDate, 
   onDateRangeChange,
   customMonth,
-  onCustomMonthChange
+  onCustomMonthChange,
+  dataMinDate,
+  dataMaxDate
 }: PeriodFilterProps) {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [tempStartDate, setTempStartDate] = useState<Date | undefined>(startDate);
@@ -39,6 +43,34 @@ export function PeriodFilter({
     }
   };
 
+  // Check if a period has data available
+  const periodAvailability = useMemo(() => {
+    if (!dataMinDate || !dataMaxDate) {
+      return { today: true, '7d': true, mtd: true, ytd: true, month: true, custom: true };
+    }
+
+    const now = new Date();
+    const today = startOfDay(now);
+    const todayEnd = endOfDay(now);
+    const sevenDaysAgo = startOfDay(subDays(now, 7));
+    const monthStart = startOfMonth(now);
+    const yearStart = startOfYear(now);
+
+    // Check if data range overlaps with period range
+    const hasOverlap = (periodStart: Date, periodEnd: Date) => {
+      return !(isAfter(periodStart, dataMaxDate) || isBefore(periodEnd, dataMinDate));
+    };
+
+    return {
+      today: hasOverlap(today, todayEnd),
+      '7d': hasOverlap(sevenDaysAgo, todayEnd),
+      mtd: hasOverlap(monthStart, todayEnd),
+      ytd: hasOverlap(yearStart, todayEnd),
+      month: true, // Always allow month selection, we'll filter months
+      custom: true, // Always allow custom
+    };
+  }, [dataMinDate, dataMaxDate]);
+
   const generateMonthOptions = () => {
     const months = [];
     const currentDate = new Date();
@@ -46,7 +78,16 @@ export function PeriodFilter({
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
       const monthKey = format(date, 'yyyy-MM');
       const monthLabel = format(date, 'MMMM yyyy', { locale: ptBR });
-      months.push({ value: monthKey, label: monthLabel });
+      
+      // Check if this month has data
+      let hasData = true;
+      if (dataMinDate && dataMaxDate) {
+        const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+        const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        hasData = !(isAfter(monthStart, dataMaxDate) || isBefore(monthEnd, dataMinDate));
+      }
+      
+      months.push({ value: monthKey, label: monthLabel, hasData });
     }
     return months;
   };
@@ -58,10 +99,34 @@ export function PeriodFilter({
           <SelectValue placeholder="Período" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="today">Hoje</SelectItem>
-          <SelectItem value="7d">Últimos 7 dias</SelectItem>
-          <SelectItem value="mtd">Mês atual</SelectItem>
-          <SelectItem value="ytd">Ano atual</SelectItem>
+          <SelectItem 
+            value="today" 
+            disabled={!periodAvailability.today}
+            className={!periodAvailability.today ? "opacity-50" : ""}
+          >
+            Hoje
+          </SelectItem>
+          <SelectItem 
+            value="7d"
+            disabled={!periodAvailability['7d']}
+            className={!periodAvailability['7d'] ? "opacity-50" : ""}
+          >
+            Últimos 7 dias
+          </SelectItem>
+          <SelectItem 
+            value="mtd"
+            disabled={!periodAvailability.mtd}
+            className={!periodAvailability.mtd ? "opacity-50" : ""}
+          >
+            Mês atual
+          </SelectItem>
+          <SelectItem 
+            value="ytd"
+            disabled={!periodAvailability.ytd}
+            className={!periodAvailability.ytd ? "opacity-50" : ""}
+          >
+            Ano atual
+          </SelectItem>
           <SelectItem value="month">Por mês</SelectItem>
           <SelectItem value="custom">Personalizado</SelectItem>
         </SelectContent>
@@ -74,7 +139,12 @@ export function PeriodFilter({
           </SelectTrigger>
           <SelectContent>
             {generateMonthOptions().map(month => (
-              <SelectItem key={month.value} value={month.value}>
+              <SelectItem 
+                key={month.value} 
+                value={month.value}
+                disabled={!month.hasData}
+                className={!month.hasData ? "opacity-50" : ""}
+              >
                 {month.label}
               </SelectItem>
             ))}
@@ -105,6 +175,11 @@ export function PeriodFilter({
                     onSelect={setTempStartDate}
                     locale={ptBR}
                     className="rounded-md border"
+                    disabled={(date) => {
+                      if (dataMinDate && isBefore(date, dataMinDate)) return true;
+                      if (dataMaxDate && isAfter(date, dataMaxDate)) return true;
+                      return false;
+                    }}
                   />
                 </div>
                 <div>
@@ -115,6 +190,11 @@ export function PeriodFilter({
                     onSelect={setTempEndDate}
                     locale={ptBR}
                     className="rounded-md border"
+                    disabled={(date) => {
+                      if (dataMinDate && isBefore(date, dataMinDate)) return true;
+                      if (dataMaxDate && isAfter(date, dataMaxDate)) return true;
+                      return false;
+                    }}
                   />
                 </div>
               </div>

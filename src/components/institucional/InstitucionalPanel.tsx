@@ -2,6 +2,7 @@ import { Building2 } from "lucide-react";
 import RadioburgerCard from "./RadioburgerCard";
 import AgendaCard from "./AgendaCard";
 import RadarArtigosCard from "./RadarArtigosCard";
+import FeriadosCard from "./FeriadosCard";
 
 const InstitucionalPanel = () => {
   // Data do próximo Radioburger - pode ser atualizada conforme necessário
@@ -16,8 +17,11 @@ const InstitucionalPanel = () => {
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RadioburgerCard nextDate={nextRadioburgerDate} />
-        <AgendaCard />
+        <FeriadosCard />
       </div>
+
+      {/* Abertura de Agenda - Full Width */}
+      <AgendaCard />
 
       {/* Radar de Artigos - Full Width */}
       <RadarArtigosCard />
