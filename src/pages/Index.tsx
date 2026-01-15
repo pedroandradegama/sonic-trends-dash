@@ -3,13 +3,11 @@ import { useIntegratedDashboard } from '@/hooks/useIntegratedDashboard';
 import { useRepassePeriod } from '@/hooks/useDataPeriod';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { useDoctorsList } from '@/hooks/useDoctorsList';
 import { KPICard } from '@/components/kpis/KPICard';
 import { PeriodFilter, PeriodType } from '@/components/filters/PeriodFilter';
 import { DataPeriodInfo } from '@/components/filters/DataPeriodInfo';
 import { ExamFilter } from '@/components/filters/ExamFilter';
 import { ConvenioFilter } from '@/components/filters/ConvenioFilter';
-import { DoctorSelector } from '@/components/filters/DoctorSelector';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
@@ -25,8 +23,6 @@ import imagLogo from '@/assets/imag-logo.png';
 export default function Index() {
   const { signOut, user } = useAuth();
   const { profile } = useUserProfile();
-  const { doctors, loading: doctorsLoading, isMasterAdmin } = useDoctorsList();
-  const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
   const { minDate, maxDate, loading: periodLoading } = useRepassePeriod();
   const [period, setPeriod] = useState<PeriodType>('mtd');
   const [startDate, setStartDate] = useState<Date>();
@@ -65,13 +61,10 @@ export default function Index() {
     }
   }, [period, startDate, endDate, customMonth]);
 
-  // Determine which doctor's data to show
+  // Cada médico vê apenas seus próprios dados
   const effectiveMedicoNome = useMemo(() => {
-    if (isMasterAdmin) {
-      return selectedDoctor || undefined; // null means all doctors
-    }
     return profile?.medico_nome;
-  }, [isMasterAdmin, selectedDoctor, profile?.medico_nome]);
+  }, [profile?.medico_nome]);
 
   const filters = useMemo(() => ({
     startDate: dateRange?.start,
@@ -148,14 +141,6 @@ export default function Index() {
             </div>
           </div>
           <div className="flex flex-col md:flex-row gap-3 items-end">
-            {isMasterAdmin && (
-              <DoctorSelector
-                doctors={doctors}
-                selectedDoctor={selectedDoctor}
-                onDoctorChange={setSelectedDoctor}
-                currentUserName={profile?.medico_nome}
-              />
-            )}
             <div className="flex gap-2">
               <Button asChild variant="default" size="sm">
                 <Link to="/">Repasse</Link>

@@ -8,9 +8,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAgendaComunicacoes, CreateAgendaComunicacao } from '@/hooks/useAgendaComunicacoes';
-import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
+import { format, parseISO, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DaySchedule {
   date: Date;
@@ -20,6 +22,7 @@ interface DaySchedule {
 
 const AgendaCard = () => {
   const { toast } = useToast();
+  const { profile } = useUserProfile();
   const { 
     comunicacoes, 
     isLoading, 
@@ -43,8 +46,8 @@ const AgendaCard = () => {
   // Comments
   const [comentarios, setComentarios] = useState('');
   
-  // Edit mode
-  const [editingId, setEditingId] = useState<string | null>(null);
+  // Sending email state
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   // Generate month options (current month + next 6 months)
   const monthOptions = useMemo(() => {
@@ -65,6 +68,11 @@ const AgendaCard = () => {
     const [year, month] = selectedMonth.split('-').map(Number);
     return new Date(year, month - 1, 1);
   }, [selectedMonth]);
+
+  // Get dates from existing communications
+  const savedDates = useMemo(() => {
+    return comunicacoes.map(c => parseISO(c.data_agenda));
+  }, [comunicacoes]);
 
   // Handle day click on calendar
   const handleDayClick = (date: Date | undefined) => {
@@ -121,7 +129,7 @@ const AgendaCard = () => {
     }
   };
 
-  // Submit all selected days
+  // Submit all selected days and send email
   const handleSubmit = async () => {
     if (selectedDays.length === 0) {
       toast({
@@ -143,10 +151,43 @@ const AgendaCard = () => {
         });
       }
 
-      toast({
-        title: 'Comunicação enviada',
-        description: `${selectedDays.length} dia(s) de disponibilidade registrado(s) com sucesso.`,
-      });
+      // Send email notification
+      setIsSendingEmail(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('send-agenda-email', {
+          body: {
+            medicoNome: profile?.medico_nome || 'Médico',
+            diasAgenda: selectedDays.map(day => ({
+              data: format(day.date, "dd/MM/yyyy (EEEE)", { locale: ptBR }),
+              horarioInicio: day.horario_inicio,
+              horarioFim: day.horario_fim,
+            })),
+            comentarios: comentarios || undefined,
+          },
+        });
+
+        if (error) {
+          console.error('Erro ao enviar email:', error);
+          toast({
+            title: 'Agenda salva, mas email não enviado',
+            description: 'A comunicação foi registrada, mas houve um erro ao enviar o email de notificação.',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Comunicação enviada com sucesso!',
+            description: `${selectedDays.length} dia(s) registrado(s) e email enviado para a equipe.`,
+          });
+        }
+      } catch (emailError) {
+        console.error('Erro ao enviar email:', emailError);
+        toast({
+          title: 'Agenda salva',
+          description: `${selectedDays.length} dia(s) registrado(s). Email de notificação não configurado.`,
+        });
+      } finally {
+        setIsSendingEmail(false);
+      }
 
       // Reset form
       setSelectedDays([]);
@@ -243,13 +284,17 @@ const AgendaCard = () => {
               className="rounded-md border"
               modifiers={{
                 selected: selectedDates,
+                active: activeDay ? [activeDay] : [],
+                saved: savedDates,
               }}
               modifiersClassNames={{
-                selected: "bg-primary text-primary-foreground hover:bg-primary/90",
+                selected: "bg-primary/30 text-primary-foreground font-semibold",
+                active: "!bg-primary !text-primary-foreground ring-2 ring-primary ring-offset-2",
+                saved: "bg-primary text-primary-foreground hover:bg-primary/90",
               }}
             />
             <p className="text-xs text-muted-foreground">
-              Clique nos dias para selecioná-los. Após selecionar, defina os horários.
+              Clique nos dias para selecioná-los. Dias em <span className="font-semibold text-primary">azul sólido</span> já estão confirmados.
             </p>
           </div>
 
@@ -259,9 +304,9 @@ const AgendaCard = () => {
             
             {/* Time input for active day */}
             {activeDay && (
-              <div className="p-4 border rounded-lg bg-muted/50 space-y-3">
+              <div className="p-4 border-2 border-primary rounded-lg bg-primary/5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm capitalize">
+                  <span className="font-medium text-sm capitalize text-primary">
                     {format(activeDay, "EEEE, dd 'de' MMMM", { locale: ptBR })}
                   </span>
                   <Button
@@ -293,7 +338,7 @@ const AgendaCard = () => {
                 </div>
                 <Button size="sm" onClick={confirmDaySchedule} className="w-full">
                   <Save className="mr-2 h-4 w-4" />
-                  Confirmar Horário
+                  Salvar Horário
                 </Button>
               </div>
             )}
@@ -308,7 +353,7 @@ const AgendaCard = () => {
                 selectedDays.map((day) => (
                   <div 
                     key={day.date.toISOString()} 
-                    className="flex items-center justify-between p-2 bg-muted/30 rounded-lg"
+                    className="flex items-center justify-between p-2 bg-primary/10 rounded-lg border border-primary/20"
                   >
                     <div className="flex-1">
                       <p className="text-sm font-medium capitalize">
@@ -360,13 +405,13 @@ const AgendaCard = () => {
         <div className="flex gap-3">
           <Button 
             onClick={handleSubmit} 
-            disabled={isCreating || selectedDays.length === 0} 
+            disabled={isCreating || isSendingEmail || selectedDays.length === 0} 
             className="flex-1 md:flex-none"
           >
-            {isCreating ? (
+            {isCreating || isSendingEmail ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Enviando...
+                {isSendingEmail ? 'Enviando email...' : 'Salvando...'}
               </>
             ) : (
               <>
@@ -389,7 +434,7 @@ const AgendaCard = () => {
               {comunicacoes.map((com) => (
                 <div 
                   key={com.id} 
-                  className="flex items-start justify-between gap-3 p-3 bg-muted/50 rounded-lg"
+                  className="flex items-start justify-between gap-3 p-3 bg-primary/5 rounded-lg border border-primary/20"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm capitalize">

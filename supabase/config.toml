@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.fetch-pubmed-articles]
 verify_jwt = false
+
+[functions.send-agenda-email]
+verify_jwt = false
