@@ -1,14 +1,22 @@
-import { useState } from 'react';
-import { CalendarPlus, Clock, Trash2, Send, Loader2 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { CalendarPlus, Clock, Trash2, Send, Loader2, Edit2, Save, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Calendar } from '@/components/ui/calendar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAgendaComunicacoes, CreateAgendaComunicacao } from '@/hooks/useAgendaComunicacoes';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+
+interface DaySchedule {
+  date: Date;
+  horario_inicio: string;
+  horario_fim: string;
+}
 
 const AgendaCard = () => {
   const { toast } = useToast();
@@ -21,37 +29,129 @@ const AgendaCard = () => {
     isDeleting 
   } = useAgendaComunicacoes();
 
-  const [formData, setFormData] = useState<CreateAgendaComunicacao>({
-    data_agenda: '',
-    horario_inicio: '',
-    horario_fim: '',
-    comentarios: '',
-  });
+  // Month selection
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => format(new Date(), 'yyyy-MM'));
+  
+  // Selected days with their schedules
+  const [selectedDays, setSelectedDays] = useState<DaySchedule[]>([]);
+  
+  // Currently selected day for time input
+  const [activeDay, setActiveDay] = useState<Date | null>(null);
+  const [tempHorarioInicio, setTempHorarioInicio] = useState('08:00');
+  const [tempHorarioFim, setTempHorarioFim] = useState('18:00');
+  
+  // Comments
+  const [comentarios, setComentarios] = useState('');
+  
+  // Edit mode
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Generate month options (current month + next 6 months)
+  const monthOptions = useMemo(() => {
+    const options = [];
+    const now = new Date();
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      options.push({
+        value: format(date, 'yyyy-MM'),
+        label: format(date, 'MMMM yyyy', { locale: ptBR }),
+      });
+    }
+    return options;
+  }, []);
+
+  // Get the month date from selected month string
+  const currentMonthDate = useMemo(() => {
+    const [year, month] = selectedMonth.split('-').map(Number);
+    return new Date(year, month - 1, 1);
+  }, [selectedMonth]);
+
+  // Handle day click on calendar
+  const handleDayClick = (date: Date | undefined) => {
+    if (!date) return;
+
+    // Check if already selected
+    const existingIndex = selectedDays.findIndex(d => isSameDay(d.date, date));
     
-    if (!formData.data_agenda || !formData.horario_inicio) {
+    if (existingIndex >= 0) {
+      // Already selected - set as active for editing
+      const existing = selectedDays[existingIndex];
+      setActiveDay(date);
+      setTempHorarioInicio(existing.horario_inicio);
+      setTempHorarioFim(existing.horario_fim);
+    } else {
+      // New day - add with default times
+      setActiveDay(date);
+      setTempHorarioInicio('08:00');
+      setTempHorarioFim('18:00');
+    }
+  };
+
+  // Confirm time for active day
+  const confirmDaySchedule = () => {
+    if (!activeDay) return;
+
+    setSelectedDays(prev => {
+      const existingIndex = prev.findIndex(d => isSameDay(d.date, activeDay));
+      const newSchedule: DaySchedule = {
+        date: activeDay,
+        horario_inicio: tempHorarioInicio,
+        horario_fim: tempHorarioFim,
+      };
+
+      if (existingIndex >= 0) {
+        // Update existing
+        const updated = [...prev];
+        updated[existingIndex] = newSchedule;
+        return updated;
+      } else {
+        // Add new
+        return [...prev, newSchedule].sort((a, b) => a.date.getTime() - b.date.getTime());
+      }
+    });
+
+    setActiveDay(null);
+  };
+
+  // Remove day from selection
+  const removeDay = (date: Date) => {
+    setSelectedDays(prev => prev.filter(d => !isSameDay(d.date, date)));
+    if (activeDay && isSameDay(activeDay, date)) {
+      setActiveDay(null);
+    }
+  };
+
+  // Submit all selected days
+  const handleSubmit = async () => {
+    if (selectedDays.length === 0) {
       toast({
-        title: 'Campos obrigatórios',
-        description: 'Por favor, preencha a data e o horário de início.',
+        title: 'Nenhum dia selecionado',
+        description: 'Por favor, selecione pelo menos um dia no calendário.',
         variant: 'destructive',
       });
       return;
     }
 
     try {
-      await createComunicacao(formData);
+      // Create one entry for each selected day
+      for (const day of selectedDays) {
+        await createComunicacao({
+          data_agenda: format(day.date, 'yyyy-MM-dd'),
+          horario_inicio: day.horario_inicio,
+          horario_fim: day.horario_fim || '',
+          comentarios: comentarios,
+        });
+      }
+
       toast({
         title: 'Comunicação enviada',
-        description: 'Sua disponibilidade de agenda foi registrada com sucesso.',
+        description: `${selectedDays.length} dia(s) de disponibilidade registrado(s) com sucesso.`,
       });
-      setFormData({
-        data_agenda: '',
-        horario_inicio: '',
-        horario_fim: '',
-        comentarios: '',
-      });
+
+      // Reset form
+      setSelectedDays([]);
+      setComentarios('');
+      setActiveDay(null);
     } catch (error) {
       toast({
         title: 'Erro ao enviar',
@@ -86,8 +186,11 @@ const AgendaCard = () => {
   };
 
   const formatTime = (timeStr: string) => {
-    return timeStr.slice(0, 5); // HH:MM format
+    return timeStr?.slice(0, 5) || ''; // HH:MM format
   };
+
+  // Get selected dates for calendar highlighting
+  const selectedDates = useMemo(() => selectedDays.map(d => d.date), [selectedDays]);
 
   return (
     <Card className="bg-card border-border">
@@ -98,55 +201,168 @@ const AgendaCard = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Formulário */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="data_agenda">Data da Agenda *</Label>
-              <Input
-                id="data_agenda"
-                type="date"
-                value={formData.data_agenda}
-                onChange={(e) => setFormData({ ...formData, data_agenda: e.target.value })}
-                required
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-2">
-                <Label htmlFor="horario_inicio">Horário Início *</Label>
-                <Input
-                  id="horario_inicio"
-                  type="time"
-                  value={formData.horario_inicio}
-                  onChange={(e) => setFormData({ ...formData, horario_inicio: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="horario_fim">Horário Fim</Label>
-                <Input
-                  id="horario_fim"
-                  type="time"
-                  value={formData.horario_fim}
-                  onChange={(e) => setFormData({ ...formData, horario_fim: e.target.value })}
-                />
-              </div>
-            </div>
-          </div>
+        {/* Month Selector */}
+        <div className="space-y-2">
+          <Label>Selecione o Mês</Label>
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger className="w-full md:w-64">
+              <SelectValue placeholder="Selecione o mês" />
+            </SelectTrigger>
+            <SelectContent>
+              {monthOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="comentarios">Comentários / Observações</Label>
-            <Textarea
-              id="comentarios"
-              placeholder="Informe alterações de premissas, restrições ou observações relevantes..."
-              value={formData.comentarios}
-              onChange={(e) => setFormData({ ...formData, comentarios: e.target.value })}
-              rows={3}
+        {/* Calendar with multi-select days */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <Label>Selecione os dias de disponibilidade</Label>
+            <Calendar
+              mode="multiple"
+              selected={selectedDates}
+              onSelect={(dates) => {
+                // Handle the multi-select change
+                if (dates && dates.length > selectedDates.length) {
+                  // New date added - find which one
+                  const newDate = dates.find(d => !selectedDates.some(sd => isSameDay(sd, d)));
+                  if (newDate) handleDayClick(newDate);
+                } else if (dates && dates.length < selectedDates.length) {
+                  // Date removed - find which one
+                  const removedDate = selectedDates.find(sd => !dates.some(d => isSameDay(d, sd)));
+                  if (removedDate) removeDay(removedDate);
+                }
+              }}
+              locale={ptBR}
+              month={currentMonthDate}
+              onMonthChange={() => {}}
+              className="rounded-md border"
+              modifiers={{
+                selected: selectedDates,
+              }}
+              modifiersClassNames={{
+                selected: "bg-primary text-primary-foreground hover:bg-primary/90",
+              }}
             />
+            <p className="text-xs text-muted-foreground">
+              Clique nos dias para selecioná-los. Após selecionar, defina os horários.
+            </p>
           </div>
 
-          <Button type="submit" disabled={isCreating} className="w-full md:w-auto">
+          {/* Selected days list with times */}
+          <div className="space-y-4">
+            <Label>Dias selecionados e horários</Label>
+            
+            {/* Time input for active day */}
+            {activeDay && (
+              <div className="p-4 border rounded-lg bg-muted/50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-sm capitalize">
+                    {format(activeDay, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => setActiveDay(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Horário Início</Label>
+                    <Input
+                      type="time"
+                      value={tempHorarioInicio}
+                      onChange={(e) => setTempHorarioInicio(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Horário Fim</Label>
+                    <Input
+                      type="time"
+                      value={tempHorarioFim}
+                      onChange={(e) => setTempHorarioFim(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <Button size="sm" onClick={confirmDaySchedule} className="w-full">
+                  <Save className="mr-2 h-4 w-4" />
+                  Confirmar Horário
+                </Button>
+              </div>
+            )}
+
+            {/* List of selected days */}
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {selectedDays.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Nenhum dia selecionado ainda
+                </p>
+              ) : (
+                selectedDays.map((day) => (
+                  <div 
+                    key={day.date.toISOString()} 
+                    className="flex items-center justify-between p-2 bg-muted/30 rounded-lg"
+                  >
+                    <div className="flex-1">
+                      <p className="text-sm font-medium capitalize">
+                        {format(day.date, "dd/MM (EEE)", { locale: ptBR })}
+                      </p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {day.horario_inicio} - {day.horario_fim}
+                      </p>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => handleDayClick(day.date)}
+                      >
+                        <Edit2 className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive"
+                        onClick={() => removeDay(day.date)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Comments */}
+        <div className="space-y-2">
+          <Label htmlFor="comentarios">Comentários / Observações</Label>
+          <Textarea
+            id="comentarios"
+            placeholder="Informe alterações de premissas, restrições ou observações relevantes..."
+            value={comentarios}
+            onChange={(e) => setComentarios(e.target.value)}
+            rows={3}
+          />
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex gap-3">
+          <Button 
+            onClick={handleSubmit} 
+            disabled={isCreating || selectedDays.length === 0} 
+            className="flex-1 md:flex-none"
+          >
             {isCreating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -155,19 +371,19 @@ const AgendaCard = () => {
             ) : (
               <>
                 <Send className="mr-2 h-4 w-4" />
-                Enviar Comunicação
+                Enviar Comunicação ({selectedDays.length} dia{selectedDays.length !== 1 ? 's' : ''})
               </>
             )}
           </Button>
-        </form>
+        </div>
 
-        {/* Lista de comunicações */}
+        {/* Lista de comunicações existentes */}
         {isLoading ? (
           <div className="flex justify-center py-4">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : comunicacoes.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-3 pt-4 border-t">
             <h4 className="text-sm font-medium text-muted-foreground">Suas comunicações recentes:</h4>
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {comunicacoes.map((com) => (
@@ -206,7 +422,7 @@ const AgendaCard = () => {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground text-center py-4">
+          <p className="text-sm text-muted-foreground text-center py-4 border-t pt-4">
             Nenhuma comunicação de agenda registrada.
           </p>
         )}

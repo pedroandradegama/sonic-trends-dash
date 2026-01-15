@@ -198,6 +198,8 @@ export default function Index() {
                   }}
                   customMonth={customMonth}
                   onCustomMonthChange={setCustomMonth}
+                  dataMinDate={minDate}
+                  dataMaxDate={maxDate}
                 />
                 <ExamFilter
                   selectedExams={selectedExams}
