@@ -15,16 +15,16 @@ const InstitucionalPanel = () => {
         <h2 className="text-xl font-semibold">Institucional</h2>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RadioburgerCard nextDate={nextRadioburgerDate} />
-        <FeriadosCard />
-      </div>
-
       {/* Abertura de Agenda - Full Width */}
       <AgendaCard />
 
       {/* Radar de Artigos - Full Width */}
       <RadarArtigosCard />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <FeriadosCard />
+        <RadioburgerCard nextDate={nextRadioburgerDate} />
+      </div>
     </div>
   );
 };
