@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useCasuisticaData } from '@/hooks/useCasuisticaData';
 import { useCasuisticaPeriod } from '@/hooks/useDataPeriod';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -16,7 +15,7 @@ import { CorrelacaoAxialPanel } from '@/components/casuistica/CorrelacaoAxialPan
 import { SubspecialtyIcon } from '@/components/casuistica/SubspecialtyIcon';
 import { DataPeriodInfo } from '@/components/filters/DataPeriodInfo';
 import { PeriodFilter } from '@/components/filters/PeriodFilter';
-import { Link } from 'react-router-dom';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -25,7 +24,6 @@ import { parse, isValid, startOfDay, endOfDay, startOfMonth, endOfMonth, startOf
 import { ptBR } from 'date-fns/locale';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Menu, X } from 'lucide-react';
-import imagLogo from '@/assets/imag-logo.png';
 
 function normalize(str?: string | null) {
   if (!str) return '';
@@ -159,7 +157,6 @@ function extractSpecificDiagnostico(comentario: string | null | undefined, subes
 }
 
 export default function Casuistica() {
-  const { signOut } = useAuth();
   const { data, loading, error, subgrupos } = useCasuisticaData();
   const { minDate, maxDate, loading: periodLoading } = useCasuisticaPeriod();
   const { profile } = useUserProfile();
@@ -449,68 +446,7 @@ export default function Casuistica() {
       <div className="relative z-10 p-4 md:p-6">
         <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-center gap-3 md:gap-4">
-              <img src={imagLogo} alt="IMAG - Medicina Diagnóstica" className="h-10 md:h-12" />
-              <div>
-                <h1 className="text-2xl md:text-4xl font-bold text-foreground mb-1 md:mb-2">Dashboard Casuística</h1>
-                {profile?.medico_nome && (
-                  <p className="text-sm md:text-lg text-muted-foreground">
-                    Olá, <span className="font-medium text-foreground">{profile.medico_nome.split(' ')[0]}</span>
-                  </p>
-                )}
-              </div>
-            </div>
-            
-            {/* Mobile menu button */}
-            <div className="sm:hidden">
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </Button>
-            </div>
-            
-            {/* Desktop nav */}
-            <div className="hidden sm:flex flex-col md:flex-row gap-3 items-end">
-              <div className="flex gap-2">
-                <Button asChild variant="outline">
-                  <Link to="/">Repasse</Link>
-                </Button>
-                <Button asChild variant="default">
-                  <Link to="/casuistica">Casuística</Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <Link to="/nps">NPS</Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <Link to="/institucional">Institucional</Link>
-                </Button>
-                <Button onClick={signOut} variant="outline">Sair</Button>
-              </div>
-            </div>
-          </div>
-          
-          {/* Mobile nav */}
-          {mobileMenuOpen && (
-            <div className="sm:hidden flex flex-col gap-2 p-4 bg-card rounded-xl border shadow-lg">
-              <Button asChild variant="outline" className="w-full justify-start">
-                <Link to="/">Repasse</Link>
-              </Button>
-              <Button asChild variant="default" className="w-full justify-start">
-                <Link to="/casuistica">Casuística</Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full justify-start">
-                <Link to="/nps">NPS</Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full justify-start">
-                <Link to="/institucional">Institucional</Link>
-              </Button>
-              <Button onClick={signOut} variant="outline" className="w-full justify-start">Sair</Button>
-            </div>
-          )}
+          <PageHeader />
 
           {/* Tabs principais */}
           <Tabs defaultValue="casuistica" className="w-full">

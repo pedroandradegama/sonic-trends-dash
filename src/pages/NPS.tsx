@@ -3,11 +3,8 @@ import { useNPSByMedico } from '@/hooks/useNPSByMedico';
 import { useNPSByConvenio } from '@/hooks/useNPSByConvenio';
 import { useNPSEvolution } from '@/hooks/useNPSEvolution';
 import { useNPSPeriod } from '@/hooks/useDataPeriod';
-import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link } from 'react-router-dom';
 import { PeriodFilter, PeriodType } from '@/components/filters/PeriodFilter';
 import { DataPeriodInfo } from '@/components/filters/DataPeriodInfo';
 import { NPSMedicoCard } from '@/components/nps/NPSMedicoCard';
@@ -15,12 +12,11 @@ import { NPSChart } from '@/components/nps/NPSChart';
 import { NPSConvenioChart } from '@/components/nps/NPSConvenioChart';
 import { NPSConvenioCard } from '@/components/nps/NPSConvenioCard';
 import { NPSEvolutionChart } from '@/components/nps/NPSEvolutionChart';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { startOfDay, endOfDay, subDays, startOfMonth, startOfYear, parse, differenceInDays } from 'date-fns';
 import { Loader2 } from 'lucide-react';
-import imagLogo from '@/assets/imag-logo.png';
 
 export default function NPS() {
-  const { signOut, user } = useAuth();
   const { profile } = useUserProfile();
   const { minDate, maxDate, loading: periodLoading } = useNPSPeriod();
   const [period, setPeriod] = useState<PeriodType>('mtd');
@@ -109,38 +105,7 @@ export default function NPS() {
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-4">
-          <img src={imagLogo} alt="IMAG - Medicina Diagnóstica" className="h-12" />
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">NPS por Médico</h1>
-            {profile?.medico_nome && (
-              <p className="text-muted-foreground mt-1">
-                Olá, <span className="font-medium text-foreground">{profile.medico_nome.split(' ')[0]}</span>
-              </p>
-            )}
-          </div>
-        </div>
-        <div className="flex flex-col md:flex-row gap-3 items-end">
-          <div className="flex gap-2">
-            <Button variant="outline" asChild>
-              <Link to="/">Repasse</Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to="/casuistica">Casuística</Link>
-            </Button>
-            <Button variant="default" asChild>
-              <Link to="/nps">NPS</Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to="/institucional">Institucional</Link>
-            </Button>
-            <Button variant="outline" onClick={signOut}>
-              Sair
-            </Button>
-          </div>
-        </div>
-      </div>
+      <PageHeader />
 
       {/* Filters */}
       <Card>
