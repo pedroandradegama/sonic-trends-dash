@@ -1,27 +1,22 @@
 import { useState, useMemo } from 'react';
 import { useIntegratedDashboard } from '@/hooks/useIntegratedDashboard';
 import { useRepassePeriod } from '@/hooks/useDataPeriod';
-import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { KPICard } from '@/components/kpis/KPICard';
 import { PeriodFilter, PeriodType } from '@/components/filters/PeriodFilter';
 import { DataPeriodInfo } from '@/components/filters/DataPeriodInfo';
 import { ExamFilter } from '@/components/filters/ExamFilter';
 import { ConvenioFilter } from '@/components/filters/ConvenioFilter';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link } from 'react-router-dom';
 import { Activity, DollarSign, TrendingUp, PieChart } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { startOfDay, endOfDay, subDays, startOfMonth, startOfYear, parse } from 'date-fns';
 import { TimeSeriesChart, ChartMetric } from '@/components/dashboard/TimeSeriesChart';
 import { ProductChart } from '@/components/dashboard/ProductChart';
 import { ConvenioChart } from '@/components/dashboard/ConvenioChart';
-
-import imagLogo from '@/assets/imag-logo.png';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function Index() {
-  const { signOut, user } = useAuth();
   const { profile } = useUserProfile();
   const { minDate, maxDate, loading: periodLoading } = useRepassePeriod();
   const [period, setPeriod] = useState<PeriodType>('mtd');
@@ -125,41 +120,8 @@ export default function Index() {
     <TooltipProvider>
       <div className="min-h-screen bg-background p-4 md:p-6">
         <div className="max-w-7xl mx-auto space-y-6">
-          {/* Header */}
-          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex items-center gap-4">
-              <img src={imagLogo} alt="IMAG - Medicina Diagnóstica" className="h-12" />
-              <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-                Portal Analítico | Médico Radiologista
-              </h1>
-              {profile?.medico_nome && (
-                <p className="text-muted-foreground mt-1">
-                  Olá, <span className="font-medium text-foreground">{profile.medico_nome.split(' ')[0]}</span>
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="flex flex-col md:flex-row gap-3 items-end">
-            <div className="flex gap-2">
-              <Button asChild variant="default" size="sm">
-                <Link to="/">Repasse</Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/casuistica">Casuística</Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/nps">NPS</Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/institucional">Institucional</Link>
-              </Button>
-              <Button onClick={signOut} variant="outline" size="sm">
-                Sair
-              </Button>
-            </div>
-          </div>
-        </header>
+        {/* Header */}
+        <PageHeader />
 
           {/* Filters */}
           <Card>
