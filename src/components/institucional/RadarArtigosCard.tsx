@@ -54,9 +54,22 @@ function getSubgroupLabel(subgroup: string): string {
 }
 
 function ArticleItem({ article, onTrackClick }: { article: UltrasoundArticle; onTrackClick: (id: string) => void }) {
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     onTrackClick(article.id);
-    window.open(article.url, '_blank');
+    // Use window.open with noopener for security
+    const newWindow = window.open(article.url, '_blank', 'noopener,noreferrer');
+    if (!newWindow) {
+      // Fallback: create and click a link if popup was blocked
+      const link = document.createElement('a');
+      link.href = article.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   return (
