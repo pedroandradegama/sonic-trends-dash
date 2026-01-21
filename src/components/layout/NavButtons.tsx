@@ -9,6 +9,7 @@ export function NavButtons() {
 
   const navItems = [
     { path: '/institucional', label: 'Institucional' },
+    { path: '/magia', label: 'MagIA' },
     { path: '/', label: 'Repasse' },
     { path: '/casuistica', label: 'Casuística' },
     { path: '/nps', label: 'NPS' },
