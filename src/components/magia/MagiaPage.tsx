@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { AlertTriangle, Brain, Copy, CheckCircle, Loader2, TestTube, Sparkles, History } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,6 +14,11 @@ import { useMagiaHistory, DiagnosisResult, MagiaHistoryItem } from '@/hooks/useM
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+import { InputModeSelector, InputMode } from './InputModeSelector';
+import { AudioInputPanel } from './AudioInputPanel';
+import { TextInputPanel } from './TextInputPanel';
+import { StructuredInputPanel } from './StructuredInputPanel';
 
 const AREAS = [
   { value: 'abdome', label: 'Abdome' },
@@ -38,11 +42,16 @@ export default function MagiaPage() {
 
   const [confirmedAnonymized, setConfirmedAnonymized] = useState(false);
   const [area, setArea] = useState('outro');
+  const [inputMode, setInputMode] = useState<InputMode>('text');
   const [caseText, setCaseText] = useState('');
   const [requestStatus, setRequestStatus] = useState<RequestStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [result, setResult] = useState<DiagnosisResult | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+
+  const handleStructuredChange = useCallback((text: string) => {
+    setCaseText(text);
+  }, []);
 
   const handleGenerate = async (testMode = false) => {
     const textToSend = testMode ? TEST_CASE : caseText;
@@ -153,7 +162,10 @@ ${result.disclaimer}
     setResult(item.result);
     setRequestStatus(item.result ? 'success' : 'idle');
     setShowHistory(false);
+    setInputMode('text'); // Switch to text mode when loading from history
   };
+
+  const isGenerateDisabled = !confirmedAnonymized || caseText.length < 20 || requestStatus === 'loading';
 
   return (
     <div className="space-y-6">
@@ -262,25 +274,42 @@ ${result.disclaimer}
             </Select>
           </div>
 
-          {/* Case Text */}
-          <div className="space-y-2">
-            <Label htmlFor="case">História clínica + achados ultrassonográficos</Label>
-            <Textarea
-              id="case"
-              value={caseText}
-              onChange={(e) => setCaseText(e.target.value)}
-              placeholder="Exemplo: Mulher 34 anos, dor pélvica crônica há 6 meses. US TV: cisto simples de 3,2 cm em ovário direito, parede fina, sem septos/vegetações..."
-              className="min-h-[150px]"
-            />
-            <p className="text-xs text-muted-foreground">
-              Mínimo 20 caracteres. Atual: {caseText.length}
-            </p>
+          {/* Input Mode Selector */}
+          <div className="space-y-4">
+            <Label>Método de entrada</Label>
+            <InputModeSelector mode={inputMode} onModeChange={setInputMode} />
           </div>
+
+          {/* Input Panels */}
+          <div className="border rounded-lg p-4 bg-muted/30">
+            {inputMode === 'audio' && (
+              <AudioInputPanel value={caseText} onChange={setCaseText} />
+            )}
+            {inputMode === 'text' && (
+              <TextInputPanel value={caseText} onChange={setCaseText} />
+            )}
+            {inputMode === 'structured' && (
+              <StructuredInputPanel area={area} onChange={handleStructuredChange} />
+            )}
+          </div>
+
+          {/* Preview for structured mode */}
+          {inputMode === 'structured' && caseText && (
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">Texto gerado (prévia):</Label>
+              <div className="p-3 bg-muted/50 rounded-md text-sm">
+                {caseText}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Caracteres: {caseText.length} {caseText.length < 20 && '(mínimo 20)'}
+              </p>
+            </div>
+          )}
 
           {/* Generate Button */}
           <Button
             onClick={() => handleGenerate(false)}
-            disabled={!confirmedAnonymized || caseText.length < 20 || requestStatus === 'loading'}
+            disabled={isGenerateDisabled}
             className="w-full"
             size="lg"
           >
