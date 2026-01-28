@@ -15,7 +15,7 @@ import { CorrelacaoAxialPanel } from '@/components/casuistica/CorrelacaoAxialPan
 import { SubspecialtyIcon } from '@/components/casuistica/SubspecialtyIcon';
 import { DataPeriodInfo } from '@/components/filters/DataPeriodInfo';
 import { PeriodFilter } from '@/components/filters/PeriodFilter';
-import { PageHeader } from '@/components/layout/PageHeader';
+import { MainLayout } from '@/components/layout/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -436,17 +436,15 @@ export default function Casuistica() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-medical-success/5 relative overflow-hidden">
-      {/* Decorative background elements */}
-      <div className="decorative-blob decorative-blob-1" />
-      <div className="decorative-blob decorative-blob-2" />
-      <div className="decorative-blob decorative-blob-3" />
-      <div className="absolute inset-0 bg-pattern-dots opacity-30 pointer-events-none" />
-      
-      <div className="relative z-10 p-4 md:p-6">
-        <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
-          {/* Header */}
-          <PageHeader />
+    <MainLayout>
+      <div className="relative overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="decorative-blob decorative-blob-1" />
+        <div className="decorative-blob decorative-blob-2" />
+        <div className="decorative-blob decorative-blob-3" />
+        <div className="absolute inset-0 bg-pattern-dots opacity-30 pointer-events-none" />
+        
+        <div className="relative z-10 space-y-6 md:space-y-8">
 
           {/* Tabs principais */}
           <Tabs defaultValue="casuistica" className="w-full">
@@ -850,6 +848,6 @@ export default function Casuistica() {
         </Tabs>
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }

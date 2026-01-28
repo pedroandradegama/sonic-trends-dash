@@ -14,7 +14,7 @@ import { startOfDay, endOfDay, subDays, startOfMonth, startOfYear, parse } from 
 import { TimeSeriesChart, ChartMetric } from '@/components/dashboard/TimeSeriesChart';
 import { ProductChart } from '@/components/dashboard/ProductChart';
 import { ConvenioChart } from '@/components/dashboard/ConvenioChart';
-import { PageHeader } from '@/components/layout/PageHeader';
+import { MainLayout } from '@/components/layout/MainLayout';
 
 export default function Index() {
   const { profile } = useUserProfile();
@@ -118,11 +118,8 @@ export default function Index() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-background p-4 md:p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <PageHeader />
-
+      <MainLayout>
+        <div className="space-y-6">
           {/* Filters */}
           <Card>
             <CardHeader>
@@ -277,11 +274,10 @@ export default function Index() {
                   <ConvenioChart data={convenioDistribution} />
                 </CardContent>
               </Card>
-
             </>
           )}
         </div>
-      </div>
+      </MainLayout>
     </TooltipProvider>
   );
 }

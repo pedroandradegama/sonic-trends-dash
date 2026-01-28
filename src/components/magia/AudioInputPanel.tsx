@@ -1,10 +1,11 @@
 import { useState, useRef, useCallback } from 'react';
-import { Mic, MicOff, Loader2, AlertCircle } from 'lucide-react';
+import { Mic, MicOff, Loader2, AlertCircle, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AudioInputPanelProps {
   value: string;
@@ -15,15 +16,26 @@ export function AudioInputPanel({ value, onChange }: AudioInputPanelProps) {
   const { toast } = useToast();
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
   const [error, setError] = useState<string | null>(null);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<number | null>(null);
 
   const startRecording = useCallback(async () => {
     try {
       setError(null);
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setRecordingTime(0);
+      
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 16000,
+        } 
+      });
       
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm;codecs=opus'
@@ -42,12 +54,21 @@ export function AudioInputPanel({ value, onChange }: AudioInputPanelProps) {
         const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
         stream.getTracks().forEach(track => track.stop());
         
-        // Transcribe using Web Speech API as fallback
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+        
         await transcribeAudio(audioBlob);
       };
 
-      mediaRecorder.start();
+      mediaRecorder.start(1000); // Collect data every second
       setIsRecording(true);
+      
+      // Start recording timer
+      timerRef.current = window.setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
       
       toast({
         title: 'Gravação iniciada',
@@ -69,27 +90,36 @@ export function AudioInputPanel({ value, onChange }: AudioInputPanelProps) {
 
   const transcribeAudio = async (audioBlob: Blob) => {
     try {
-      // Using Web Speech API for transcription
-      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        // For now, we'll use a simple approach - in production you'd use OpenAI Whisper
+      console.log('Starting transcription, blob size:', audioBlob.size);
+      
+      // Create FormData to send the audio file
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'audio.webm');
+
+      // Call the edge function
+      const { data, error: fnError } = await supabase.functions.invoke('transcribe-audio', {
+        body: formData,
+      });
+
+      if (fnError) {
+        console.error('Edge function error:', fnError);
+        throw new Error(fnError.message || 'Erro na transcrição');
+      }
+
+      if (data?.text) {
+        onChange(value ? `${value}\n\n${data.text}` : data.text);
         toast({
           title: 'Transcrição concluída',
           description: 'Revise o texto abaixo e ajuste se necessário.',
         });
-        
-        // Placeholder - in real implementation, send to Whisper API
-        setIsTranscribing(false);
-        toast({
-          title: 'Áudio capturado',
-          description: 'Transcrição por áudio requer integração com Whisper API. Por enquanto, digite o texto manualmente.',
-        });
-      } else {
-        setError('Seu navegador não suporta transcrição de áudio. Use Chrome ou Edge.');
-        setIsTranscribing(false);
+      } else if (data?.error) {
+        throw new Error(data.error);
       }
+      
+      setIsTranscribing(false);
     } catch (err) {
       console.error('Transcription error:', err);
-      setError('Erro ao transcrever o áudio. Tente novamente.');
+      setError(err instanceof Error ? err.message : 'Erro ao transcrever o áudio. Tente novamente.');
       setIsTranscribing(false);
     }
   };
@@ -102,33 +132,53 @@ export function AudioInputPanel({ value, onChange }: AudioInputPanelProps) {
     }
   };
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-col items-center gap-4 p-6 border-2 border-dashed rounded-lg">
-        <Button
-          type="button"
-          size="lg"
-          variant={isRecording ? "destructive" : "default"}
-          onClick={handleRecordClick}
-          disabled={isTranscribing}
-          className="h-20 w-20 rounded-full"
-        >
-          {isTranscribing ? (
-            <Loader2 className="h-8 w-8 animate-spin" />
-          ) : isRecording ? (
-            <MicOff className="h-8 w-8" />
-          ) : (
-            <Mic className="h-8 w-8" />
+      <div className="flex flex-col items-center gap-4 p-6 border-2 border-dashed rounded-lg bg-muted/30">
+        <div className="relative">
+          <Button
+            type="button"
+            size="lg"
+            variant={isRecording ? "destructive" : "default"}
+            onClick={handleRecordClick}
+            disabled={isTranscribing}
+            className="h-24 w-24 rounded-full shadow-lg transition-all duration-300"
+          >
+            {isTranscribing ? (
+              <Loader2 className="h-10 w-10 animate-spin" />
+            ) : isRecording ? (
+              <MicOff className="h-10 w-10" />
+            ) : (
+              <Mic className="h-10 w-10" />
+            )}
+          </Button>
+          
+          {isRecording && (
+            <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded-full animate-pulse">
+              {formatTime(recordingTime)}
+            </span>
           )}
-        </Button>
+        </div>
         
-        <p className="text-sm text-muted-foreground text-center">
-          {isTranscribing 
-            ? 'Transcrevendo áudio...' 
-            : isRecording 
-              ? 'Gravando... Clique para parar' 
-              : 'Clique para gravar'}
-        </p>
+        <div className="text-center space-y-1">
+          <p className="text-sm font-medium text-foreground">
+            {isTranscribing 
+              ? 'Transcrevendo áudio...' 
+              : isRecording 
+                ? 'Gravando... Clique para parar' 
+                : 'Clique para gravar'}
+          </p>
+          <p className="text-xs text-muted-foreground flex items-center gap-1 justify-center">
+            <Volume2 className="h-3 w-3" />
+            Transcrição via OpenAI Whisper
+          </p>
+        </div>
       </div>
 
       {error && (
