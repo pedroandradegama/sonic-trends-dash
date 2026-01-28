@@ -12,7 +12,7 @@ import { NPSChart } from '@/components/nps/NPSChart';
 import { NPSConvenioChart } from '@/components/nps/NPSConvenioChart';
 import { NPSConvenioCard } from '@/components/nps/NPSConvenioCard';
 import { NPSEvolutionChart } from '@/components/nps/NPSEvolutionChart';
-import { PageHeader } from '@/components/layout/PageHeader';
+import { MainLayout } from '@/components/layout/MainLayout';
 import { startOfDay, endOfDay, subDays, startOfMonth, startOfYear, parse, differenceInDays } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 
@@ -86,133 +86,134 @@ export default function NPS() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <MainLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <MainLayout>
         <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded">
           Erro ao carregar dados: {error}
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8">
-      {/* Header */}
-      <PageHeader />
-
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-          <CardDescription className="flex items-center justify-between">
-            <span>Selecione o período para análise</span>
-            <DataPeriodInfo minDate={minDate} maxDate={maxDate} loading={periodLoading} />
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <PeriodFilter
-            period={period}
-            onPeriodChange={setPeriod}
-            startDate={startDate}
-            endDate={endDate}
-            onDateRangeChange={(start, end) => {
-              setStartDate(start);
-              setEndDate(end);
-            }}
-            customMonth={customMonth}
-            onCustomMonthChange={setCustomMonth}
-          />
-        </CardContent>
-      </Card>
-
-      {/* NPS Geral */}
-      {data.length > 0 && (
-        <Card className="bg-gradient-to-br from-primary/5 to-primary/10">
-          <CardHeader>
-            <CardTitle className="text-2xl">NPS Médio Geral</CardTitle>
-            <CardDescription>Resultado consolidado de todos os médicos</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <p className="text-4xl font-bold text-primary">{npsGeral.nps.toFixed(1)}</p>
-                <p className="text-sm text-muted-foreground mt-1">NPS Score</p>
-              </div>
-              <div className="text-center">
-                <p className="text-4xl font-bold text-primary">{npsGeral.notaMedia.toFixed(2)}</p>
-                <p className="text-sm text-muted-foreground mt-1">Nota Média</p>
-              </div>
-              <div className="text-center">
-                <p className="text-4xl font-bold text-primary">{npsGeral.totalRespostas}</p>
-                <p className="text-sm text-muted-foreground mt-1">Total de Respostas</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Curva evolutiva para períodos longos ou Tabs para períodos curtos */}
-      {isLongPeriod ? (
+    <MainLayout>
+      <div className="space-y-8">
+        {/* Filters */}
         <Card>
           <CardHeader>
-            <CardTitle>Evolução do NPS ao Longo do Tempo</CardTitle>
-            <CardDescription>
-              Acompanhe a evolução mensal do seu NPS
+            <CardTitle>Filtros</CardTitle>
+            <CardDescription className="flex items-center justify-between">
+              <span>Selecione o período para análise</span>
+              <DataPeriodInfo minDate={minDate} maxDate={maxDate} loading={periodLoading} />
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {evolutionData.length > 0 ? (
-              <NPSEvolutionChart data={evolutionData} />
-            ) : (
-              <p className="text-center text-muted-foreground py-8">
-                Nenhum dado encontrado para o período selecionado.
-              </p>
-            )}
+            <PeriodFilter
+              period={period}
+              onPeriodChange={setPeriod}
+              startDate={startDate}
+              endDate={endDate}
+              onDateRangeChange={(start, end) => {
+                setStartDate(start);
+                setEndDate(end);
+              }}
+              customMonth={customMonth}
+              onCustomMonthChange={setCustomMonth}
+            />
           </CardContent>
         </Card>
-      ) : (
-        <>
-          {data.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>NPS por Convênio</CardTitle>
-                <CardDescription>
-                  Visualização do NPS estratificado por convênio
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <NPSConvenioChart data={convenioData} />
-              </CardContent>
-            </Card>
-          )}
 
-          <div>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">
-              Detalhamento por Convênio ({convenioData.length})
-            </h2>
-            {convenioData.length === 0 ? (
-              <Card>
-                <CardContent className="py-8 text-center text-muted-foreground">
+        {/* NPS Geral */}
+        {data.length > 0 && (
+          <Card className="bg-gradient-to-br from-primary/5 to-primary/10">
+            <CardHeader>
+              <CardTitle className="text-2xl">NPS Médio Geral</CardTitle>
+              <CardDescription>Resultado consolidado de todos os médicos</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center">
+                  <p className="text-4xl font-bold text-primary">{npsGeral.nps.toFixed(1)}</p>
+                  <p className="text-sm text-muted-foreground mt-1">NPS Score</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-4xl font-bold text-primary">{npsGeral.notaMedia.toFixed(2)}</p>
+                  <p className="text-sm text-muted-foreground mt-1">Nota Média</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-4xl font-bold text-primary">{npsGeral.totalRespostas}</p>
+                  <p className="text-sm text-muted-foreground mt-1">Total de Respostas</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Curva evolutiva para períodos longos ou Tabs para períodos curtos */}
+        {isLongPeriod ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Evolução do NPS ao Longo do Tempo</CardTitle>
+              <CardDescription>
+                Acompanhe a evolução mensal do seu NPS
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {evolutionData.length > 0 ? (
+                <NPSEvolutionChart data={evolutionData} />
+              ) : (
+                <p className="text-center text-muted-foreground py-8">
                   Nenhum dado encontrado para o período selecionado.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {data.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>NPS por Convênio</CardTitle>
+                  <CardDescription>
+                    Visualização do NPS estratificado por convênio
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <NPSConvenioChart data={convenioData} />
                 </CardContent>
               </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {convenioData.map((convenio) => (
-                  <NPSConvenioCard key={convenio.convenio} data={convenio} />
-                ))}
-              </div>
             )}
-          </div>
-        </>
-      )}
-    </div>
+
+            <div>
+              <h2 className="text-2xl font-semibold mb-4 text-foreground">
+                Detalhamento por Convênio ({convenioData.length})
+              </h2>
+              {convenioData.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    Nenhum dado encontrado para o período selecionado.
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {convenioData.map((convenio) => (
+                    <NPSConvenioCard key={convenio.convenio} data={convenio} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </MainLayout>
   );
 }

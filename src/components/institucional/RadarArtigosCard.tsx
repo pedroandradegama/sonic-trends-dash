@@ -13,7 +13,8 @@ import {
   Calendar,
   Tag,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Copy
 } from 'lucide-react';
 import { 
   useUltrasoundArticles, 
@@ -54,29 +55,20 @@ function getSubgroupLabel(subgroup: string): string {
 }
 
 function ArticleItem({ article, onTrackClick }: { article: UltrasoundArticle; onTrackClick: (id: string) => void }) {
-  const handleClick = (e: React.MouseEvent) => {
+  const { toast } = useToast();
+
+  const handleCopyLink = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    onTrackClick(article.id);
-    // Use window.open with noopener for security
-    const newWindow = window.open(article.url, '_blank', 'noopener,noreferrer');
-    if (!newWindow) {
-      // Fallback: create and click a link if popup was blocked
-      const link = document.createElement('a');
-      link.href = article.url;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+    navigator.clipboard.writeText(article.url);
+    toast({
+      title: 'Link copiado',
+      description: 'O link foi copiado para a área de transferência.',
+    });
   };
 
   return (
-    <div 
-      className="group p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
-      onClick={handleClick}
-    >
+    <div className="group p-4 border rounded-lg hover:bg-accent/50 transition-colors">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -93,9 +85,15 @@ function ArticleItem({ article, onTrackClick }: { article: UltrasoundArticle; on
             </Badge>
           </div>
           
-          <h4 className="font-medium text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2">
+          <a 
+            href={article.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => onTrackClick(article.id)}
+            className="font-medium text-sm leading-snug hover:text-primary hover:underline transition-colors line-clamp-2 block"
+          >
             {article.title}
-          </h4>
+          </a>
           
           <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
@@ -125,7 +123,25 @@ function ArticleItem({ article, onTrackClick }: { article: UltrasoundArticle; on
           )}
         </div>
         
-        <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0 mt-1" />
+        <div className="flex flex-col gap-1">
+          <a
+            href={article.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => onTrackClick(article.id)}
+            className="p-2 rounded hover:bg-primary/10 transition-colors"
+            title="Abrir artigo"
+          >
+            <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          </a>
+          <button
+            onClick={handleCopyLink}
+            className="p-2 rounded hover:bg-primary/10 transition-colors"
+            title="Copiar link"
+          >
+            <Copy className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+          </button>
+        </div>
       </div>
     </div>
   );
