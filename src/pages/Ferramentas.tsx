@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { Baby, ArrowRight } from 'lucide-react';
+import { Baby, Stethoscope, ArrowRight } from 'lucide-react';
 
 const tools = [
   {
@@ -13,6 +13,14 @@ const tools = [
     description: 'Normalidade por idade (P5–P95) para fígado, baço e rins. Konuş et al., AJR 1998.',
     icon: Baby,
     path: '/ferramentas/percentis-us',
+    badge: null,
+  },
+  {
+    id: 'ti-rads',
+    title: 'US — Calculadora ACR TI-RADS (2017)',
+    description: 'Pontuação e categoria TI-RADS (TR1–TR5) com recomendação de conduta por tamanho (FNA / follow-up).',
+    icon: Stethoscope,
+    path: '/ferramentas/ti-rads',
     badge: 'Novo',
   },
 ];

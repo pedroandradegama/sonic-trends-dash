@@ -1,5 +1,6 @@
 import { 
-  Home, 
+  LayoutDashboard,
+  DollarSign, 
   Building2, 
   Sparkles, 
   BarChart3, 
@@ -14,10 +15,11 @@ import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
 const navItems = [
+  { path: '/home', label: 'Home', icon: LayoutDashboard },
   { path: '/perfil', label: 'Perfil', icon: User },
   { path: '/institucional', label: 'Institucional', icon: Building2 },
   { path: '/magia', label: 'MagIA', icon: Sparkles },
-  { path: '/', label: 'Repasse', icon: Home },
+  { path: '/', label: 'Repasse', icon: DollarSign },
   { path: '/casuistica', label: 'Casuística', icon: BarChart3 },
   { path: '/nps', label: 'NPS', icon: ThumbsUp },
   { path: '/ferramentas', label: 'Ferramentas', icon: Wrench },

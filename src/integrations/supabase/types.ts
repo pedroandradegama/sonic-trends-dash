@@ -535,6 +535,63 @@ export type Database = {
         }
         Relationships: []
       }
+      tirads_rules: {
+        Row: {
+          category_group: string
+          created_at: string | null
+          id: string
+          option_key: string
+          option_label: string
+          points: number
+        }
+        Insert: {
+          category_group: string
+          created_at?: string | null
+          id?: string
+          option_key: string
+          option_label: string
+          points: number
+        }
+        Update: {
+          category_group?: string
+          created_at?: string | null
+          id?: string
+          option_key?: string
+          option_label?: string
+          points?: number
+        }
+        Relationships: []
+      }
+      tirads_thresholds: {
+        Row: {
+          created_at: string | null
+          fna_min_cm: number | null
+          follow_up_min_cm: number | null
+          follow_up_schedule: string | null
+          id: string
+          note: string | null
+          tr_level: string
+        }
+        Insert: {
+          created_at?: string | null
+          fna_min_cm?: number | null
+          follow_up_min_cm?: number | null
+          follow_up_schedule?: string | null
+          id?: string
+          note?: string | null
+          tr_level: string
+        }
+        Update: {
+          created_at?: string | null
+          fna_min_cm?: number | null
+          follow_up_min_cm?: number | null
+          follow_up_schedule?: string | null
+          id?: string
+          note?: string | null
+          tr_level?: string
+        }
+        Relationships: []
+      }
       tool_usage_log: {
         Row: {
           created_at: string | null

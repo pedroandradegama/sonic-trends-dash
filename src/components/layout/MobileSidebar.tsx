@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { 
-  Home, 
+  LayoutDashboard,
+  DollarSign, 
   Building2, 
   Sparkles, 
   BarChart3, 
@@ -19,10 +20,11 @@ import imagLogoNew from '@/assets/imag-logo-new.png';
 import { useUserProfile } from '@/hooks/useUserProfile';
 
 const navItems = [
+  { path: '/home', label: 'Home', icon: LayoutDashboard },
   { path: '/perfil', label: 'Perfil', icon: User },
   { path: '/institucional', label: 'Institucional', icon: Building2 },
   { path: '/magia', label: 'MagIA', icon: Sparkles },
-  { path: '/', label: 'Repasse', icon: Home },
+  { path: '/', label: 'Repasse', icon: DollarSign },
   { path: '/casuistica', label: 'Casuística', icon: BarChart3 },
   { path: '/nps', label: 'NPS', icon: ThumbsUp },
   { path: '/ferramentas', label: 'Ferramentas', icon: Wrench },
