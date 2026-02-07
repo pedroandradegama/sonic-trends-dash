@@ -3,10 +3,8 @@ import RadioburgerCard from "./RadioburgerCard";
 import AgendaCard from "./AgendaCard";
 import RadarArtigosCard from "./RadarArtigosCard";
 import FeriadosCard from "./FeriadosCard";
-import ReminderCard from "./ReminderCard";
 
 const InstitucionalPanel = () => {
-  // Data do próximo Radioburger - pode ser atualizada conforme necessário
   const nextRadioburgerDate = "2026-02-20";
 
   return (
@@ -26,9 +24,6 @@ const InstitucionalPanel = () => {
         <FeriadosCard />
         <RadioburgerCard nextDate={nextRadioburgerDate} />
       </div>
-
-      {/* Lembrete de Acesso */}
-      <ReminderCard />
     </div>
   );
 };

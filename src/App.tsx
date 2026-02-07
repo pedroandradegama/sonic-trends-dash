@@ -13,6 +13,7 @@ import Casuistica from "./pages/Casuistica";
 import NPS from "./pages/NPS";
 import Institucional from "./pages/Institucional";
 import Magia from "./pages/Magia";
+import Perfil from "./pages/Perfil";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,11 @@ const App = () => (
             <Route path="/magia" element={
               <ProtectedRoute>
                 <Magia />
+              </ProtectedRoute>
+            } />
+            <Route path="/perfil" element={
+              <ProtectedRoute>
+                <Perfil />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
