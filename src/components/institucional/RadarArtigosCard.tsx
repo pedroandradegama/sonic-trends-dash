@@ -67,6 +67,30 @@ function ArticleItem({ article, onTrackClick }: { article: UltrasoundArticle; on
     });
   };
 
+  const handleOpenArticle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Track click asynchronously - don't block navigation
+    try {
+      onTrackClick(article.id);
+    } catch {
+      // Ignore tracking errors
+    }
+
+    // Open link using multiple fallback methods
+    try {
+      const newWindow = window.open(article.url, '_blank', 'noopener,noreferrer');
+      if (!newWindow || newWindow.closed) {
+        // Fallback: navigate the current window
+        window.location.href = article.url;
+      }
+    } catch {
+      // Last resort: direct navigation
+      window.location.href = article.url;
+    }
+  };
+
   return (
     <div className="group p-4 border rounded-lg hover:bg-accent/50 transition-colors">
       <div className="flex items-start justify-between gap-3">
@@ -76,7 +100,7 @@ function ArticleItem({ article, onTrackClick }: { article: UltrasoundArticle; on
               <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 flex-shrink-0" />
             )}
             {isNew(article.publication_date) && (
-              <Badge variant="default" className="bg-green-500 text-white text-xs">
+              <Badge variant="default" className="bg-success text-success-foreground text-xs">
                 Novo
               </Badge>
             )}
@@ -85,15 +109,12 @@ function ArticleItem({ article, onTrackClick }: { article: UltrasoundArticle; on
             </Badge>
           </div>
           
-          <a 
-            href={article.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => onTrackClick(article.id)}
-            className="font-medium text-sm leading-snug hover:text-primary hover:underline transition-colors line-clamp-2 block"
+          <button
+            onClick={handleOpenArticle}
+            className="font-medium text-sm leading-snug hover:text-primary hover:underline transition-colors line-clamp-2 block text-left"
           >
             {article.title}
-          </a>
+          </button>
           
           <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
@@ -124,16 +145,13 @@ function ArticleItem({ article, onTrackClick }: { article: UltrasoundArticle; on
         </div>
         
         <div className="flex flex-col gap-1">
-          <a
-            href={article.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => onTrackClick(article.id)}
+          <button
+            onClick={handleOpenArticle}
             className="p-2 rounded hover:bg-primary/10 transition-colors"
             title="Abrir artigo"
           >
             <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-          </a>
+          </button>
           <button
             onClick={handleCopyLink}
             className="p-2 rounded hover:bg-primary/10 transition-colors"
@@ -167,7 +185,6 @@ export default function RadarArtigosCard() {
   const { data: tags } = useArticleTags();
   const trackClick = useTrackArticleClick();
 
-  // Fetch articles from PubMed
   const handleFetchPubmed = async () => {
     setIsLoadingPubmed(true);
     try {

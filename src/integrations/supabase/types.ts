@@ -166,6 +166,51 @@ export type Database = {
         }
         Relationships: []
       }
+      doctor_preferences: {
+        Row: {
+          ambient_music: boolean
+          coffee: boolean
+          created_at: string
+          id: string
+          music_genre: string | null
+          overbooking_enabled: boolean
+          overbooking_percentage: number | null
+          overbooking_time_slot: string | null
+          scheduling_profile: string
+          tea: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ambient_music?: boolean
+          coffee?: boolean
+          created_at?: string
+          id?: string
+          music_genre?: string | null
+          overbooking_enabled?: boolean
+          overbooking_percentage?: number | null
+          overbooking_time_slot?: string | null
+          scheduling_profile?: string
+          tea?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ambient_music?: boolean
+          coffee?: boolean
+          created_at?: string
+          id?: string
+          music_genre?: string | null
+          overbooking_enabled?: boolean
+          overbooking_percentage?: number | null
+          overbooking_time_slot?: string | null
+          scheduling_profile?: string
+          tea?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       Exames: {
         Row: {
           Atendimento: number | null
