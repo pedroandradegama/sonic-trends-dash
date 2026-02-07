@@ -388,6 +388,60 @@ export type Database = {
         }
         Relationships: []
       }
+      peds_us_organ_norms: {
+        Row: {
+          age_max_mo: number
+          age_min_mo: number
+          created_at: string | null
+          id: string
+          low_suggested_mm: number
+          max_mm: number | null
+          mean_mm: number | null
+          min_mm: number | null
+          organ_key: string
+          p5_mm: number
+          p95_mm: number
+          sd_mm: number | null
+          source: string
+          table_ref: string
+          up_suggested_mm: number
+        }
+        Insert: {
+          age_max_mo: number
+          age_min_mo: number
+          created_at?: string | null
+          id?: string
+          low_suggested_mm: number
+          max_mm?: number | null
+          mean_mm?: number | null
+          min_mm?: number | null
+          organ_key: string
+          p5_mm: number
+          p95_mm: number
+          sd_mm?: number | null
+          source: string
+          table_ref: string
+          up_suggested_mm: number
+        }
+        Update: {
+          age_max_mo?: number
+          age_min_mo?: number
+          created_at?: string | null
+          id?: string
+          low_suggested_mm?: number
+          max_mm?: number | null
+          mean_mm?: number | null
+          min_mm?: number | null
+          organ_key?: string
+          p5_mm?: number
+          p95_mm?: number
+          sd_mm?: number | null
+          source?: string
+          table_ref?: string
+          up_suggested_mm?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -478,6 +532,30 @@ export type Database = {
           Produto?: string | null
           Qtde?: string | null
           "Vl. Repasse"?: string | null
+        }
+        Relationships: []
+      }
+      tool_usage_log: {
+        Row: {
+          created_at: string | null
+          id: string
+          payload: Json | null
+          tool_key: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          payload?: Json | null
+          tool_key: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          payload?: Json | null
+          tool_key?: string
+          user_id?: string
         }
         Relationships: []
       }

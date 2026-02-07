@@ -6,19 +6,21 @@ import {
   ThumbsUp,
   User,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Wrench
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
 const navItems = [
+  { path: '/perfil', label: 'Perfil', icon: User },
   { path: '/institucional', label: 'Institucional', icon: Building2 },
   { path: '/magia', label: 'MagIA', icon: Sparkles },
   { path: '/', label: 'Repasse', icon: Home },
   { path: '/casuistica', label: 'Casuística', icon: BarChart3 },
   { path: '/nps', label: 'NPS', icon: ThumbsUp },
-  { path: '/perfil', label: 'Perfil', icon: User },
+  { path: '/ferramentas', label: 'Ferramentas', icon: Wrench },
 ];
 
 export function AppSidebar() {
@@ -30,7 +32,7 @@ export function AppSidebar() {
       className={cn(
         "fixed left-0 top-14 z-40 h-[calc(100vh-3.5rem)] transition-all duration-300 flex flex-col",
         "bg-card border-r border-border",
-        collapsed ? "w-16" : "w-56"
+        collapsed ? "w-16" : "w-64"
       )}
     >
       {/* Navigation */}

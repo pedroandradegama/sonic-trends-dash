@@ -24,8 +24,8 @@ export function MainLayout({ children }: MainLayoutProps) {
         <>
           <TopHeader />
           <AppSidebar />
-          <main className="transition-all duration-300 min-h-screen pt-14 ml-56 p-6">
-            <div className="max-w-7xl mx-auto">
+          <main className="transition-all duration-300 min-h-screen pt-14 ml-64 p-4">
+            <div className="mx-auto">
               {children}
             </div>
           </main>
