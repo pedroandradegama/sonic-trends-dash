@@ -7,7 +7,8 @@ import {
   ThumbsUp,
   User,
   LogOut,
-  Menu
+  Menu,
+  Wrench
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -18,12 +19,13 @@ import imagLogoNew from '@/assets/imag-logo-new.png';
 import { useUserProfile } from '@/hooks/useUserProfile';
 
 const navItems = [
+  { path: '/perfil', label: 'Perfil', icon: User },
   { path: '/institucional', label: 'Institucional', icon: Building2 },
   { path: '/magia', label: 'MagIA', icon: Sparkles },
   { path: '/', label: 'Repasse', icon: Home },
   { path: '/casuistica', label: 'Casuística', icon: BarChart3 },
   { path: '/nps', label: 'NPS', icon: ThumbsUp },
-  { path: '/perfil', label: 'Perfil', icon: User },
+  { path: '/ferramentas', label: 'Ferramentas', icon: Wrench },
 ];
 
 export function MobileSidebar() {
