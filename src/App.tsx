@@ -16,6 +16,8 @@ import Magia from "./pages/Magia";
 import Perfil from "./pages/Perfil";
 import Ferramentas from "./pages/Ferramentas";
 import PercentisUS from "./pages/PercentisUS";
+import TiRads from "./pages/TiRads";
+import Home from "./pages/Home";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +33,11 @@ const App = () => (
             <Route path="/admin" element={
               <ProtectedRoute>
                 <Admin />
+              </ProtectedRoute>
+            } />
+            <Route path="/home" element={
+              <ProtectedRoute>
+                <Home />
               </ProtectedRoute>
             } />
             <Route path="/" element={
@@ -71,6 +78,11 @@ const App = () => (
             <Route path="/ferramentas/percentis-us" element={
               <ProtectedRoute>
                 <PercentisUS />
+              </ProtectedRoute>
+            } />
+            <Route path="/ferramentas/ti-rads" element={
+              <ProtectedRoute>
+                <TiRads />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
