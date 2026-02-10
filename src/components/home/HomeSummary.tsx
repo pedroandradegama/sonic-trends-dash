@@ -8,6 +8,7 @@ import { useDoctorPreferences } from '@/hooks/useDoctorPreferences';
 import { useIntegratedDashboard } from '@/hooks/useIntegratedDashboard';
 import { useCasuisticaData } from '@/hooks/useCasuisticaData';
 import { useNPSData } from '@/hooks/useNPSData';
+import { useInterestingCases } from '@/hooks/useInterestingCases';
 import {
   User,
   DollarSign,
@@ -17,7 +18,9 @@ import {
   ArrowRight,
   Baby,
   Stethoscope,
+  BookOpen,
   ChevronRight,
+  Bookmark,
 } from 'lucide-react';
 
 const SCHEDULING_LABELS: Record<string, string> = {
@@ -32,6 +35,7 @@ export function HomeSummary() {
   const { kpis, loading: dashLoading, examDistribution } = useIntegratedDashboard();
   const { data: casuisticaData, loading: casLoading } = useCasuisticaData();
   const { data: npsData, loading: npsLoading } = useNPSData();
+  const { cases: interestingCases, loading: casesLoading } = useInterestingCases();
 
   // Perfil summary
   const perfilSummary = useMemo(() => {
@@ -95,9 +99,10 @@ export function HomeSummary() {
   const tools = [
     { label: 'US Pediátrico — Percentis', icon: Baby, path: '/ferramentas/percentis-us' },
     { label: 'ACR TI-RADS (2017)', icon: Stethoscope, path: '/ferramentas/ti-rads' },
+    { label: 'Medidas Adulto', icon: BookOpen, path: '/ferramentas/medidas-adulto' },
   ];
 
-  const isLoading = dashLoading || casLoading || npsLoading;
+  const isLoading = dashLoading || casLoading || npsLoading || casesLoading;
 
   return (
     <div className="space-y-6">
@@ -203,6 +208,14 @@ export function HomeSummary() {
                   <div className="text-xs text-muted-foreground">
                     {casuisticaSummary.totalDiagnosticos} diagnósticos únicos
                   </div>
+                  {interestingCases.length > 0 && (
+                    <div className="flex items-center gap-1.5 pt-1">
+                      <Badge variant="secondary" className="text-xs gap-1">
+                        <Bookmark className="h-3 w-3" />
+                        {interestingCases.length} caso{interestingCases.length !== 1 ? 's' : ''} interessante{interestingCases.length !== 1 ? 's' : ''}
+                      </Badge>
+                    </div>
+                  )}
                 </>
               ) : (
                 <p className="text-sm text-muted-foreground">Sem dados de casuística.</p>

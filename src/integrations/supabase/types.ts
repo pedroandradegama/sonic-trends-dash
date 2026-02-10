@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      adult_reference_favorites: {
+        Row: {
+          created_at: string
+          id: string
+          measurement_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          measurement_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          measurement_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adult_reference_favorites_measurement_id_fkey"
+            columns: ["measurement_id"]
+            isOneToOne: false
+            referencedRelation: "adult_reference_measurements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      adult_reference_measurements: {
+        Row: {
+          category: string
+          created_at: string
+          cutoff_text: string | null
+          id: string
+          modality: string
+          normal_text: string
+          notes: string | null
+          parameter: string
+          source_title: string
+          source_url: string
+          structure: string
+          unit: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          cutoff_text?: string | null
+          id?: string
+          modality: string
+          normal_text: string
+          notes?: string | null
+          parameter: string
+          source_title: string
+          source_url: string
+          structure: string
+          unit?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          cutoff_text?: string | null
+          id?: string
+          modality?: string
+          normal_text?: string
+          notes?: string | null
+          parameter?: string
+          source_title?: string
+          source_url?: string
+          structure?: string
+          unit?: string | null
+        }
+        Relationships: []
+      }
       agenda_comunicacoes: {
         Row: {
           comentarios: string | null
@@ -265,6 +339,42 @@ export type Database = {
           Prontuário?: number | null
           SLA?: string | null
           Status?: string | null
+        }
+        Relationships: []
+      }
+      interesting_cases: {
+        Row: {
+          created_at: string
+          diagnostic_hypothesis: string | null
+          exam_date: string
+          followup_days: number | null
+          id: string
+          patient_name: string
+          updated_at: string
+          user_id: string
+          wants_followup: boolean
+        }
+        Insert: {
+          created_at?: string
+          diagnostic_hypothesis?: string | null
+          exam_date: string
+          followup_days?: number | null
+          id?: string
+          patient_name: string
+          updated_at?: string
+          user_id: string
+          wants_followup?: boolean
+        }
+        Update: {
+          created_at?: string
+          diagnostic_hypothesis?: string | null
+          exam_date?: string
+          followup_days?: number | null
+          id?: string
+          patient_name?: string
+          updated_at?: string
+          user_id?: string
+          wants_followup?: boolean
         }
         Relationships: []
       }
