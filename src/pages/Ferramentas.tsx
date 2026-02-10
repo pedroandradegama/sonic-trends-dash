@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { Baby, Stethoscope, ArrowRight } from 'lucide-react';
+import { Baby, Stethoscope, BookOpen, ArrowRight } from 'lucide-react';
 
 const tools = [
   {
@@ -21,6 +21,14 @@ const tools = [
     description: 'Pontuação e categoria TI-RADS (TR1–TR5) com recomendação de conduta por tamanho (FNA / follow-up).',
     icon: Stethoscope,
     path: '/ferramentas/ti-rads',
+    badge: null,
+  },
+  {
+    id: 'medidas-adulto',
+    title: 'Compêndio — Medidas de Referência (Adulto)',
+    description: 'Valores usuais e pontos de corte em exames de adultos (US/geral), com calculadoras de resíduo pós-miccional e fração de ejeção da vesícula biliar.',
+    icon: BookOpen,
+    path: '/ferramentas/medidas-adulto',
     badge: 'Novo',
   },
 ];

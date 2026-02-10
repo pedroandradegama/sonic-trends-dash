@@ -13,6 +13,7 @@ import { BIRADSConvergenceAnalysis } from '@/components/casuistica/BIRADSConverg
 import { DiagnosticosPanel } from '@/components/casuistica/DiagnosticosPanel';
 import { CorrelacaoAxialPanel } from '@/components/casuistica/CorrelacaoAxialPanel';
 import { SubspecialtyIcon } from '@/components/casuistica/SubspecialtyIcon';
+import { InterestingCasesPanel } from '@/components/casuistica/InterestingCasesPanel';
 import { DataPeriodInfo } from '@/components/filters/DataPeriodInfo';
 import { PeriodFilter } from '@/components/filters/PeriodFilter';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -448,10 +449,11 @@ export default function Casuistica() {
 
           {/* Tabs principais */}
           <Tabs defaultValue="casuistica" className="w-full">
-            <TabsList className="grid w-full max-w-2xl grid-cols-2 md:grid-cols-4 h-auto">
+            <TabsList className="grid w-full max-w-3xl grid-cols-2 md:grid-cols-4 h-auto">
               <TabsTrigger value="casuistica" className="text-xs md:text-sm py-2">Casuística Geral</TabsTrigger>
               <TabsTrigger value="correlacao" className="text-xs md:text-sm py-2">Correlação Axial</TabsTrigger>
               <TabsTrigger value="diagnosticos" className="text-xs md:text-sm py-2">Correlação Anatomopatológica</TabsTrigger>
+              <TabsTrigger value="interessantes" className="text-xs md:text-sm py-2">Casos Interessantes</TabsTrigger>
             </TabsList>
 
           {/* Tab Casuística */}
@@ -844,6 +846,11 @@ export default function Casuistica() {
                 />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Tab Casos Interessantes */}
+          <TabsContent value="interessantes" className="space-y-6">
+            <InterestingCasesPanel />
           </TabsContent>
         </Tabs>
         </div>

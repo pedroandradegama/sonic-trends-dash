@@ -18,6 +18,7 @@ import Ferramentas from "./pages/Ferramentas";
 import PercentisUS from "./pages/PercentisUS";
 import TiRads from "./pages/TiRads";
 import Home from "./pages/Home";
+import MedidasAdulto from "./pages/MedidasAdulto";
 
 const queryClient = new QueryClient();
 
@@ -83,6 +84,11 @@ const App = () => (
             <Route path="/ferramentas/ti-rads" element={
               <ProtectedRoute>
                 <TiRads />
+              </ProtectedRoute>
+            } />
+            <Route path="/ferramentas/medidas-adulto" element={
+              <ProtectedRoute>
+                <MedidasAdulto />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
