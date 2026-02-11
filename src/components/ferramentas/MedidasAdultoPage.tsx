@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CompendioTab } from './medidas-adulto/CompendioTab';
 import { PVRTab } from './medidas-adulto/PVRTab';
-import { FEVBTab } from './medidas-adulto/FEVBTab';
 
 export function MedidasAdultoPage() {
   return (
@@ -15,15 +13,13 @@ export function MedidasAdultoPage() {
       </div>
 
       <Tabs defaultValue="compendio" className="w-full">
-        <TabsList className="grid w-full max-w-lg grid-cols-3 h-auto">
+        <TabsList className="grid w-full max-w-lg grid-cols-2 h-auto">
           <TabsTrigger value="compendio" className="text-xs md:text-sm py-2">Compêndio</TabsTrigger>
           <TabsTrigger value="pvr" className="text-xs md:text-sm py-2">Pós-miccional (PVR)</TabsTrigger>
-          <TabsTrigger value="fevb" className="text-xs md:text-sm py-2">Vesícula — FEVB</TabsTrigger>
         </TabsList>
 
         <TabsContent value="compendio"><CompendioTab /></TabsContent>
         <TabsContent value="pvr"><PVRTab /></TabsContent>
-        <TabsContent value="fevb"><FEVBTab /></TabsContent>
       </Tabs>
 
       <p className="text-xs text-muted-foreground text-center border-t pt-4">

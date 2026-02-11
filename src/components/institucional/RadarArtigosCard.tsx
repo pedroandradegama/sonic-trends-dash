@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,28 +67,8 @@ function ArticleItem({ article, onTrackClick }: { article: UltrasoundArticle; on
     });
   };
 
-  const handleOpenArticle = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Track click asynchronously - don't block navigation
-    try {
-      onTrackClick(article.id);
-    } catch {
-      // Ignore tracking errors
-    }
-
-    // Open link using multiple fallback methods
-    try {
-      const newWindow = window.open(article.url, '_blank', 'noopener,noreferrer');
-      if (!newWindow || newWindow.closed) {
-        // Fallback: navigate the current window
-        window.location.href = article.url;
-      }
-    } catch {
-      // Last resort: direct navigation
-      window.location.href = article.url;
-    }
+  const handleTrack = () => {
+    try { onTrackClick(article.id); } catch { /* ignore */ }
   };
 
   return (
@@ -109,12 +89,15 @@ function ArticleItem({ article, onTrackClick }: { article: UltrasoundArticle; on
             </Badge>
           </div>
           
-          <button
-            onClick={handleOpenArticle}
+          <a
+            href={article.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleTrack}
             className="font-medium text-sm leading-snug hover:text-primary hover:underline transition-colors line-clamp-2 block text-left"
           >
             {article.title}
-          </button>
+          </a>
           
           <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
@@ -129,7 +112,7 @@ function ArticleItem({ article, onTrackClick }: { article: UltrasoundArticle; on
             )}
           </div>
           
-          {article.tags.length > 0 && (
+          {article.tags && article.tags.length > 0 && (
             <div className="flex items-center gap-1 mt-2 flex-wrap">
               <Tag className="h-3 w-3 text-muted-foreground" />
               {article.tags.slice(0, 3).map(tag => (
@@ -145,13 +128,16 @@ function ArticleItem({ article, onTrackClick }: { article: UltrasoundArticle; on
         </div>
         
         <div className="flex flex-col gap-1">
-          <button
-            onClick={handleOpenArticle}
+          <a
+            href={article.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleTrack}
             className="p-2 rounded hover:bg-primary/10 transition-colors"
             title="Abrir artigo"
           >
             <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-          </button>
+          </a>
           <button
             onClick={handleCopyLink}
             className="p-2 rounded hover:bg-primary/10 transition-colors"
@@ -356,6 +342,11 @@ export default function RadarArtigosCard() {
           )}
         </div>
 
+        {/* Hot Topics */}
+        {articles && articles.length > 0 && (
+          <HotTopicsPanel articles={articles} />
+        )}
+
         {/* Footer */}
         {articles && articles.length > 0 && (
           <div className="text-xs text-muted-foreground text-center pt-2 border-t">
@@ -364,5 +355,53 @@ export default function RadarArtigosCard() {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function HotTopicsPanel({ articles }: { articles: UltrasoundArticle[] }) {
+  // Group latest 3 articles per subgroup
+  const hotTopics = useMemo(() => {
+    const bySubgroup = new Map<string, UltrasoundArticle[]>();
+    articles.forEach(a => {
+      const group = bySubgroup.get(a.subgroup) || [];
+      if (group.length < 3) group.push(a);
+      bySubgroup.set(a.subgroup, group);
+    });
+    // Only show subgroups with articles
+    return Array.from(bySubgroup.entries())
+      .filter(([, arts]) => arts.length > 0)
+      .sort((a, b) => a[0].localeCompare(b[0]));
+  }, [articles]);
+
+  if (hotTopics.length === 0) return null;
+
+  return (
+    <div className="border-t pt-4 space-y-3">
+      <h4 className="text-sm font-semibold flex items-center gap-2">
+        <Star className="h-4 w-4 text-primary" />
+        Hot Topics por Área
+      </h4>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {hotTopics.map(([subgroup, arts]) => (
+          <div key={subgroup} className="border rounded-lg p-3 space-y-2">
+            <Badge variant="outline" className="text-xs">{getSubgroupLabel(subgroup)}</Badge>
+            <ul className="space-y-1.5">
+              {arts.map(a => (
+                <li key={a.id}>
+                  <a
+                    href={a.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs hover:text-primary hover:underline transition-colors line-clamp-2"
+                  >
+                    {a.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
