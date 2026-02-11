@@ -307,24 +307,32 @@ ${result.disclaimer}
           )}
 
           {/* Generate Button */}
-          <Button
-            onClick={() => handleGenerate(false)}
-            disabled={isGenerateDisabled}
-            className="w-full"
-            size="lg"
-          >
-            {requestStatus === 'loading' ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Gerando hipóteses...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Gerar hipóteses diagnósticas
-              </>
+          <div className="space-y-2">
+            <Button
+              onClick={() => handleGenerate(false)}
+              disabled={isGenerateDisabled}
+              className="w-full"
+              size="lg"
+            >
+              {requestStatus === 'loading' ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Gerando hipóteses...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Gerar hipóteses diagnósticas
+                </>
+              )}
+            </Button>
+            {isGenerateDisabled && requestStatus !== 'loading' && (
+              <p className="text-xs text-muted-foreground text-center">
+                {!confirmedAnonymized && 'Marque a confirmação de anonimização. '}
+                {caseText.length < 20 && `Texto insuficiente (${caseText.length}/20 caracteres).`}
+              </p>
             )}
-          </Button>
+          </div>
         </CardContent>
       </Card>
 

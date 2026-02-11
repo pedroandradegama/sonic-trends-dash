@@ -21,6 +21,8 @@ import {
   BookOpen,
   ChevronRight,
   Bookmark,
+  FlaskConical,
+  Droplets,
 } from 'lucide-react';
 
 const SCHEDULING_LABELS: Record<string, string> = {
@@ -100,6 +102,8 @@ export function HomeSummary() {
     { label: 'US Pediátrico — Percentis', icon: Baby, path: '/ferramentas/percentis-us' },
     { label: 'ACR TI-RADS (2017)', icon: Stethoscope, path: '/ferramentas/ti-rads' },
     { label: 'Medidas Adulto', icon: BookOpen, path: '/ferramentas/medidas-adulto' },
+    { label: 'Prova Motora VB', icon: FlaskConical, path: '/ferramentas/prova-motora-vb' },
+    { label: 'Vol. Vesical Ped.', icon: Droplets, path: '/ferramentas/volume-vesical-ped' },
   ];
 
   const isLoading = dashLoading || casLoading || npsLoading || casesLoading;

@@ -19,6 +19,8 @@ import PercentisUS from "./pages/PercentisUS";
 import TiRads from "./pages/TiRads";
 import Home from "./pages/Home";
 import MedidasAdulto from "./pages/MedidasAdulto";
+import ProvaMotoraVB from "./pages/ProvaMotoraVB";
+import VolumeVesicalPed from "./pages/VolumeVesicalPed";
 
 const queryClient = new QueryClient();
 
@@ -89,6 +91,16 @@ const App = () => (
             <Route path="/ferramentas/medidas-adulto" element={
               <ProtectedRoute>
                 <MedidasAdulto />
+              </ProtectedRoute>
+            } />
+            <Route path="/ferramentas/prova-motora-vb" element={
+              <ProtectedRoute>
+                <ProvaMotoraVB />
+              </ProtectedRoute>
+            } />
+            <Route path="/ferramentas/volume-vesical-ped" element={
+              <ProtectedRoute>
+                <VolumeVesicalPed />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

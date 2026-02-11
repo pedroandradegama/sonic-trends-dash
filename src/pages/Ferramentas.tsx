@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { Baby, Stethoscope, BookOpen, ArrowRight } from 'lucide-react';
+import { Baby, Stethoscope, BookOpen, ArrowRight, FlaskConical, Droplets } from 'lucide-react';
 
 const tools = [
   {
@@ -26,9 +26,25 @@ const tools = [
   {
     id: 'medidas-adulto',
     title: 'Compêndio — Medidas de Referência (Adulto)',
-    description: 'Valores usuais e pontos de corte em exames de adultos (US/geral), com calculadoras de resíduo pós-miccional e fração de ejeção da vesícula biliar.',
+    description: 'Valores usuais e pontos de corte em exames de adultos (US/geral), com calculadora de resíduo pós-miccional.',
     icon: BookOpen,
     path: '/ferramentas/medidas-adulto',
+    badge: null,
+  },
+  {
+    id: 'prova-motora-vb',
+    title: 'Prova Motora da Vesícula Biliar',
+    description: 'Fração de ejeção vesicular com múltiplos pontos de medida (jejum, 15, 30, 60 min). Entrada por dimensões ou volume direto.',
+    icon: FlaskConical,
+    path: '/ferramentas/prova-motora-vb',
+    badge: 'Novo',
+  },
+  {
+    id: 'volume-vesical-ped',
+    title: 'Volume Vesical Esperado — Pediatria',
+    description: 'Capacidade vesical esperada por idade (Koff 1983 / Holmdahl 1996) com comparação ao volume medido.',
+    icon: Droplets,
+    path: '/ferramentas/volume-vesical-ped',
     badge: 'Novo',
   },
 ];
