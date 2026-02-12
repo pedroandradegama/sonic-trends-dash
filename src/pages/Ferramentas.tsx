@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { Baby, Stethoscope, BookOpen, ArrowRight, FlaskConical, Droplets } from 'lucide-react';
+import { Baby, Stethoscope, BookOpen, ArrowRight, FlaskConical, Droplets, Activity } from 'lucide-react';
 
 const tools = [
   {
@@ -37,7 +37,7 @@ const tools = [
     description: 'Fração de ejeção vesicular com múltiplos pontos de medida (jejum, 15, 30, 60 min). Entrada por dimensões ou volume direto.',
     icon: FlaskConical,
     path: '/ferramentas/prova-motora-vb',
-    badge: 'Novo',
+    badge: null,
   },
   {
     id: 'volume-vesical-ped',
@@ -45,6 +45,14 @@ const tools = [
     description: 'Capacidade vesical esperada por idade (Koff 1983 / Holmdahl 1996) com comparação ao volume medido.',
     icon: Droplets,
     path: '/ferramentas/volume-vesical-ped',
+    badge: null,
+  },
+  {
+    id: 'cimt-percentile',
+    title: 'Percentil do Complexo Médio-Intimal (CMI/IMT)',
+    description: 'Tabelas ELSA-Brasil, CAPS e MESA. Percentil por idade/sexo/etnia com alerta de placa (CMI > 1,5 mm). DIC/SBC 2019.',
+    icon: Activity,
+    path: '/ferramentas/cimt-percentile',
     badge: 'Novo',
   },
 ];
