@@ -240,6 +240,57 @@ export type Database = {
         }
         Relationships: []
       }
+      cimt_norms: {
+        Row: {
+          age_band_max: number | null
+          age_band_min: number | null
+          age_point: number | null
+          age_type: string
+          created_at: string
+          ethnicity: string
+          id: string
+          p25: number
+          p50: number
+          p75: number
+          p90: number | null
+          segment: string
+          sex: string
+          source: string
+        }
+        Insert: {
+          age_band_max?: number | null
+          age_band_min?: number | null
+          age_point?: number | null
+          age_type: string
+          created_at?: string
+          ethnicity: string
+          id?: string
+          p25: number
+          p50: number
+          p75: number
+          p90?: number | null
+          segment: string
+          sex: string
+          source: string
+        }
+        Update: {
+          age_band_max?: number | null
+          age_band_min?: number | null
+          age_point?: number | null
+          age_type?: string
+          created_at?: string
+          ethnicity?: string
+          id?: string
+          p25?: number
+          p50?: number
+          p75?: number
+          p90?: number | null
+          segment?: string
+          sex?: string
+          source?: string
+        }
+        Relationships: []
+      }
       doctor_preferences: {
         Row: {
           ambient_music: boolean

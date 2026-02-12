@@ -21,6 +21,7 @@ import Home from "./pages/Home";
 import MedidasAdulto from "./pages/MedidasAdulto";
 import ProvaMotoraVB from "./pages/ProvaMotoraVB";
 import VolumeVesicalPed from "./pages/VolumeVesicalPed";
+import CIMTPercentile from "./pages/CIMTPercentile";
 
 const queryClient = new QueryClient();
 
@@ -101,6 +102,11 @@ const App = () => (
             <Route path="/ferramentas/volume-vesical-ped" element={
               <ProtectedRoute>
                 <VolumeVesicalPed />
+              </ProtectedRoute>
+            } />
+            <Route path="/ferramentas/cimt-percentile" element={
+              <ProtectedRoute>
+                <CIMTPercentile />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
