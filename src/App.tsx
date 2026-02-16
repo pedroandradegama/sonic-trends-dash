@@ -22,6 +22,7 @@ import MedidasAdulto from "./pages/MedidasAdulto";
 import ProvaMotoraVB from "./pages/ProvaMotoraVB";
 import VolumeVesicalPed from "./pages/VolumeVesicalPed";
 import CIMTPercentile from "./pages/CIMTPercentile";
+import ORADSCalculator from "./pages/ORADSCalculator";
 
 const queryClient = new QueryClient();
 
@@ -107,6 +108,11 @@ const App = () => (
             <Route path="/ferramentas/cimt-percentile" element={
               <ProtectedRoute>
                 <CIMTPercentile />
+              </ProtectedRoute>
+            } />
+            <Route path="/ferramentas/orads-us" element={
+              <ProtectedRoute>
+                <ORADSCalculator />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

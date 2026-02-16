@@ -549,6 +549,54 @@ export type Database = {
         }
         Relationships: []
       }
+      orads_us_lesions: {
+        Row: {
+          created_at: string
+          id: string
+          menopausal_status: string
+          payload: Json
+          result: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          menopausal_status: string
+          payload?: Json
+          result?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          menopausal_status?: string
+          payload?: Json
+          result?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      orads_us_rules_version: {
+        Row: {
+          created_at: string
+          id: string
+          source_refs: Json
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          source_refs?: Json
+          version: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          source_refs?: Json
+          version?: string
+        }
+        Relationships: []
+      }
       peds_us_organ_norms: {
         Row: {
           age_max_mo: number
