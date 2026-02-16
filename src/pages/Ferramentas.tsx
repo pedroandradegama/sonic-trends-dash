@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { Baby, Stethoscope, BookOpen, ArrowRight, FlaskConical, Droplets, Activity } from 'lucide-react';
+import { Baby, Stethoscope, BookOpen, ArrowRight, FlaskConical, Droplets, Activity, CircleDot } from 'lucide-react';
 
 const tools = [
   {
@@ -53,6 +53,14 @@ const tools = [
     description: 'Tabelas ELSA-Brasil, CAPS e MESA. Percentil por idade/sexo/etnia com alerta de placa (CMI > 1,5 mm). DIC/SBC 2019.',
     icon: Activity,
     path: '/ferramentas/cimt-percentile',
+    badge: null,
+  },
+  {
+    id: 'orads-us',
+    title: 'US — Calculadora O-RADS (v2022)',
+    description: 'Classificação O-RADS 0–5 com recomendação de conduta baseada no algoritmo ACR (v2022).',
+    icon: CircleDot,
+    path: '/ferramentas/orads-us',
     badge: 'Novo',
   },
 ];
