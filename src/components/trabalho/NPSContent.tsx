@@ -1,0 +1,129 @@
+import { useState, useMemo } from 'react';
+import { useNPSByMedico } from '@/hooks/useNPSByMedico';
+import { useNPSByConvenio } from '@/hooks/useNPSByConvenio';
+import { useNPSEvolution } from '@/hooks/useNPSEvolution';
+import { useNPSPeriod } from '@/hooks/useDataPeriod';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { PeriodFilter, PeriodType } from '@/components/filters/PeriodFilter';
+import { DataPeriodInfo } from '@/components/filters/DataPeriodInfo';
+import { NPSChart } from '@/components/nps/NPSChart';
+import { NPSConvenioChart } from '@/components/nps/NPSConvenioChart';
+import { NPSConvenioCard } from '@/components/nps/NPSConvenioCard';
+import { NPSEvolutionChart } from '@/components/nps/NPSEvolutionChart';
+import { startOfDay, endOfDay, subDays, startOfMonth, startOfYear, parse, differenceInDays } from 'date-fns';
+import { Loader2 } from 'lucide-react';
+
+export function NPSContent() {
+  const { profile } = useUserProfile();
+  const { minDate, maxDate, loading: periodLoading } = useNPSPeriod();
+  const [period, setPeriod] = useState<PeriodType>('mtd');
+  const [startDate, setStartDate] = useState<Date>();
+  const [endDate, setEndDate] = useState<Date>();
+  const [customMonth, setCustomMonth] = useState<string>();
+
+  const dateRange = useMemo(() => {
+    const now = new Date();
+    switch (period) {
+      case 'today': return { start: startOfDay(now), end: endOfDay(now) };
+      case '7d': return { start: startOfDay(subDays(now, 7)), end: endOfDay(now) };
+      case 'mtd': return { start: startOfMonth(now), end: endOfDay(now) };
+      case 'ytd': return { start: startOfYear(now), end: endOfDay(now) };
+      case 'month':
+        if (customMonth) {
+          const monthDate = parse(customMonth, 'yyyy-MM', new Date());
+          return { start: startOfMonth(monthDate), end: endOfDay(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0)) };
+        }
+        return { start: startOfMonth(now), end: endOfDay(now) };
+      case 'custom':
+        return startDate && endDate ? { start: startDate, end: endDate } : undefined;
+      default: return undefined;
+    }
+  }, [period, startDate, endDate, customMonth]);
+
+  const effectiveMedicoNome = profile?.medico_nome;
+  const { data, loading, error } = useNPSByMedico(dateRange?.start, dateRange?.end, effectiveMedicoNome);
+  const { data: convenioData } = useNPSByConvenio(dateRange?.start, dateRange?.end, effectiveMedicoNome);
+  const { data: evolutionData } = useNPSEvolution(dateRange?.start, dateRange?.end, effectiveMedicoNome);
+
+  const isLongPeriod = useMemo(() => {
+    if (!dateRange?.start || !dateRange?.end) return false;
+    return differenceInDays(dateRange.end, dateRange.start) > 30;
+  }, [dateRange]);
+
+  const npsGeral = useMemo(() => {
+    if (data.length === 0) return { nps: 0, notaMedia: 0, totalRespostas: 0 };
+    const totalRespostas = data.reduce((sum, m) => sum + m.totalRespostas, 0);
+    const totalPromotores = data.reduce((sum, m) => sum + m.promotores, 0);
+    const totalDetratores = data.reduce((sum, m) => sum + m.detratores, 0);
+    const somaNotas = data.reduce((sum, m) => sum + (m.notaMedia * m.totalRespostas), 0);
+    const nps = ((totalPromotores - totalDetratores) / totalRespostas) * 100;
+    return { nps, notaMedia: somaNotas / totalRespostas, totalRespostas };
+  }, [data]);
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
+  if (error) {
+    return <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded">Erro: {error}</div>;
+  }
+
+  return (
+    <div className="space-y-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+          <CardDescription className="flex items-center justify-between">
+            <span>Selecione o período para análise</span>
+            <DataPeriodInfo minDate={minDate} maxDate={maxDate} loading={periodLoading} />
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PeriodFilter period={period} onPeriodChange={setPeriod} startDate={startDate} endDate={endDate} onDateRangeChange={(s, e) => { setStartDate(s); setEndDate(e); }} customMonth={customMonth} onCustomMonthChange={setCustomMonth} />
+        </CardContent>
+      </Card>
+
+      {data.length > 0 && (
+        <Card className="bg-gradient-to-br from-primary/5 to-primary/10">
+          <CardHeader><CardTitle className="text-2xl">NPS Médio Geral</CardTitle></CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center"><p className="text-4xl font-bold text-primary">{npsGeral.nps.toFixed(1)}</p><p className="text-sm text-muted-foreground mt-1">NPS Score</p></div>
+              <div className="text-center"><p className="text-4xl font-bold text-primary">{npsGeral.notaMedia.toFixed(2)}</p><p className="text-sm text-muted-foreground mt-1">Nota Média</p></div>
+              <div className="text-center"><p className="text-4xl font-bold text-primary">{npsGeral.totalRespostas}</p><p className="text-sm text-muted-foreground mt-1">Total de Respostas</p></div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {isLongPeriod ? (
+        <Card>
+          <CardHeader><CardTitle>Evolução do NPS ao Longo do Tempo</CardTitle></CardHeader>
+          <CardContent>
+            {evolutionData.length > 0 ? <NPSEvolutionChart data={evolutionData} /> : <p className="text-center text-muted-foreground py-8">Nenhum dado encontrado.</p>}
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {data.length > 0 && (
+            <Card>
+              <CardHeader><CardTitle>NPS por Convênio</CardTitle></CardHeader>
+              <CardContent><NPSConvenioChart data={convenioData} /></CardContent>
+            </Card>
+          )}
+          <div>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Detalhamento por Convênio ({convenioData.length})</h2>
+            {convenioData.length === 0 ? (
+              <Card><CardContent className="py-8 text-center text-muted-foreground">Nenhum dado encontrado.</CardContent></Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {convenioData.map(c => <NPSConvenioCard key={c.convenio} data={c} />)}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

@@ -1,15 +1,12 @@
 import { useState } from 'react';
 import { 
   LayoutDashboard,
-  DollarSign, 
-  Building2, 
-  Sparkles, 
-  BarChart3, 
-  ThumbsUp,
-  User,
+  CalendarDays, 
+  Briefcase, 
+  Wrench, 
+  Users,
   LogOut,
   Menu,
-  Wrench
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -21,13 +18,10 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 
 const navItems = [
   { path: '/home', label: 'Home', icon: LayoutDashboard },
-  { path: '/perfil', label: 'Perfil', icon: User },
-  { path: '/institucional', label: 'Institucional', icon: Building2 },
-  { path: '/magia', label: 'MagIA', icon: Sparkles },
-  { path: '/', label: 'Repasse', icon: DollarSign },
-  { path: '/casuistica', label: 'Casuística', icon: BarChart3 },
-  { path: '/nps', label: 'NPS', icon: ThumbsUp },
-  { path: '/ferramentas', label: 'Ferramentas', icon: Wrench },
+  { path: '/minha-agenda', label: 'Minha Agenda', icon: CalendarDays },
+  { path: '/meu-trabalho', label: 'Meu Trabalho', icon: Briefcase },
+  { path: '/ferramentas-ia', label: 'Ferramentas & IA', icon: Wrench },
+  { path: '/comunidade', label: 'Comunidade', icon: Users },
 ];
 
 export function MobileSidebar() {
@@ -39,7 +33,6 @@ export function MobileSidebar() {
 
   return (
     <>
-      {/* Mobile Header */}
       <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-card border-b border-border shadow-sm">
         <div className="flex items-center justify-between h-full px-4">
           <div className="flex items-center gap-3">
@@ -61,13 +54,11 @@ export function MobileSidebar() {
               </SheetTrigger>
               <SheetContent side="left" className="w-64 p-0">
                 <div className="flex flex-col h-full">
-                  {/* Sheet Header */}
                   <div className="flex items-center gap-3 p-4 border-b border-border">
                     <img src={imagLogoNew} alt="IMAG" className="h-7" />
                     <span className="text-base font-semibold">Menu</span>
                   </div>
 
-                  {/* Navigation */}
                   <nav className="flex-1 p-3 space-y-1">
                     {navItems.map((item) => {
                       const isActive = location.pathname === item.path;
@@ -93,7 +84,6 @@ export function MobileSidebar() {
                     })}
                   </nav>
 
-                  {/* Footer */}
                   <div className="p-3 border-t border-border">
                     <Button
                       variant="ghost"

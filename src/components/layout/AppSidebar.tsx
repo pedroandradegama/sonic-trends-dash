@@ -1,14 +1,11 @@
 import { 
   LayoutDashboard,
-  DollarSign, 
-  Building2, 
-  Sparkles, 
-  BarChart3, 
-  ThumbsUp,
-  User,
+  CalendarDays, 
+  Briefcase, 
+  Wrench, 
+  Users,
   ChevronLeft,
   ChevronRight,
-  Wrench
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -16,13 +13,10 @@ import { useState } from 'react';
 
 const navItems = [
   { path: '/home', label: 'Home', icon: LayoutDashboard },
-  { path: '/perfil', label: 'Perfil', icon: User },
-  { path: '/institucional', label: 'Institucional', icon: Building2 },
-  { path: '/magia', label: 'MagIA', icon: Sparkles },
-  { path: '/', label: 'Repasse', icon: DollarSign },
-  { path: '/casuistica', label: 'Casuística', icon: BarChart3 },
-  { path: '/nps', label: 'NPS', icon: ThumbsUp },
-  { path: '/ferramentas', label: 'Ferramentas', icon: Wrench },
+  { path: '/minha-agenda', label: 'Minha Agenda', icon: CalendarDays },
+  { path: '/meu-trabalho', label: 'Meu Trabalho', icon: Briefcase },
+  { path: '/ferramentas-ia', label: 'Ferramentas & IA', icon: Wrench },
+  { path: '/comunidade', label: 'Comunidade', icon: Users },
 ];
 
 export function AppSidebar() {
