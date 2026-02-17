@@ -67,8 +67,15 @@ function ArticleItem({ article, onTrackClick }: { article: UltrasoundArticle; on
     });
   };
 
-  const handleTrack = () => {
+  const handleTrack = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
     try { onTrackClick(article.id); } catch { /* ignore */ }
+    // Force open in new tab even inside iframes
+    const w = window.open(article.url, '_blank', 'noopener,noreferrer');
+    if (!w) {
+      // Fallback: navigate current tab
+      window.location.href = article.url;
+    }
   };
 
   return (
