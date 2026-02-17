@@ -8,11 +8,11 @@ export function NavButtons() {
   const currentPath = location.pathname;
 
   const navItems = [
-    { path: '/institucional', label: 'Institucional' },
-    { path: '/magia', label: 'MagIA' },
-    { path: '/', label: 'Repasse' },
-    { path: '/casuistica', label: 'Casuística' },
-    { path: '/nps', label: 'NPS' },
+    { path: '/home', label: 'Home' },
+    { path: '/minha-agenda', label: 'Minha Agenda' },
+    { path: '/meu-trabalho', label: 'Meu Trabalho' },
+    { path: '/ferramentas-ia', label: 'Ferramentas & IA' },
+    { path: '/comunidade', label: 'Comunidade' },
   ];
 
   return (
