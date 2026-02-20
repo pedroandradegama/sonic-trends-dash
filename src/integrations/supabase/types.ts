@@ -894,6 +894,87 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_notification_rules: {
+        Row: {
+          created_at: string
+          days_before: number | null
+          description: string | null
+          id: string
+          is_active: boolean
+          label: string
+          notification_type: string
+          template_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          days_before?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          notification_type: string
+          template_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          days_before?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          notification_type?: string
+          template_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_notifications: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          id: string
+          meta_message_id: string | null
+          notification_type: string
+          recipient_name: string | null
+          recipient_phone: string
+          sent_at: string | null
+          status: string
+          template_name: string
+          template_params: Json | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          meta_message_id?: string | null
+          notification_type: string
+          recipient_name?: string | null
+          recipient_phone: string
+          sent_at?: string | null
+          status?: string
+          template_name: string
+          template_params?: Json | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          meta_message_id?: string | null
+          notification_type?: string
+          recipient_name?: string | null
+          recipient_phone?: string
+          sent_at?: string | null
+          status?: string
+          template_name?: string
+          template_params?: Json | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
