@@ -2,14 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
+import { useMasterAdminCheck } from '@/hooks/useMasterAdminCheck';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Plus, UserCheck, UserX, Trash2, Users, Shield, Clock } from 'lucide-react';
+import { ArrowLeft, Plus, UserCheck, UserX, Trash2, Users, Shield, Clock, MessageCircle, Send, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import imagLogo from '@/assets/imag-logo.png';
@@ -24,20 +26,42 @@ interface AuthorizedDoctor {
   last_login_at: string | null;
 }
 
+interface WhatsAppLog {
+  id: string;
+  timestamp: string;
+  to: string;
+  templateName: string;
+  status: 'sending' | 'sent' | 'failed';
+  messageId?: string;
+  error?: string;
+}
+
 export default function Admin() {
   const [doctors, setDoctors] = useState<AuthorizedDoctor[]>([]);
   const [loading, setLoading] = useState(true);
   const [newEmail, setNewEmail] = useState('');
   const [newNome, setNewNome] = useState('');
   const [adding, setAdding] = useState(false);
-  
+
+  // WhatsApp state
+  const [waPhone, setWaPhone] = useState('5581971121516');
+  const [waTemplate, setWaTemplate] = useState('menu_unidade');
+  const [waParams, setWaParams] = useState('');
+  const [waRecipientName, setWaRecipientName] = useState('');
+  const [waSending, setWaSending] = useState(false);
+  const [waLogs, setWaLogs] = useState<WhatsAppLog[]>([]);
+
   const { user, signOut } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdminCheck();
+  const { isMasterAdmin, loading: masterLoading } = useMasterAdminCheck();
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const hasAccess = isAdmin || isMasterAdmin;
+  const isLoadingAccess = adminLoading || masterLoading;
+
   useEffect(() => {
-    if (!adminLoading && !isAdmin) {
+    if (!isLoadingAccess && !hasAccess) {
       toast({
         title: "Acesso negado",
         description: "Você não tem permissão para acessar esta página.",
@@ -45,13 +69,13 @@ export default function Admin() {
       });
       navigate('/');
     }
-  }, [isAdmin, adminLoading, navigate, toast]);
+  }, [hasAccess, isLoadingAccess, navigate, toast]);
 
   useEffect(() => {
-    if (isAdmin) {
+    if (hasAccess) {
       fetchDoctors();
     }
-  }, [isAdmin]);
+  }, [hasAccess]);
 
   async function fetchDoctors() {
     setLoading(true);
@@ -60,15 +84,10 @@ export default function Admin() {
         .from('authorized_doctors')
         .select('*')
         .order('nome');
-
       if (error) throw error;
       setDoctors(data || []);
     } catch (error: any) {
-      toast({
-        title: "Erro ao carregar médicos",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao carregar médicos", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -77,32 +96,18 @@ export default function Admin() {
   async function handleAddDoctor(e: React.FormEvent) {
     e.preventDefault();
     if (!newEmail.trim() || !newNome.trim()) return;
-
     setAdding(true);
     try {
       const { error } = await supabase
         .from('authorized_doctors')
-        .insert({
-          email: newEmail.toLowerCase().trim(),
-          nome: newNome.trim().toUpperCase(),
-        });
-
+        .insert({ email: newEmail.toLowerCase().trim(), nome: newNome.trim().toUpperCase() });
       if (error) throw error;
-
-      toast({
-        title: "Médico adicionado",
-        description: `${newNome} foi cadastrado com sucesso.`,
-      });
-
+      toast({ title: "Médico adicionado", description: `${newNome} foi cadastrado com sucesso.` });
       setNewEmail('');
       setNewNome('');
       fetchDoctors();
     } catch (error: any) {
-      toast({
-        title: "Erro ao adicionar médico",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao adicionar médico", description: error.message, variant: "destructive" });
     } finally {
       setAdding(false);
     }
@@ -114,51 +119,76 @@ export default function Admin() {
         .from('authorized_doctors')
         .update({ is_active: !doctor.is_active })
         .eq('id', doctor.id);
-
       if (error) throw error;
-
-      toast({
-        title: doctor.is_active ? "Médico desativado" : "Médico ativado",
-        description: `${doctor.nome} foi ${doctor.is_active ? 'desativado' : 'ativado'}.`,
-      });
-
+      toast({ title: doctor.is_active ? "Médico desativado" : "Médico ativado", description: `${doctor.nome} foi ${doctor.is_active ? 'desativado' : 'ativado'}.` });
       fetchDoctors();
     } catch (error: any) {
-      toast({
-        title: "Erro ao atualizar médico",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao atualizar médico", description: error.message, variant: "destructive" });
     }
   }
 
   async function handleDelete(doctor: AuthorizedDoctor) {
     if (!confirm(`Tem certeza que deseja remover ${doctor.nome}?`)) return;
-
     try {
-      const { error } = await supabase
-        .from('authorized_doctors')
-        .delete()
-        .eq('id', doctor.id);
-
+      const { error } = await supabase.from('authorized_doctors').delete().eq('id', doctor.id);
       if (error) throw error;
-
-      toast({
-        title: "Médico removido",
-        description: `${doctor.nome} foi removido do sistema.`,
-      });
-
+      toast({ title: "Médico removido", description: `${doctor.nome} foi removido do sistema.` });
       fetchDoctors();
     } catch (error: any) {
-      toast({
-        title: "Erro ao remover médico",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao remover médico", description: error.message, variant: "destructive" });
     }
   }
 
-  if (adminLoading || loading) {
+  async function handleSendWhatsApp(e: React.FormEvent) {
+    e.preventDefault();
+    if (!waPhone.trim() || !waTemplate.trim()) return;
+
+    const logId = crypto.randomUUID();
+    const newLog: WhatsAppLog = {
+      id: logId,
+      timestamp: new Date().toISOString(),
+      to: waPhone.trim(),
+      templateName: waTemplate.trim(),
+      status: 'sending',
+    };
+    setWaLogs(prev => [newLog, ...prev]);
+    setWaSending(true);
+
+    try {
+      const params = waParams.trim()
+        ? waParams.split(',').map(p => p.trim()).filter(Boolean)
+        : [];
+
+      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+        body: {
+          to: waPhone.trim(),
+          recipientName: waRecipientName.trim() || undefined,
+          notificationType: 'test',
+          templateName: waTemplate.trim(),
+          templateParams: params,
+          languageCode: 'pt_BR',
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      setWaLogs(prev => prev.map(l =>
+        l.id === logId ? { ...l, status: 'sent', messageId: data.messageId } : l
+      ));
+      toast({ title: "✅ Mensagem enviada!", description: `ID: ${data.messageId}` });
+    } catch (err: any) {
+      const errMsg = err.message || 'Erro desconhecido';
+      setWaLogs(prev => prev.map(l =>
+        l.id === logId ? { ...l, status: 'failed', error: errMsg } : l
+      ));
+      toast({ title: "Falha no envio", description: errMsg, variant: "destructive" });
+    } finally {
+      setWaSending(false);
+    }
+  }
+
+  if (isLoadingAccess || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-medical-blue/5 to-medical-success/5">
         <div className="text-center">
@@ -169,9 +199,7 @@ export default function Admin() {
     );
   }
 
-  if (!isAdmin) {
-    return null;
-  }
+  if (!hasAccess) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-medical-blue/5 to-medical-success/5 p-4 md:p-8">
@@ -187,11 +215,9 @@ export default function Admin() {
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="bg-medical-blue/10 text-medical-blue border-medical-blue/30">
               <Shield className="h-3 w-3 mr-1" />
-              Admin
+              {isMasterAdmin ? 'Master Admin' : 'Admin'}
             </Badge>
-            <Button variant="ghost" size="sm" onClick={signOut}>
-              Sair
-            </Button>
+            <Button variant="ghost" size="sm" onClick={signOut}>Sair</Button>
           </div>
         </div>
 
@@ -201,136 +227,203 @@ export default function Admin() {
             <Users className="h-6 w-6 text-medical-blue" />
             Painel de Administração
           </h1>
-          <p className="text-muted-foreground">
-            Cadastre e gerencie os médicos autorizados a acessar a plataforma
-          </p>
+          <p className="text-muted-foreground">Gerencie médicos e notificações da plataforma</p>
         </div>
 
-        {/* Add Doctor Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5" />
-              Adicionar Médico
-            </CardTitle>
-            <CardDescription>
-              Cadastre um novo médico que poderá criar uma conta na plataforma
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleAddDoctor} className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 space-y-2">
-                <Label htmlFor="nome">Nome Completo</Label>
-                <Input
-                  id="nome"
-                  value={newNome}
-                  onChange={(e) => setNewNome(e.target.value)}
-                  placeholder="NOME COMPLETO DO MÉDICO"
-                  required
-                />
-              </div>
-              <div className="flex-1 space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  placeholder="medico@email.com"
-                  required
-                />
-              </div>
-              <div className="flex items-end">
-                <Button type="submit" disabled={adding}>
-                  {adding ? 'Adicionando...' : 'Adicionar'}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="medicos">
+          <TabsList className="mb-4">
+            <TabsTrigger value="medicos" className="flex items-center gap-2">
+              <Users className="h-4 w-4" /> Médicos
+            </TabsTrigger>
+            <TabsTrigger value="whatsapp" className="flex items-center gap-2">
+              <MessageCircle className="h-4 w-4" /> WhatsApp
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Doctors List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Médicos Cadastrados ({doctors.length})</CardTitle>
-            <CardDescription>
-              Lista de todos os médicos autorizados a usar a plataforma
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {doctors.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                Nenhum médico cadastrado ainda.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {doctors.map((doctor) => (
-                  <div
-                    key={doctor.id}
-                    className={`flex items-center justify-between p-4 rounded-lg border ${
-                      doctor.is_active 
-                        ? 'bg-card border-border' 
-                        : 'bg-muted/50 border-muted'
-                    }`}
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className={`font-medium ${!doctor.is_active && 'text-muted-foreground'}`}>
-                          {doctor.nome}
-                        </h3>
-                        {doctor.registered_at ? (
-                          <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
-                            Registrado
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
-                            Pendente
-                          </Badge>
-                        )}
-                        {!doctor.is_active && (
-                          <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30">
-                            Inativo
-                          </Badge>
-                        )}
+          {/* ── ABA MÉDICOS ── */}
+          <TabsContent value="medicos" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Plus className="h-5 w-5" /> Adicionar Médico</CardTitle>
+                <CardDescription>Cadastre um novo médico que poderá criar uma conta na plataforma</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleAddDoctor} className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor="nome">Nome Completo</Label>
+                    <Input id="nome" value={newNome} onChange={e => setNewNome(e.target.value)} placeholder="NOME COMPLETO DO MÉDICO" required />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="medico@email.com" required />
+                  </div>
+                  <div className="flex items-end">
+                    <Button type="submit" disabled={adding}>{adding ? 'Adicionando...' : 'Adicionar'}</Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Médicos Cadastrados ({doctors.length})</CardTitle>
+                <CardDescription>Lista de todos os médicos autorizados a usar a plataforma</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {doctors.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">Nenhum médico cadastrado ainda.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {doctors.map(doctor => (
+                      <div key={doctor.id} className={`flex items-center justify-between p-4 rounded-lg border ${doctor.is_active ? 'bg-card border-border' : 'bg-muted/50 border-muted'}`}>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className={`font-medium ${!doctor.is_active && 'text-muted-foreground'}`}>{doctor.nome}</h3>
+                            {doctor.registered_at ? (
+                              <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">Registrado</Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">Pendente</Badge>
+                            )}
+                            {!doctor.is_active && <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30">Inativo</Badge>}
+                          </div>
+                          <p className={`text-sm ${doctor.is_active ? 'text-muted-foreground' : 'text-muted-foreground/60'}`}>{doctor.email}</p>
+                          {doctor.last_login_at && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                              <Clock className="h-3 w-3" />
+                              Último acesso: {format(new Date(doctor.last_login_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm" onClick={() => toggleActive(doctor)} title={doctor.is_active ? 'Desativar' : 'Ativar'}>
+                            {doctor.is_active ? <UserX className="h-4 w-4 text-red-500" /> : <UserCheck className="h-4 w-4 text-green-500" />}
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => handleDelete(doctor)} title="Remover">
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
                       </div>
-                      <p className={`text-sm ${doctor.is_active ? 'text-muted-foreground' : 'text-muted-foreground/60'}`}>
-                        {doctor.email}
-                      </p>
-                      {doctor.last_login_at && (
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                          <Clock className="h-3 w-3" />
-                          Último acesso: {format(new Date(doctor.last_login_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        </p>
-                      )}
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ── ABA WHATSAPP ── */}
+          <TabsContent value="whatsapp" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5 text-green-600" />
+                  Envio de Notificação WhatsApp
+                </CardTitle>
+                <CardDescription>
+                  Dispare mensagens usando templates aprovados na conta Meta Business da IMAG
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSendWhatsApp} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="wa-phone">Número destino</Label>
+                      <Input
+                        id="wa-phone"
+                        value={waPhone}
+                        onChange={e => setWaPhone(e.target.value)}
+                        placeholder="5511999999999"
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">Formato internacional sem + (ex: 5581912345678)</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => toggleActive(doctor)}
-                        title={doctor.is_active ? 'Desativar' : 'Ativar'}
-                      >
-                        {doctor.is_active ? (
-                          <UserX className="h-4 w-4 text-red-500" />
-                        ) : (
-                          <UserCheck className="h-4 w-4 text-green-500" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(doctor)}
-                        title="Remover"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
+                    <div className="space-y-2">
+                      <Label htmlFor="wa-name">Nome do destinatário (opcional)</Label>
+                      <Input
+                        id="wa-name"
+                        value={waRecipientName}
+                        onChange={e => setWaRecipientName(e.target.value)}
+                        placeholder="Ex: Dr. João"
+                      />
                     </div>
                   </div>
-                ))}
-              </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="wa-template">Nome do template</Label>
+                      <Input
+                        id="wa-template"
+                        value={waTemplate}
+                        onChange={e => setWaTemplate(e.target.value)}
+                        placeholder="menu_unidade"
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">Nome exato do template aprovado no Meta</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="wa-params">Parâmetros do template (opcional)</Label>
+                      <Input
+                        id="wa-params"
+                        value={waParams}
+                        onChange={e => setWaParams(e.target.value)}
+                        placeholder="valor1, valor2, valor3"
+                      />
+                      <p className="text-xs text-muted-foreground">Separe com vírgula na ordem de {'{{1}}'}, {'{{2}}'} ...</p>
+                    </div>
+                  </div>
+
+                  <Button type="submit" disabled={waSending} className="w-full md:w-auto">
+                    {waSending ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Enviando...</>
+                    ) : (
+                      <><Send className="h-4 w-4 mr-2" /> Enviar mensagem</>
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* Log de envios */}
+            {waLogs.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Log de envios desta sessão</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {waLogs.map(log => (
+                      <div key={log.id} className={`flex items-start gap-3 p-3 rounded-lg border text-sm ${
+                        log.status === 'sent' ? 'bg-green-500/5 border-green-500/20'
+                        : log.status === 'failed' ? 'bg-red-500/5 border-red-500/20'
+                        : 'bg-muted/50 border-muted'
+                      }`}>
+                        <div className="mt-0.5 shrink-0">
+                          {log.status === 'sending' && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                          {log.status === 'sent' && <CheckCircle2 className="h-4 w-4 text-green-600" />}
+                          {log.status === 'failed' && <XCircle className="h-4 w-4 text-red-600" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium">{log.templateName}</span>
+                            <span className="text-muted-foreground">→ {log.to}</span>
+                            <span className="text-xs text-muted-foreground ml-auto">
+                              {format(new Date(log.timestamp), "HH:mm:ss")}
+                            </span>
+                          </div>
+                          {log.status === 'sent' && log.messageId && (
+                            <p className="text-xs text-green-600 mt-1">Message ID: {log.messageId}</p>
+                          )}
+                          {log.status === 'failed' && log.error && (
+                            <p className="text-xs text-red-600 mt-1">{log.error}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             )}
-          </CardContent>
-        </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
