@@ -12,12 +12,12 @@ const WHATSAPP_PHONE_NUMBER_ID = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
 const WHATSAPP_API_URL = `https://graph.facebook.com/v21.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
 
 interface SendWhatsAppRequest {
-  to: string;           // número destino no formato internacional, ex: "5511999999999"
+  to: string;
   recipientName?: string;
   notificationType: string;
   templateName: string;
-  templateParams?: string[]; // parâmetros de corpo do template, em ordem
-  languageCode?: string;     // padrão "pt_BR"
+  templateParams?: string[];
+  languageCode?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -25,7 +25,6 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Autenticação via JWT
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -34,15 +33,15 @@ const handler = async (req: Request): Promise<Response> => {
     });
   }
 
+  // Valida o JWT via getUser
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_ANON_KEY")!,
     { global: { headers: { Authorization: authHeader } } }
   );
 
-  const token = authHeader.replace("Bearer ", "");
-  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-  if (claimsError || !claimsData?.claims) {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -113,12 +112,12 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     const metaData = await metaResponse.json();
-    console.log("Resposta Meta API:", metaData);
+    console.log("Resposta Meta API:", JSON.stringify(metaData));
 
     const metaMessageId = metaData?.messages?.[0]?.id ?? null;
-    const success = metaResponse.ok && metaMessageId;
+    const success = metaResponse.ok && !!metaMessageId;
 
-    // Registra no log
+    // Registra no log com service role
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -134,7 +133,7 @@ const handler = async (req: Request): Promise<Response> => {
       meta_message_id: metaMessageId,
       error_message: success ? null : JSON.stringify(metaData),
       sent_at: success ? new Date().toISOString() : null,
-      created_by: claimsData.claims.sub,
+      created_by: user.id,
     });
 
     if (!success) {
