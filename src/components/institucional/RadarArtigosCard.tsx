@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   BookOpen, 
-  ExternalLink, 
+  ExternalLink as ExternalLinkIcon, 
   Search, 
   Filter, 
   Star,
@@ -26,6 +26,7 @@ import {
 import { differenceInDays } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { ExternalLink, normalizeScientificUrl } from '@/components/ExternalLink';
 
 const SUBGROUPS = [
   { value: 'todos', label: 'Todos os Subgrupos' },
@@ -67,15 +68,8 @@ function ArticleItem({ article, onTrackClick }: { article: UltrasoundArticle; on
     });
   };
 
-  const handleTrack = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
+  const handleTrackClick = () => {
     try { onTrackClick(article.id); } catch { /* ignore */ }
-    // Force open in new tab even inside iframes
-    const w = window.open(article.url, '_blank', 'noopener,noreferrer');
-    if (!w) {
-      // Fallback: navigate current tab
-      window.location.href = article.url;
-    }
   };
 
   return (
@@ -96,15 +90,13 @@ function ArticleItem({ article, onTrackClick }: { article: UltrasoundArticle; on
             </Badge>
           </div>
           
-          <a
+          <ExternalLink
             href={article.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={handleTrack}
-            className="font-medium text-sm leading-snug hover:text-primary hover:underline transition-colors line-clamp-2 block text-left"
+            onClick={handleTrackClick}
+            className="font-medium text-sm leading-snug hover:text-primary hover:underline transition-colors line-clamp-2 !inline text-left"
           >
             {article.title}
-          </a>
+          </ExternalLink>
           
           <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
@@ -135,16 +127,14 @@ function ArticleItem({ article, onTrackClick }: { article: UltrasoundArticle; on
         </div>
         
         <div className="flex flex-col gap-1">
-          <a
+          <ExternalLink
             href={article.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={handleTrack}
+            onClick={handleTrackClick}
             className="p-2 rounded hover:bg-primary/10 transition-colors"
             title="Abrir artigo"
           >
-            <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-          </a>
+            <ExternalLinkIcon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          </ExternalLink>
           <button
             onClick={handleCopyLink}
             className="p-2 rounded hover:bg-primary/10 transition-colors"
@@ -395,14 +385,12 @@ function HotTopicsPanel({ articles }: { articles: UltrasoundArticle[] }) {
             <ul className="space-y-1.5">
               {arts.map(a => (
                 <li key={a.id}>
-                  <a
+                  <ExternalLink
                     href={a.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs hover:text-primary hover:underline transition-colors line-clamp-2"
+                    className="text-xs hover:text-primary hover:underline transition-colors line-clamp-2 !inline"
                   >
                     {a.title}
-                  </a>
+                  </ExternalLink>
                 </li>
               ))}
             </ul>

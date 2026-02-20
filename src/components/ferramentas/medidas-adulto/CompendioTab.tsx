@@ -8,7 +8,8 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useAdultReferenceMeasurements } from '@/hooks/useAdultReferenceMeasurements';
 import { logToolUsage } from '@/hooks/useToolUsageLog';
-import { Copy, Star, ExternalLink, Search } from 'lucide-react';
+import { Copy, Star, ExternalLink as ExternalLinkIcon, Search } from 'lucide-react';
+import { ExternalLink } from '@/components/ExternalLink';
 import { toast } from 'sonner';
 
 export function CompendioTab() {
@@ -110,10 +111,9 @@ export function CompendioTab() {
                 <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => handleCopy(m)}>
                   <Copy className="h-3 w-3" /> Copiar para laudo
                 </Button>
-                <a href={m.source_url} target="_blank" rel="noreferrer"
-                  className="text-xs text-primary hover:underline flex items-center gap-1">
-                  <ExternalLink className="h-3 w-3" /> {m.source_title}
-                </a>
+                <ExternalLink href={m.source_url} className="text-xs text-primary hover:underline" showIcon iconClassName="h-3 w-3">
+                  {m.source_title}
+                </ExternalLink>
               </div>
             </CardContent>
           </Card>
