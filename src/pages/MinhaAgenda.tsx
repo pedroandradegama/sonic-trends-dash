@@ -7,7 +7,7 @@ import { PerfilPanel } from '@/components/perfil/PerfilPanel';
 import AgendaCard from '@/components/institucional/AgendaCard';
 
 const tabs = [
-  { key: 'preferencias', label: 'Preferências', icon: Settings },
+  { key: 'preferencias', label: 'Preferências de Agenda', icon: Settings },
   { key: 'comunicacao', label: 'Comunicação de Agenda', icon: CalendarPlus },
 ] as const;
 

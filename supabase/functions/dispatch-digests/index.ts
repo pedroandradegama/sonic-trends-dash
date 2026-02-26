@@ -1,0 +1,217 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("pt-BR", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+function getReadingTimeField(minutes: number): string {
+  if (minutes === 3) return "summary_3min";
+  if (minutes === 10) return "summary_10min";
+  return "summary_5min";
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const today = new Date().toISOString().split("T")[0];
+
+    // 1. Get pending dispatches for today
+    const { data: pendingItems, error: fetchError } = await supabase
+      .from("digest_dispatch_queue")
+      .select("id, doctor_id, article_id, scheduled_for")
+      .eq("scheduled_for", today)
+      .eq("status", "pending");
+
+    if (fetchError) {
+      console.error("Error fetching dispatch queue:", fetchError.message);
+      throw fetchError;
+    }
+
+    if (!pendingItems || pendingItems.length === 0) {
+      console.log("No pending dispatches for today");
+      return new Response(
+        JSON.stringify({ success: true, dispatched: 0 }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // 2. Group by doctor
+    const byDoctor = new Map<string, typeof pendingItems>();
+    for (const item of pendingItems) {
+      const group = byDoctor.get(item.doctor_id) || [];
+      group.push(item);
+      byDoctor.set(item.doctor_id, group);
+    }
+
+    let dispatched = 0;
+    let failed = 0;
+
+    for (const [doctorId, items] of byDoctor.entries()) {
+      try {
+        // Get doctor profile + preferences
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("medico_nome, whatsapp_number")
+          .eq("user_id", doctorId)
+          .maybeSingle();
+
+        if (!profile?.whatsapp_number) {
+          console.log(`No WhatsApp number for doctor ${doctorId}, skipping`);
+          await supabase
+            .from("digest_dispatch_queue")
+            .update({ status: "skipped" })
+            .in("id", items.map((i) => i.id));
+          continue;
+        }
+
+        const { data: prefs } = await supabase
+          .from("doctor_preferences")
+          .select("digest_reading_time, digest_frequency")
+          .eq("user_id", doctorId)
+          .maybeSingle();
+
+        const readingTime = prefs?.digest_reading_time || 5;
+        const summaryField = getReadingTimeField(readingTime);
+
+        // Get article details + summaries
+        const articleIds = items.map((i) => i.article_id);
+        const { data: articles } = await supabase
+          .from("ultrasound_articles")
+          .select("id, title, url, source, publication_date")
+          .in("id", articleIds);
+
+        const { data: summaries } = await supabase
+          .from("article_summaries")
+          .select("*")
+          .in("article_id", articleIds);
+
+        const summaryMap = new Map((summaries || []).map((s: any) => [s.article_id, s]));
+
+        // 3. Build message
+        let message = `🔬 *DIGEST RADIOLOGIA & ULTRASSONOGRAFIA*\n`;
+        message += `📅 ${formatDate(today)}  |  ⏱ ~${readingTime} min por artigo\n`;
+        message += `📄 ${articles?.length || 0} artigo(s) selecionado(s)\n\n`;
+
+        let idx = 1;
+        for (const article of articles || []) {
+          const summary = summaryMap.get(article.id);
+          if (!summary) continue;
+
+          const emoji = summary.emoji_highlight || "🔬";
+          message += `━━━━━━━━━━━━━━━━━━━━━\n`;
+          message += `${emoji} *${idx}. ${summary.short_title || article.title}*\n`;
+          message += `📰 ${article.source} · ${article.publication_date ? formatDate(article.publication_date) : "N/A"}\n`;
+          message += `📊 Evidência: *${summary.evidence_level || "N/A"}*\n\n`;
+
+          if (summary.hot_topics?.length > 0) {
+            message += `🏷️ ${summary.hot_topics.map((t: string) => `#${t.replace(/\s+/g, "_")}`).join(" ")}\n\n`;
+          }
+
+          const summaryText = (summary as any)[summaryField] || summary.summary_5min || "";
+          if (summaryText) {
+            message += `${summaryText}\n\n`;
+          }
+
+          if (summary.clinical_impact) {
+            message += `⚡ *Impacto clínico:* ${summary.clinical_impact}\n\n`;
+          }
+
+          message += `🔗 ${article.url}\n\n`;
+          idx++;
+        }
+
+        message += `━━━━━━━━━━━━━━━━━━━━━\n`;
+        message += `_Digest gerado automaticamente. Para alterar suas preferências, acesse o app._`;
+
+        // 4. Send via send-whatsapp
+        const { data: sendResult, error: sendError } = await supabase.functions.invoke("send-whatsapp", {
+          body: {
+            to: profile.whatsapp_number,
+            recipientName: profile.medico_nome,
+            notificationType: "artigos_resumo",
+            templateName: "digest_artigos_radiologia",
+            templateParams: [message],
+            languageCode: "pt_BR",
+          },
+        });
+
+        if (sendError || sendResult?.error) {
+          const errMsg = sendError?.message || sendResult?.error || "Unknown error";
+          console.error(`Failed to send to ${doctorId}:`, errMsg);
+
+          await supabase
+            .from("digest_dispatch_queue")
+            .update({ status: "failed" })
+            .in("id", items.map((i) => i.id));
+
+          failed += items.length;
+        } else {
+          // Success
+          await supabase
+            .from("digest_dispatch_queue")
+            .update({ status: "sent", sent_at: new Date().toISOString() })
+            .in("id", items.map((i) => i.id));
+
+          // Recalculate next dispatch
+          const nextInterval =
+            prefs?.digest_frequency === "biweekly" ? 14 :
+            prefs?.digest_frequency === "monthly" ? 30 : 7;
+          const nextDispatch = new Date(Date.now() + nextInterval * 24 * 60 * 60 * 1000).toISOString();
+
+          await supabase
+            .from("doctor_preferences")
+            .update({ digest_next_dispatch: nextDispatch })
+            .eq("user_id", doctorId);
+
+          dispatched += items.length;
+        }
+      } catch (err) {
+        console.error(`Error dispatching to ${doctorId}:`, err);
+        await supabase
+          .from("digest_dispatch_queue")
+          .update({ status: "failed" })
+          .in("id", items.map((i) => i.id));
+        failed += items.length;
+      }
+    }
+
+    // 5. Chain cleanup
+    try {
+      await supabase.functions.invoke("cleanup-summaries");
+    } catch (err) {
+      console.error("Cleanup chain error:", err);
+    }
+
+    console.log(`Dispatch done: ${dispatched} sent, ${failed} failed`);
+
+    return new Response(
+      JSON.stringify({ success: true, dispatched, failed }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Error:", error);
+    return new Response(
+      JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});

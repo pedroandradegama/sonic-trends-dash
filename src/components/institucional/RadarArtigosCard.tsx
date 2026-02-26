@@ -41,10 +41,10 @@ const SUBGROUPS = [
 ];
 
 const DATE_FILTERS = [
-  { value: '0', label: 'Todas as datas' },
   { value: '30', label: 'Últimos 30 dias' },
   { value: '90', label: 'Últimos 90 dias' },
   { value: '180', label: 'Últimos 180 dias' },
+  { value: '0', label: 'Todas as datas' },
 ];
 
 const JOURNAL_SOURCES = [
@@ -52,7 +52,6 @@ const JOURNAL_SOURCES = [
   { key: 'radiology', label: 'Radiology' },
   { key: 'ajr', label: 'AJR' },
   { key: 'jum', label: 'J Ultrasound Med' },
-  { key: 'ultrasound_med_biol', label: 'Ultrasound Med Biol' },
 ];
 
 function isNew(date: string | null): boolean {
@@ -160,7 +159,7 @@ function ArticleItem({ article, onTrackClick }: { article: UltrasoundArticle; on
 export default function RadarArtigosCard() {
   const [subgroup, setSubgroup] = useState('todos');
   const [source, setSource] = useState('todos');
-  const [days, setDays] = useState('0');
+  const [days, setDays] = useState('30');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [isScrapingAll, setIsScrapingAll] = useState(false);

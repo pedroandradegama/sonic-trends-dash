@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import Home from "./pages/Home";
+import Perfil from "./pages/Perfil";
 import MinhaAgenda from "./pages/MinhaAgenda";
 import MeuTrabalho from "./pages/MeuTrabalho";
 import FerramentasIA from "./pages/FerramentasIA";
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
             <Route path="/" element={<Navigate to="/home" replace />} />
+            <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
             <Route path="/minha-agenda" element={<ProtectedRoute><MinhaAgenda /></ProtectedRoute>} />
             <Route path="/meu-trabalho" element={<ProtectedRoute><MeuTrabalho /></ProtectedRoute>} />
             <Route path="/ferramentas-ia" element={<ProtectedRoute><FerramentasIA /></ProtectedRoute>} />
@@ -57,7 +59,7 @@ const App = () => (
             <Route path="/ferramentas/cimt-percentile" element={<ProtectedRoute><CIMTPercentile /></ProtectedRoute>} />
             <Route path="/ferramentas/orads-us" element={<ProtectedRoute><ORADSCalculator /></ProtectedRoute>} />
             {/* Legacy redirects */}
-            <Route path="/perfil" element={<Navigate to="/minha-agenda" replace />} />
+            {/* Legacy redirects - removed /perfil redirect since it's now a real page */}
             <Route path="/institucional" element={<Navigate to="/comunidade" replace />} />
             <Route path="/magia" element={<Navigate to="/ferramentas-ia" replace />} />
             <Route path="/ferramentas" element={<Navigate to="/ferramentas-ia" replace />} />

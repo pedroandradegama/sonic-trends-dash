@@ -27,9 +27,13 @@ const JOURNAL_SOURCES: Record<string, JournalSource> = {
     name: 'J Ultrasound Med',
     url: 'https://onlinelibrary.wiley.com/journal/15509613',
   },
-  ultrasound_med_biol: {
-    name: 'Ultrasound Med Biol',
-    url: 'https://www.umbjournal.org/current',
+  european_radiology: {
+    name: 'European Radiology',
+    url: 'https://link.springer.com/journal/330',
+  },
+  jcu: {
+    name: 'J Clinical Ultrasound',
+    url: 'https://onlinelibrary.wiley.com/journal/10970096',
   },
 }
 
@@ -245,7 +249,7 @@ Deno.serve(async (req) => {
 
     // Filter only ultrasound-related articles
     // For journals that are 100% ultrasound (jum, ultrasound_med_biol), keep all
-    const isUltrasoundJournal = ['jum', 'ultrasound_med_biol'].includes(sourceKey)
+    const isUltrasoundJournal = ['jum', 'jcu'].includes(sourceKey)
     const filteredArticles = isUltrasoundJournal 
       ? rawArticles 
       : rawArticles.filter(a => isUltrasoundArticle(a.title))
@@ -294,6 +298,16 @@ Deno.serve(async (req) => {
     }
 
     console.log(`Done: ${inserted} inserted, ${skipped} skipped`)
+
+    // Encadeia sumarização automaticamente após o scraping
+    if (inserted > 0) {
+      try {
+        await supabase.functions.invoke('summarize-articles')
+        console.log('Summarization triggered successfully')
+      } catch (sumErr) {
+        console.error('Failed to trigger summarization:', sumErr)
+      }
+    }
 
     return new Response(
       JSON.stringify({
