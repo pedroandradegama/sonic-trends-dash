@@ -11,7 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Plus, UserCheck, UserX, Trash2, Users, Shield, Clock, MessageCircle, Send, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, UserCheck, UserX, Trash2, Users, Shield, Clock, MessageCircle, Send, CheckCircle2, XCircle, Loader2, Newspaper, Globe } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import imagLogo from '@/assets/imag-logo.png';
@@ -36,6 +37,25 @@ interface WhatsAppLog {
   error?: string;
 }
 
+interface ScrapeLog {
+  id: string;
+  timestamp: string;
+  source: string;
+  status: 'scraping' | 'done' | 'failed';
+  found?: number;
+  inserted?: number;
+  error?: string;
+}
+
+const JOURNAL_SOURCES = [
+  { key: 'radiographics', label: 'Radiographics (RSNA)' },
+  { key: 'radiology', label: 'Radiology (RSNA)' },
+  { key: 'ajr', label: 'AJR' },
+  { key: 'jum', label: 'J Ultrasound Med' },
+  { key: 'ultrasound_med_biol', label: 'Ultrasound Med Biol' },
+  { key: 'custom', label: 'URL personalizada' },
+];
+
 export default function Admin() {
   const [doctors, setDoctors] = useState<AuthorizedDoctor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +65,12 @@ export default function Admin() {
 
   // WhatsApp state
   const [waPhone, setWaPhone] = useState('5581971121516');
+
+  // Scraping state
+  const [scrapeSource, setScrapeSource] = useState('radiographics');
+  const [scrapeCustomUrl, setScrapeCustomUrl] = useState('');
+  const [scrapeSending, setScrapeSending] = useState(false);
+  const [scrapeLogs, setScrapeLogs] = useState<ScrapeLog[]>([]);
   const [waTemplate, setWaTemplate] = useState('menu_unidade');
   const [waParams, setWaParams] = useState('');
   const [waRecipientName, setWaRecipientName] = useState('');
@@ -188,6 +214,45 @@ export default function Admin() {
     }
   }
 
+  async function handleScrapeJournal(e: React.FormEvent) {
+    e.preventDefault();
+    const sourceLabel = JOURNAL_SOURCES.find(s => s.key === scrapeSource)?.label || scrapeSource;
+    const logId = crypto.randomUUID();
+    const newLog: ScrapeLog = {
+      id: logId,
+      timestamp: new Date().toISOString(),
+      source: sourceLabel,
+      status: 'scraping',
+    };
+    setScrapeLogs(prev => [newLog, ...prev]);
+    setScrapeSending(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('scrape-journal-articles', {
+        body: {
+          sourceKey: scrapeSource === 'custom' ? undefined : scrapeSource,
+          customUrl: scrapeSource === 'custom' ? scrapeCustomUrl.trim() : undefined,
+          maxArticles: 30,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error || !data?.success) throw new Error(data?.error || 'Erro desconhecido');
+
+      setScrapeLogs(prev => prev.map(l =>
+        l.id === logId ? { ...l, status: 'done', found: data.found, inserted: data.inserted } : l
+      ));
+      toast({ title: "✅ Scraping concluído!", description: `${data.inserted} artigos novos de ${data.found} encontrados.` });
+    } catch (err: any) {
+      setScrapeLogs(prev => prev.map(l =>
+        l.id === logId ? { ...l, status: 'failed', error: err.message } : l
+      ));
+      toast({ title: "Falha no scraping", description: err.message, variant: "destructive" });
+    } finally {
+      setScrapeSending(false);
+    }
+  }
+
   if (isLoadingAccess || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-medical-blue/5 to-medical-success/5">
@@ -234,6 +299,9 @@ export default function Admin() {
           <TabsList className="mb-4">
             <TabsTrigger value="medicos" className="flex items-center gap-2">
               <Users className="h-4 w-4" /> Médicos
+            </TabsTrigger>
+            <TabsTrigger value="artigos" className="flex items-center gap-2">
+              <Newspaper className="h-4 w-4" /> Artigos
             </TabsTrigger>
             <TabsTrigger value="whatsapp" className="flex items-center gap-2">
               <MessageCircle className="h-4 w-4" /> WhatsApp
@@ -308,6 +376,99 @@ export default function Admin() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* ── ABA ARTIGOS ── */}
+          <TabsContent value="artigos" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-primary" />
+                  Scraping de Artigos por Fonte
+                </CardTitle>
+                <CardDescription>
+                  Extraia artigos automaticamente de journals usando Firecrawl (Radiographics, Radiology, AJR, etc.)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleScrapeJournal} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Fonte</Label>
+                      <Select value={scrapeSource} onValueChange={setScrapeSource}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {JOURNAL_SOURCES.map(s => (
+                            <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {scrapeSource === 'custom' && (
+                      <div className="space-y-2">
+                        <Label>URL personalizada</Label>
+                        <Input
+                          value={scrapeCustomUrl}
+                          onChange={e => setScrapeCustomUrl(e.target.value)}
+                          placeholder="https://journal.example.com/current-issue"
+                          required
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <Button type="submit" disabled={scrapeSending} className="w-full md:w-auto">
+                    {scrapeSending ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Extraindo artigos...</>
+                    ) : (
+                      <><Newspaper className="h-4 w-4 mr-2" /> Iniciar scraping</>
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            {scrapeLogs.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Log de scraping desta sessão</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {scrapeLogs.map(log => (
+                      <div key={log.id} className={`flex items-start gap-3 p-3 rounded-lg border text-sm ${
+                        log.status === 'done' ? 'bg-green-500/5 border-green-500/20'
+                        : log.status === 'failed' ? 'bg-red-500/5 border-red-500/20'
+                        : 'bg-muted/50 border-muted'
+                      }`}>
+                        <div className="mt-0.5 shrink-0">
+                          {log.status === 'scraping' && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                          {log.status === 'done' && <CheckCircle2 className="h-4 w-4 text-green-600" />}
+                          {log.status === 'failed' && <XCircle className="h-4 w-4 text-red-600" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium">{log.source}</span>
+                            <span className="text-xs text-muted-foreground ml-auto">
+                              {format(new Date(log.timestamp), "HH:mm:ss")}
+                            </span>
+                          </div>
+                          {log.status === 'done' && (
+                            <p className="text-xs text-green-600 mt-1">
+                              {log.found} encontrados · {log.inserted} novos inseridos
+                            </p>
+                          )}
+                          {log.status === 'failed' && log.error && (
+                            <p className="text-xs text-red-600 mt-1">{log.error}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* ── ABA WHATSAPP ── */}
