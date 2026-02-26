@@ -26,7 +26,8 @@ import {
 import { differenceInDays } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ExternalLink, normalizeScientificUrl } from '@/components/ExternalLink';
+import { ExternalLink } from '@/components/ExternalLink';
+import { useQueryClient } from '@tanstack/react-query';
 
 const SUBGROUPS = [
   { value: 'todos', label: 'Todos os Subgrupos' },
@@ -44,6 +45,14 @@ const DATE_FILTERS = [
   { value: '30', label: 'Últimos 30 dias' },
   { value: '90', label: 'Últimos 90 dias' },
   { value: '180', label: 'Últimos 180 dias' },
+];
+
+const JOURNAL_SOURCES = [
+  { key: 'radiographics', label: 'Radiographics' },
+  { key: 'radiology', label: 'Radiology' },
+  { key: 'ajr', label: 'AJR' },
+  { key: 'jum', label: 'J Ultrasound Med' },
+  { key: 'ultrasound_med_biol', label: 'Ultrasound Med Biol' },
 ];
 
 function isNew(date: string | null): boolean {
@@ -154,8 +163,10 @@ export default function RadarArtigosCard() {
   const [days, setDays] = useState('0');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [isLoadingPubmed, setIsLoadingPubmed] = useState(false);
+  const [isScrapingAll, setIsScrapingAll] = useState(false);
+  const [scrapeProgress, setScrapeProgress] = useState('');
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: articles, isLoading, refetch } = useUltrasoundArticles({
     subgroup: subgroup !== 'todos' ? subgroup : undefined,
@@ -168,34 +179,50 @@ export default function RadarArtigosCard() {
   const { data: tags } = useArticleTags();
   const trackClick = useTrackArticleClick();
 
-  const handleFetchPubmed = async () => {
-    setIsLoadingPubmed(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('fetch-pubmed-articles', {
-        body: { 
-          action: 'fetch',
-          searchTerm: 'ultrasound radiology',
-          maxResults: 20 
-        },
-      });
+  const handleScrapeAll = async () => {
+    setIsScrapingAll(true);
+    let totalInserted = 0;
 
-      if (error) throw error;
+    try {
+      for (const journal of JOURNAL_SOURCES) {
+        setScrapeProgress(`Buscando ${journal.label}...`);
+        
+        try {
+          const { data, error } = await supabase.functions.invoke('scrape-journal-articles', {
+            body: { sourceKey: journal.key, maxArticles: 30 },
+          });
+
+          if (error) {
+            console.error(`Erro ao buscar ${journal.label}:`, error);
+            continue;
+          }
+
+          if (data?.success) {
+            totalInserted += data.inserted || 0;
+          }
+        } catch (err) {
+          console.error(`Erro ao buscar ${journal.label}:`, err);
+        }
+      }
 
       toast({
         title: 'Artigos atualizados',
-        description: `${data?.inserted || 0} novos artigos importados do PubMed.`,
+        description: `${totalInserted} novos artigos importados de ${JOURNAL_SOURCES.length} fontes.`,
       });
-      
-      refetch();
+
+      queryClient.invalidateQueries({ queryKey: ['ultrasound-articles'] });
+      queryClient.invalidateQueries({ queryKey: ['article-sources'] });
+      queryClient.invalidateQueries({ queryKey: ['article-tags'] });
     } catch (error) {
       console.error('Erro ao buscar artigos:', error);
       toast({
         title: 'Erro ao buscar artigos',
-        description: 'Não foi possível buscar artigos do PubMed.',
+        description: 'Não foi possível completar a varredura.',
         variant: 'destructive',
       });
     } finally {
-      setIsLoadingPubmed(false);
+      setIsScrapingAll(false);
+      setScrapeProgress('');
     }
   };
 
@@ -211,16 +238,16 @@ export default function RadarArtigosCard() {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleFetchPubmed}
-              disabled={isLoadingPubmed}
+              onClick={handleScrapeAll}
+              disabled={isScrapingAll}
               className="gap-1"
             >
-              {isLoadingPubmed ? (
+              {isScrapingAll ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <RefreshCw className="h-4 w-4" />
               )}
-              Atualizar PubMed
+              {isScrapingAll ? scrapeProgress || 'Atualizando...' : 'Atualizar Journals'}
             </Button>
             <Button
               variant="outline"
@@ -321,14 +348,14 @@ export default function RadarArtigosCard() {
             <div className="text-center py-8 text-muted-foreground">
               <BookOpen className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p>Nenhum artigo encontrado</p>
-              <p className="text-sm mb-4">Clique em "Atualizar PubMed" para buscar artigos</p>
+              <p className="text-sm mb-4">Clique em "Atualizar Journals" para buscar artigos</p>
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={handleFetchPubmed}
-                disabled={isLoadingPubmed}
+                onClick={handleScrapeAll}
+                disabled={isScrapingAll}
               >
-                {isLoadingPubmed ? (
+                {isScrapingAll ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (
                   <RefreshCw className="h-4 w-4 mr-2" />
@@ -347,7 +374,7 @@ export default function RadarArtigosCard() {
         {/* Footer */}
         {articles && articles.length > 0 && (
           <div className="text-xs text-muted-foreground text-center pt-2 border-t">
-            Exibindo {articles.length} artigo{articles.length !== 1 ? 's' : ''}
+            Exibindo {articles.length} artigo{articles.length !== 1 ? 's' : ''} · Fontes: {JOURNAL_SOURCES.map(j => j.label).join(', ')}
           </div>
         )}
       </CardContent>
@@ -356,7 +383,6 @@ export default function RadarArtigosCard() {
 }
 
 function HotTopicsPanel({ articles }: { articles: UltrasoundArticle[] }) {
-  // Group latest 3 articles per subgroup
   const hotTopics = useMemo(() => {
     const bySubgroup = new Map<string, UltrasoundArticle[]>();
     articles.forEach(a => {
@@ -364,7 +390,6 @@ function HotTopicsPanel({ articles }: { articles: UltrasoundArticle[] }) {
       if (group.length < 3) group.push(a);
       bySubgroup.set(a.subgroup, group);
     });
-    // Only show subgroups with articles
     return Array.from(bySubgroup.entries())
       .filter(([, arts]) => arts.length > 0)
       .sort((a, b) => a[0].localeCompare(b[0]));

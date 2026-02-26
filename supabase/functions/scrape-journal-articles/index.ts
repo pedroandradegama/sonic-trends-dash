@@ -8,7 +8,6 @@ const corsHeaders = {
 interface JournalSource {
   name: string
   url: string
-  searchPath?: string
 }
 
 const JOURNAL_SOURCES: Record<string, JournalSource> = {
@@ -32,6 +31,23 @@ const JOURNAL_SOURCES: Record<string, JournalSource> = {
     name: 'Ultrasound Med Biol',
     url: 'https://www.umbjournal.org/current',
   },
+}
+
+// Keywords that indicate an article is about ultrasound
+const ultrasoundKeywords = [
+  'ultrasound', 'ultrasonography', 'sonography', 'sonographic', 'echography',
+  'ecografia', 'ultrassonografia', 'doppler', 'pocus', 'point-of-care',
+  'elastography', 'elastografia', 'contrast-enhanced ultrasound', 'ceus',
+  'b-mode', 'transducer', 'probe', 'sonogram',
+  // Related techniques often used in US context
+  'ti-rads', 'tirads', 'bi-rads', 'birads', 'o-rads',
+  // Specific US procedures
+  'us-guided', 'ultrasound-guided', 'sono-guided',
+]
+
+function isUltrasoundArticle(title: string): boolean {
+  const lower = title.toLowerCase()
+  return ultrasoundKeywords.some(k => lower.includes(k))
 }
 
 // Map keywords to subgroups
@@ -67,6 +83,70 @@ function extractTags(title: string): string[] {
   return tags
 }
 
+async function translateTitles(titles: string[]): Promise<string[]> {
+  if (titles.length === 0) return []
+  
+  const apiKey = Deno.env.get('LOVABLE_API_KEY')
+  if (!apiKey) {
+    console.log('LOVABLE_API_KEY not found, skipping translation')
+    return titles
+  }
+
+  try {
+    const numberedTitles = titles.map((t, i) => `${i + 1}. ${t}`).join('\n')
+    
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.0-flash-001',
+        messages: [
+          {
+            role: 'system',
+            content: 'Você é um tradutor médico especializado. Traduza os títulos de artigos científicos do inglês para o português brasileiro. Mantenha termos técnicos médicos consagrados (ex: Doppler, TI-RADS, BI-RADS, POCUS). Retorne APENAS os títulos traduzidos, um por linha, numerados exatamente como recebidos. Não adicione explicações.'
+          },
+          {
+            role: 'user',
+            content: `Traduza estes títulos para português:\n\n${numberedTitles}`
+          }
+        ],
+        temperature: 0.3,
+      }),
+    })
+
+    if (!response.ok) {
+      console.error('Translation API error:', response.status)
+      return titles
+    }
+
+    const data = await response.json()
+    const translated = data.choices?.[0]?.message?.content?.trim() || ''
+    
+    // Parse numbered lines
+    const lines = translated.split('\n').filter((l: string) => l.trim())
+    const result: string[] = []
+    
+    for (let i = 0; i < titles.length; i++) {
+      const line = lines[i]
+      if (line) {
+        // Remove numbering prefix like "1. " or "1) "
+        const cleaned = line.replace(/^\d+[\.\)]\s*/, '').trim()
+        result.push(cleaned || titles[i])
+      } else {
+        result.push(titles[i])
+      }
+    }
+    
+    return result
+  } catch (error) {
+    console.error('Translation error:', error)
+    return titles
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -100,7 +180,6 @@ Deno.serve(async (req) => {
 
     console.log(`Scraping ${sourceName} from ${targetUrl}`)
 
-    // Use Firecrawl to scrape the journal page
     const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
       method: 'POST',
       headers: {
@@ -124,21 +203,17 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Extract article links and titles from the scraped content
     const markdown = scrapeData.data?.markdown || scrapeData.markdown || ''
     const links = scrapeData.data?.links || scrapeData.links || []
 
-    // Parse markdown for article titles and links
-    // Pattern: find markdown links [title](url)
     const articlePattern = /\[([^\]]{15,})\]\((https?:\/\/[^)]+)\)/g
-    const articles: { title: string; url: string }[] = []
+    const rawArticles: { title: string; url: string }[] = []
     let match
 
     while ((match = articlePattern.exec(markdown)) !== null) {
       const title = match[1].trim()
       const url = match[2].trim()
       
-      // Filter out navigation, menu items, author names, commentary refs
       const lowerTitle = title.toLowerCase()
       if (
         title.length > 30 &&
@@ -151,45 +226,55 @@ Deno.serve(async (req) => {
         !lowerTitle.includes('navigation') &&
         !lowerTitle.startsWith('see the invited') &&
         !lowerTitle.startsWith('see the ') &&
-        // Filter author-only links (typically just names with no other words)
         !/^[A-Z][a-z]+ [A-Z]/.test(title.trim()) &&
-        // Must contain at least one article-like URL pattern
         (url.includes('/doi/') || url.includes('/article/') || url.includes('/abs/') || url.includes('/full/') || url.includes('/pdf/'))
       ) {
-        articles.push({ title, url })
+        rawArticles.push({ title, url })
       }
     }
 
-    // Also check standalone links that might be articles
     for (const link of links) {
       if (
         typeof link === 'string' && 
         (link.includes('/doi/') || link.includes('/article/') || link.includes('/abs/')) &&
-        !articles.some(a => a.url === link)
+        !rawArticles.some(a => a.url === link)
       ) {
-        articles.push({ title: link.split('/').pop()?.replace(/-/g, ' ') || 'Article', url: link })
+        rawArticles.push({ title: link.split('/').pop()?.replace(/-/g, ' ') || 'Article', url: link })
       }
     }
 
-    const maxToProcess = maxArticles || 30
-    const toProcess = articles.slice(0, maxToProcess)
+    // Filter only ultrasound-related articles
+    // For journals that are 100% ultrasound (jum, ultrasound_med_biol), keep all
+    const isUltrasoundJournal = ['jum', 'ultrasound_med_biol'].includes(sourceKey)
+    const filteredArticles = isUltrasoundJournal 
+      ? rawArticles 
+      : rawArticles.filter(a => isUltrasoundArticle(a.title))
 
-    console.log(`Found ${articles.length} potential articles, processing ${toProcess.length}`)
+    console.log(`Found ${rawArticles.length} total articles, ${filteredArticles.length} ultrasound-related`)
+
+    const maxToProcess = maxArticles || 30
+    const toProcess = filteredArticles.slice(0, maxToProcess)
+
+    // Translate titles to Portuguese
+    const originalTitles = toProcess.map(a => a.title)
+    const translatedTitles = await translateTitles(originalTitles)
 
     // Insert into database
     let inserted = 0
     let skipped = 0
     const insertedArticles: { title: string; url: string; subgroup: string }[] = []
 
-    for (const article of toProcess) {
-      const subgroup = classifySubgroup(article.title)
+    for (let i = 0; i < toProcess.length; i++) {
+      const article = toProcess[i]
+      const translatedTitle = translatedTitles[i] || article.title
+      const subgroup = classifySubgroup(article.title) // classify on original English title
       const tags = extractTags(article.title)
 
       const { error } = await supabase
         .from('ultrasound_articles')
         .upsert({
           url: article.url,
-          title: article.title,
+          title: translatedTitle,
           source: sourceName,
           publication_date: new Date().toISOString().split('T')[0],
           subgroup,
@@ -204,7 +289,7 @@ Deno.serve(async (req) => {
         skipped++
       } else {
         inserted++
-        insertedArticles.push({ title: article.title, url: article.url, subgroup })
+        insertedArticles.push({ title: translatedTitle, url: article.url, subgroup })
       }
     }
 
@@ -214,7 +299,8 @@ Deno.serve(async (req) => {
       JSON.stringify({
         success: true,
         source: sourceName,
-        found: articles.length,
+        found: rawArticles.length,
+        ultrasoundFiltered: filteredArticles.length,
         processed: toProcess.length,
         inserted,
         skipped,
