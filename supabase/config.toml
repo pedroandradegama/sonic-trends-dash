@@ -29,3 +29,12 @@ verify_jwt = false
 
 [functions.scrape-journal-articles]
 verify_jwt = false
+
+[functions.summarize-articles]
+verify_jwt = false
+
+[functions.dispatch-digests]
+verify_jwt = false
+
+[functions.cleanup-summaries]
+verify_jwt = false

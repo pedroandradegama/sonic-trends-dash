@@ -23,6 +23,15 @@ export function normalizeScientificUrl(href: string): string {
     return `https://pubmed.ncbi.nlm.nih.gov/${trimmed}/`;
   }
 
+  // Try to convert to ePDF for RSNA/Wiley/AJR articles
+  if (
+    (trimmed.includes('pubs.rsna.org') || trimmed.includes('onlinelibrary.wiley.com') || trimmed.includes('ajronline.org')) &&
+    trimmed.includes('/doi/') &&
+    !trimmed.includes('/epdf/')
+  ) {
+    return trimmed.replace('/doi/', '/doi/epdf/');
+  }
+
   // Already a full URL
   return trimmed;
 }

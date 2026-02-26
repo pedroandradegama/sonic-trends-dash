@@ -153,6 +153,56 @@ export type Database = {
           },
         ]
       }
+      article_summaries: {
+        Row: {
+          article_id: string
+          clinical_impact: string | null
+          emoji_highlight: string | null
+          evidence_level: string | null
+          hot_topics: string[]
+          id: string
+          short_title: string | null
+          summarized_at: string
+          summary_10min: string | null
+          summary_3min: string | null
+          summary_5min: string | null
+        }
+        Insert: {
+          article_id: string
+          clinical_impact?: string | null
+          emoji_highlight?: string | null
+          evidence_level?: string | null
+          hot_topics?: string[]
+          id?: string
+          short_title?: string | null
+          summarized_at?: string
+          summary_10min?: string | null
+          summary_3min?: string | null
+          summary_5min?: string | null
+        }
+        Update: {
+          article_id?: string
+          clinical_impact?: string | null
+          emoji_highlight?: string | null
+          evidence_level?: string | null
+          hot_topics?: string[]
+          id?: string
+          short_title?: string | null
+          summarized_at?: string
+          summary_10min?: string | null
+          summary_3min?: string | null
+          summary_5min?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "article_summaries_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: true
+            referencedRelation: "ultrasound_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       authorized_doctors: {
         Row: {
           created_at: string
@@ -291,11 +341,54 @@ export type Database = {
         }
         Relationships: []
       }
+      digest_dispatch_queue: {
+        Row: {
+          article_id: string
+          created_at: string
+          doctor_id: string
+          id: string
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          doctor_id: string
+          id?: string
+          scheduled_for: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          doctor_id?: string
+          id?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "digest_dispatch_queue_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "ultrasound_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       doctor_preferences: {
         Row: {
           ambient_music: boolean
           coffee: boolean
           created_at: string
+          digest_active: boolean
+          digest_article_limit: number
+          digest_frequency: string
+          digest_next_dispatch: string | null
+          digest_reading_time: number
           id: string
           music_genre: string | null
           overbooking_enabled: boolean
@@ -310,6 +403,11 @@ export type Database = {
           ambient_music?: boolean
           coffee?: boolean
           created_at?: string
+          digest_active?: boolean
+          digest_article_limit?: number
+          digest_frequency?: string
+          digest_next_dispatch?: string | null
+          digest_reading_time?: number
           id?: string
           music_genre?: string | null
           overbooking_enabled?: boolean
@@ -324,6 +422,11 @@ export type Database = {
           ambient_music?: boolean
           coffee?: boolean
           created_at?: string
+          digest_active?: boolean
+          digest_article_limit?: number
+          digest_frequency?: string
+          digest_next_dispatch?: string | null
+          digest_reading_time?: number
           id?: string
           music_genre?: string | null
           overbooking_enabled?: boolean
@@ -653,28 +756,34 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string
           email: string
           id: string
           medico_nome: string
           updated_at: string
           user_id: string
+          whatsapp_number: string | null
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
           email: string
           id?: string
           medico_nome: string
           updated_at?: string
           user_id: string
+          whatsapp_number?: string | null
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
           email?: string
           id?: string
           medico_nome?: string
           updated_at?: string
           user_id?: string
+          whatsapp_number?: string | null
         }
         Relationships: []
       }
@@ -980,6 +1089,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_fully_dispatched_article_ids: {
+        Args: never
+        Returns: {
+          article_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -14,6 +14,11 @@ export interface DoctorPreferences {
   music_genre: string | null;
   coffee: boolean;
   tea: boolean;
+  digest_frequency: string;
+  digest_article_limit: number;
+  digest_reading_time: number;
+  digest_active: boolean;
+  digest_next_dispatch: string | null;
   created_at: string;
   updated_at: string;
 }
