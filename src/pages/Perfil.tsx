@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { User, Bell, Camera, Loader2, Save, MessageSquare, BookOpen, Clock } from "lucide-react";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -124,11 +126,16 @@ export default function PerfilPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <User className="h-5 w-5 text-primary" />
-        <h2 className="text-xl font-semibold">Meu Perfil</h2>
-      </div>
+    <TooltipProvider>
+      <MainLayout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <User className="h-6 w-6 text-primary" />
+              Meu Perfil
+            </h1>
+            <p className="text-muted-foreground mt-1">Gerencie suas informações e preferências</p>
+          </div>
 
       {/* Profile Info + Avatar */}
       {profile && (
@@ -305,6 +312,8 @@ export default function PerfilPage() {
         </div>
         <ReminderCard />
       </div>
-    </div>
+        </div>
+      </MainLayout>
+    </TooltipProvider>
   );
 }
