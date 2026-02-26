@@ -138,16 +138,23 @@ Deno.serve(async (req) => {
       const title = match[1].trim()
       const url = match[2].trim()
       
-      // Filter out navigation, menu items, etc. - keep only substantial titles
+      // Filter out navigation, menu items, author names, commentary refs
+      const lowerTitle = title.toLowerCase()
       if (
-        title.length > 20 &&
-        !title.toLowerCase().includes('sign in') &&
-        !title.toLowerCase().includes('subscribe') &&
-        !title.toLowerCase().includes('cookie') &&
-        !title.toLowerCase().includes('privacy') &&
-        !title.toLowerCase().includes('terms of') &&
-        !title.toLowerCase().includes('menu') &&
-        !title.toLowerCase().includes('navigation')
+        title.length > 30 &&
+        !lowerTitle.includes('sign in') &&
+        !lowerTitle.includes('subscribe') &&
+        !lowerTitle.includes('cookie') &&
+        !lowerTitle.includes('privacy') &&
+        !lowerTitle.includes('terms of') &&
+        !lowerTitle.includes('menu') &&
+        !lowerTitle.includes('navigation') &&
+        !lowerTitle.startsWith('see the invited') &&
+        !lowerTitle.startsWith('see the ') &&
+        // Filter author-only links (typically just names with no other words)
+        !/^[A-Z][a-z]+ [A-Z]/.test(title.trim()) &&
+        // Must contain at least one article-like URL pattern
+        (url.includes('/doi/') || url.includes('/article/') || url.includes('/abs/') || url.includes('/full/') || url.includes('/pdf/'))
       ) {
         articles.push({ title, url })
       }
@@ -172,6 +179,7 @@ Deno.serve(async (req) => {
     // Insert into database
     let inserted = 0
     let skipped = 0
+    const insertedArticles: { title: string; url: string; subgroup: string }[] = []
 
     for (const article of toProcess) {
       const subgroup = classifySubgroup(article.title)
@@ -196,6 +204,7 @@ Deno.serve(async (req) => {
         skipped++
       } else {
         inserted++
+        insertedArticles.push({ title: article.title, url: article.url, subgroup })
       }
     }
 
@@ -209,6 +218,7 @@ Deno.serve(async (req) => {
         processed: toProcess.length,
         inserted,
         skipped,
+        articles: insertedArticles,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

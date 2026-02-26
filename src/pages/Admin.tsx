@@ -45,6 +45,7 @@ interface ScrapeLog {
   found?: number;
   inserted?: number;
   error?: string;
+  articles?: { title: string; url: string; subgroup: string }[];
 }
 
 const JOURNAL_SOURCES = [
@@ -240,7 +241,7 @@ export default function Admin() {
       if (data?.error || !data?.success) throw new Error(data?.error || 'Erro desconhecido');
 
       setScrapeLogs(prev => prev.map(l =>
-        l.id === logId ? { ...l, status: 'done', found: data.found, inserted: data.inserted } : l
+        l.id === logId ? { ...l, status: 'done', found: data.found, inserted: data.inserted, articles: data.articles || [] } : l
       ));
       toast({ title: "✅ Scraping concluído!", description: `${data.inserted} artigos novos de ${data.found} encontrados.` });
     } catch (err: any) {
@@ -455,9 +456,30 @@ export default function Admin() {
                             </span>
                           </div>
                           {log.status === 'done' && (
-                            <p className="text-xs text-green-600 mt-1">
-                              {log.found} encontrados · {log.inserted} novos inseridos
-                            </p>
+                            <div className="mt-1">
+                              <p className="text-xs text-green-600">
+                                {log.found} encontrados · {log.inserted} novos inseridos
+                              </p>
+                              {log.articles && log.articles.length > 0 && (
+                                <div className="mt-2 space-y-1 max-h-60 overflow-y-auto">
+                                  {log.articles.map((article, idx) => (
+                                    <div key={idx} className="flex items-start gap-2 text-xs">
+                                      <Badge variant="outline" className="shrink-0 text-[10px] px-1.5">
+                                        {article.subgroup}
+                                      </Badge>
+                                      <a
+                                        href={article.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-primary hover:underline truncate"
+                                      >
+                                        {article.title}
+                                      </a>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           )}
                           {log.status === 'failed' && log.error && (
                             <p className="text-xs text-red-600 mt-1">{log.error}</p>
