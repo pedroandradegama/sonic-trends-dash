@@ -1,0 +1,1 @@
+DELETE FROM ultrasound_articles WHERE source = 'Radiographics' AND (title ILIKE 'See the invited%' OR url LIKE '%/author/%');
