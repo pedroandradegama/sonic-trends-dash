@@ -33,19 +33,31 @@ const handler = async (req: Request): Promise<Response> => {
     });
   }
 
-  // Valida o JWT via getUser
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
-    { global: { headers: { Authorization: authHeader } } }
-  );
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const token = authHeader.replace("Bearer ", "");
+  const isServiceRole = token === serviceRoleKey;
 
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  if (userError || !user) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+  let userId: string | null = null;
+
+  if (isServiceRole) {
+    // Server-to-server call (e.g. dispatch-digests), skip user validation
+    userId = "service-role";
+  } else {
+    // Valida o JWT via getUser
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    userId = user.id;
   }
 
   if (!WHATSAPP_TOKEN) {
@@ -133,7 +145,7 @@ const handler = async (req: Request): Promise<Response> => {
       meta_message_id: metaMessageId,
       error_message: success ? null : JSON.stringify(metaData),
       sent_at: success ? new Date().toISOString() : null,
-      created_by: user.id,
+      created_by: userId === "service-role" ? null : userId,
     });
 
     if (!success) {
