@@ -106,57 +106,62 @@ Deno.serve(async (req) => {
 
         const summaryMap = new Map((summaries || []).map((s: any) => [s.article_id, s]));
 
-        // 3. Build message
-        let message = `🔬 *DIGEST RADIOLOGIA & ULTRASSONOGRAFIA*\n`;
-        message += `📅 ${formatDate(today)}  |  ⏱ ~${readingTime} min por artigo\n`;
-        message += `📄 ${articles?.length || 0} artigo(s) selecionado(s)\n\n`;
-
-        let idx = 1;
-        for (const article of articles || []) {
-          const summary = summaryMap.get(article.id);
-          if (!summary) continue;
-
-          const emoji = summary.emoji_highlight || "🔬";
-          message += `━━━━━━━━━━━━━━━━━━━━━\n`;
-          message += `${emoji} *${idx}. ${summary.short_title || article.title}*\n`;
-          message += `📰 ${article.source} · ${article.publication_date ? formatDate(article.publication_date) : "N/A"}\n`;
-          message += `📊 Evidência: *${summary.evidence_level || "N/A"}*\n\n`;
-
-          if (summary.hot_topics?.length > 0) {
-            message += `🏷️ ${summary.hot_topics.map((t: string) => `#${t.replace(/\s+/g, "_")}`).join(" ")}\n\n`;
-          }
-
-          const summaryText = (summary as any)[summaryField] || summary.summary_5min || "";
-          if (summaryText) {
-            message += `${summaryText}\n\n`;
-          }
-
-          if (summary.clinical_impact) {
-            message += `⚡ *Impacto clínico:* ${summary.clinical_impact}\n\n`;
-          }
-
-          message += `🔗 ${article.url}\n\n`;
-          idx++;
-        }
-
-        message += `━━━━━━━━━━━━━━━━━━━━━\n`;
-        message += `_Digest gerado automaticamente. Para alterar suas preferências, acesse o app._`;
-
-        // 4. Send via send-whatsapp
-        const { data: sendResult, error: sendError } = await supabase.functions.invoke("send-whatsapp", {
+        // 3. Send header template
+        const dataFormatada = formatDate(today);
+        const { error: headerError } = await supabase.functions.invoke("send-whatsapp", {
           body: {
             to: profile.whatsapp_number,
             recipientName: profile.medico_nome,
             notificationType: "artigos_resumo",
-            templateName: "digest_artigos_radiologia",
-            templateParams: [message],
+            templateName: "digest_radiologia_introducao",
             languageCode: "pt_BR",
+            templateParams: [
+              dataFormatada,
+              readingTime.toString(),
+              (articles?.length || 0).toString(),
+            ],
           },
         });
 
-        if (sendError || sendResult?.error) {
-          const errMsg = sendError?.message || sendResult?.error || "Unknown error";
-          console.error(`Failed to send to ${doctorId}:`, errMsg);
+        if (headerError) {
+          console.error(`Failed to send header to ${doctorId}:`, headerError.message);
+        }
+
+        // 4. Send one message per article
+        let allSent = true;
+        for (const article of articles || []) {
+          const summary = summaryMap.get(article.id);
+          if (!summary) continue;
+
+          const summaryText = (summary as any)[summaryField] || summary.summary_5min || "";
+          const { error: artError } = await supabase.functions.invoke("send-whatsapp", {
+            body: {
+              to: profile.whatsapp_number,
+              recipientName: profile.medico_nome,
+              notificationType: "artigos_resumo",
+              templateName: "digest_radiologia_artigo",
+              languageCode: "pt_BR",
+              templateParams: [
+                (summary as any).short_title || article.title,
+                article.source,
+                summaryText,
+                article.url,
+              ],
+            },
+          });
+
+          if (artError) {
+            console.error(`Failed to send article ${article.id} to ${doctorId}:`, artError.message);
+            allSent = false;
+          }
+
+          // Delay between sends to avoid rate limiting
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+
+        if (!allSent || headerError) {
+          const errMsg = headerError?.message || "One or more articles failed";
+          console.error(`Partial failure for ${doctorId}:`, errMsg);
 
           await supabase
             .from("digest_dispatch_queue")
