@@ -111,29 +111,9 @@ Deno.serve(async (req) => {
 
         const summaryMap = new Map((summaries || []).map((s: any) => [s.article_id, s]));
 
-        // 3. Send header template
-        const dataFormatada = formatDate(today);
-        const { error: headerError } = await supabase.functions.invoke("send-whatsapp", {
-          body: {
-            to: profile.whatsapp_number,
-            recipientName: profile.medico_nome,
-            notificationType: "artigos_resumo",
-            templateName: "digest_radiologia_introducao",
-            languageCode: "pt_BR",
-            templateParams: [
-              dataFormatada,
-              readingTime.toString(),
-              (articles?.length || 0).toString(),
-            ],
-          },
-        });
-
-        if (headerError) {
-          console.error(`Failed to send header to ${doctorId}:`, headerError.message);
-        }
-
-        // 4. Send one message per article
+        // 3. Send articles FIRST (before header to avoid duplicate headers on retries)
         let allSent = true;
+        let articlesSentCount = 0;
         for (const article of articles || []) {
           const summary = summaryMap.get(article.id);
           if (!summary) continue;
@@ -162,14 +142,42 @@ Deno.serve(async (req) => {
           if (artError) {
             console.error(`Failed to send article ${article.id} to ${doctorId}:`, artError.message);
             allSent = false;
+          } else {
+            articlesSentCount++;
           }
 
           // Delay between sends to avoid rate limiting
           await new Promise((resolve) => setTimeout(resolve, 500));
         }
 
-        if (!allSent || headerError) {
-          const errMsg = headerError?.message || "One or more articles failed";
+        // 4. Send header ONLY if at least one article was sent successfully
+        let headerError: Error | null = null;
+        if (articlesSentCount > 0) {
+          const dataFormatada = formatDate(today);
+          const result = await supabase.functions.invoke("send-whatsapp", {
+            body: {
+              to: profile.whatsapp_number,
+              recipientName: profile.medico_nome,
+              notificationType: "artigos_resumo",
+              templateName: "digest_radiologia_introducao",
+              languageCode: "pt_BR",
+              templateParams: [
+                dataFormatada,
+                readingTime.toString(),
+                articlesSentCount.toString(),
+              ],
+            },
+          });
+          headerError = result.error;
+          if (headerError) {
+            console.error(`Failed to send header to ${doctorId}:`, headerError.message);
+          }
+        } else {
+          console.log(`No articles sent for ${doctorId}, skipping header`);
+        }
+
+        if (!allSent || headerError || articlesSentCount === 0) {
+          const errMsg = articlesSentCount === 0 ? "No articles could be sent" : (headerError?.message || "One or more articles failed");
           console.error(`Partial failure for ${doctorId}:`, errMsg);
 
           await supabase
