@@ -24,31 +24,39 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 1. Find articles without summaries
-    const { data: articles, error: articlesError } = await supabase
+    // 1. Find articles that need summaries (missing row OR all summary fields null)
+    const { data: allArticles, error: allArticlesError } = await supabase
       .from("ultrasound_articles")
       .select("id, title, url, tags, subgroup, source, publication_date")
-      .not("id", "in", `(SELECT article_id FROM article_summaries)`)
       .order("publication_date", { ascending: false })
-      .limit(20);
+      .limit(100);
 
-    // Fallback: if the subquery doesn't work, use a different approach
-    let articlesToProcess = articles;
-    if (articlesError) {
-      console.log("Subquery failed, using manual approach:", articlesError.message);
-      const { data: allArticles } = await supabase
-        .from("ultrasound_articles")
-        .select("id, title, url, tags, subgroup, source, publication_date")
-        .order("publication_date", { ascending: false })
-        .limit(100);
-
-      const { data: existingSummaries } = await supabase
-        .from("article_summaries")
-        .select("article_id");
-
-      const existingIds = new Set((existingSummaries || []).map((s: any) => s.article_id));
-      articlesToProcess = (allArticles || []).filter((a: any) => !existingIds.has(a.id)).slice(0, 20);
+    if (allArticlesError) {
+      throw allArticlesError;
     }
+
+    const articleIds = (allArticles || []).map((a: any) => a.id);
+
+    const { data: existingSummaries, error: existingSummariesError } = articleIds.length
+      ? await supabase
+          .from("article_summaries")
+          .select("article_id, summary_3min, summary_5min, summary_10min")
+          .in("article_id", articleIds)
+      : { data: [], error: null as any };
+
+    if (existingSummariesError) {
+      throw existingSummariesError;
+    }
+
+    const summaryMap = new Map((existingSummaries || []).map((s: any) => [s.article_id, s]));
+
+    const articlesToProcess = (allArticles || [])
+      .filter((article: any) => {
+        const s = summaryMap.get(article.id);
+        if (!s) return true;
+        return !s.summary_3min && !s.summary_5min && !s.summary_10min;
+      })
+      .slice(0, 20);
 
     if (!articlesToProcess || articlesToProcess.length === 0) {
       console.log("No articles to summarize");
@@ -157,6 +165,7 @@ Responda APENAS com o JSON, sem texto adicional nem markdown.`,
       const { data: newSummaries } = await supabase
         .from("article_summaries")
         .select("article_id")
+        .or("summary_3min.not.is.null,summary_5min.not.is.null,summary_10min.not.is.null")
         .order("summarized_at", { ascending: false })
         .limit(30);
 
