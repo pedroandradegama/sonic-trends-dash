@@ -22,6 +22,11 @@ function getReadingTimeField(minutes: number): string {
   return "summary_5min";
 }
 
+function truncateParam(text: string, maxLen = 900): string {
+  if (!text || text.length <= maxLen) return text;
+  return text.slice(0, maxLen - 3) + "...";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -142,10 +147,10 @@ Deno.serve(async (req) => {
               templateName: "digest_radiologia_artigo",
               languageCode: "pt_BR",
               templateParams: [
-                (summary as any).short_title || article.title,
-                article.source,
-                summaryText,
-                article.url,
+                truncateParam((summary as any).short_title || article.title, 200),
+                truncateParam(article.source, 100),
+                truncateParam(summaryText, 900),
+                truncateParam(article.url, 500),
               ],
             },
           });
