@@ -138,7 +138,11 @@ Deno.serve(async (req) => {
           const summary = summaryMap.get(article.id);
           if (!summary) continue;
 
-          const summaryText = (summary as any)[summaryField] || summary.summary_5min || "";
+          const summaryText = (summary as any)[summaryField] || summary.summary_5min || summary.summary_3min || summary.summary_10min || "";
+          if (!summaryText) {
+            console.log(`No summary text for article ${article.id}, skipping`);
+            continue;
+          }
           const { error: artError } = await supabase.functions.invoke("send-whatsapp", {
             body: {
               to: profile.whatsapp_number,
