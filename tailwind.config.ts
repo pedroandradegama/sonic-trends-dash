@@ -19,9 +19,9 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				display: ['Sora', 'sans-serif'],
-				body: ['DM Sans', 'sans-serif'],
-				sans: ['DM Sans', 'sans-serif'],
+				sans: ['DM Sans', 'system-ui', 'sans-serif'],
+				display: ['Sora', 'DM Sans', 'system-ui', 'sans-serif'],
+				body: ['DM Sans', 'system-ui', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
@@ -32,6 +32,8 @@ export default {
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))',
+					light: 'hsl(var(--primary-light))',
+					dark: 'hsl(var(--primary-dark))',
 					hover: 'hsl(var(--primary-hover))'
 				},
 				secondary: {
@@ -49,6 +51,10 @@ export default {
 				warning: {
 					DEFAULT: 'hsl(var(--warning))',
 					foreground: 'hsl(var(--warning-foreground))'
+				},
+				info: {
+					DEFAULT: 'hsl(var(--info))',
+					foreground: 'hsl(var(--info-foreground))'
 				},
 				muted: {
 					DEFAULT: 'hsl(var(--muted))',
@@ -96,11 +102,12 @@ export default {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			boxShadow: {
-				'glass': '0 8px 32px 0 hsl(195 46% 27% / 0.08)',
-				'imag-sm': '0 1px 2px 0 hsl(195 46% 27% / 0.05)',
-				'imag-md': '0 4px 6px -1px hsl(195 46% 27% / 0.08)',
-				'imag-lg': '0 10px 15px -3px hsl(195 46% 27% / 0.1)',
-				'imag-xl': '0 20px 25px -5px hsl(195 46% 27% / 0.12)',
+				'glass': 'var(--shadow-glass)',
+				'imag-sm': 'var(--shadow-sm)',
+				'imag-md': 'var(--shadow-md)',
+				'imag-lg': 'var(--shadow-lg)',
+				'imag-xl': 'var(--shadow-xl)',
+				'card': 'var(--shadow-card)',
 			},
 			keyframes: {
 				'accordion-down': {
