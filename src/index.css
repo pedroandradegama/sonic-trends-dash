@@ -2,127 +2,138 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* IMAG Design System — All colors MUST be HSL */
+
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
     --background: 210 20% 98%;
-    --foreground: 215 20% 20%;
+    --foreground: 210 40% 14%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 20% 20%;
+    --card-foreground: 210 40% 14%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 20% 20%;
+    --popover-foreground: 210 40% 14%;
 
-    --primary: 195 46% 27%; /* IMAG Primary #275667 */
+    --primary: 195 47% 34%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 195 46% 22%;
+    --primary-light: 193 44% 42%;
+    --primary-dark: 195 50% 25%;
+    --primary-hover: 195 50% 25%;
 
-    --secondary: 210 30% 95%;
-    --secondary-foreground: 215 20% 25%;
+    --secondary: 190 40% 49%;
+    --secondary-foreground: 0 0% 100%;
 
     --muted: 210 20% 96%;
-    --muted-foreground: 215 15% 50%;
+    --muted-foreground: 210 15% 45%;
 
-    --accent: 195 100% 88%;
-    --accent-foreground: 215 20% 25%;
+    --accent: 190 45% 60%;
+    --accent-foreground: 210 40% 14%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 69% 58%;
+    --success: 152 60% 40%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 45 93% 47%;
+    --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
+
+    --info: 210 80% 55%;
+    --info-foreground: 0 0% 100%;
 
     --border: 210 20% 90%;
     --input: 210 20% 92%;
-    --ring: 210 85% 45%;
+    --ring: 195 47% 34%;
 
     /* IMAG Brand Colors */
-    --imag-primary: 195 46% 27%; /* #275667 */
-    --imag-primary-light: 195 46% 85%;
-    --imag-secondary: 210 20% 96%; /* #F5F7F9 */
-    --imag-accent: 195 100% 70%;
-    --imag-success: 142 69% 58%;
-    --imag-warning: 45 93% 47%;
+    --imag-primary: 195 47% 34%;
+    --imag-primary-light: 193 44% 42%;
+    --imag-secondary: 210 20% 96%;
+    --imag-accent: 190 45% 60%;
+    --imag-success: 152 60% 40%;
+    --imag-warning: 38 92% 50%;
     --imag-error: 0 72% 51%;
 
     /* Medical/Chart Colors */
-    --medical-teal: 180 45% 35%; /* Azul petróleo para gráficos */
+    --medical-teal: 180 45% 35%;
     --medical-teal-light: 180 45% 70%;
     --medical-blue: 210 85% 45%;
-    --medical-success: 142 69% 58%;
+    --medical-success: 152 60% 40%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(210 85% 45%), hsl(195 100% 70%));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 20% 98%));
+    --gradient-primary: linear-gradient(135deg, hsl(195 47% 34%), hsl(193 44% 42%));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 20% 99%));
     --gradient-subtle: linear-gradient(180deg, hsl(210 20% 98%), hsl(210 15% 96%));
-    --gradient-page: linear-gradient(135deg, hsl(195 46% 27% / 0.03) 0%, hsl(180 45% 35% / 0.05) 50%, hsl(142 69% 58% / 0.03) 100%);
+    --gradient-page: linear-gradient(135deg, hsl(195 47% 34% / 0.03) 0%, hsl(180 45% 35% / 0.05) 50%, hsl(152 60% 40% / 0.03) 100%);
 
     /* Shadows */
-    --shadow-card: 0 4px 6px -1px hsl(210 20% 85% / 0.1), 0 2px 4px -1px hsl(210 20% 85% / 0.06);
-    --shadow-elevated: 0 10px 15px -3px hsl(210 20% 85% / 0.1), 0 4px 6px -2px hsl(210 20% 85% / 0.05);
-    --shadow-medical: 0 4px 20px hsl(210 85% 45% / 0.1);
-    --shadow-glass: 0 8px 32px 0 hsl(195 46% 27% / 0.08);
-    
+    --shadow-sm: 0 1px 2px 0 hsl(195 47% 34% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(195 47% 34% / 0.08);
+    --shadow-lg: 0 10px 15px -3px hsl(195 47% 34% / 0.1);
+    --shadow-xl: 0 20px 25px -5px hsl(195 47% 34% / 0.12);
+    --shadow-card: 0 4px 6px -1px hsl(195 47% 34% / 0.1), 0 2px 4px -1px hsl(195 47% 34% / 0.06);
+    --shadow-glass: 0 8px 32px 0 hsl(195 47% 34% / 0.08);
+
     /* Background decorative elements */
-    --bg-dot-pattern: radial-gradient(circle, hsl(195 46% 27% / 0.08) 1px, transparent 1px);
-    --bg-grid-pattern: linear-gradient(hsl(195 46% 27% / 0.03) 1px, transparent 1px),
-                       linear-gradient(to right, hsl(195 46% 27% / 0.03) 1px, transparent 1px);
+    --bg-dot-pattern: radial-gradient(circle, hsl(195 47% 34% / 0.08) 1px, transparent 1px);
+    --bg-grid-pattern: linear-gradient(hsl(195 47% 34% / 0.03) 1px, transparent 1px),
+                       linear-gradient(to right, hsl(195 47% 34% / 0.03) 1px, transparent 1px);
 
-    --radius: 0.75rem;
+    --radius: 0.625rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 210 40% 14%;
+    --sidebar-primary: 195 47% 34%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 20% 96%;
+    --sidebar-accent-foreground: 210 40% 14%;
+    --sidebar-border: 210 20% 92%;
+    --sidebar-ring: 195 47% 34%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 210 35% 8%;
+    --foreground: 210 20% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 210 30% 12%;
+    --card-foreground: 210 20% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 210 30% 12%;
+    --popover-foreground: 210 20% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 193 44% 42%;
+    --primary-foreground: 210 35% 8%;
+    --primary-light: 193 44% 50%;
+    --primary-dark: 195 50% 30%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 210 25% 18%;
+    --secondary-foreground: 210 20% 95%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 210 25% 15%;
+    --muted-foreground: 210 15% 60%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 210 25% 20%;
+    --accent-foreground: 210 20% 95%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 210 20% 95%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --border: 210 25% 20%;
+    --input: 210 25% 20%;
+    --ring: 193 44% 42%;
+
+    --sidebar-background: 210 30% 12%;
+    --sidebar-foreground: 210 20% 90%;
+    --sidebar-primary: 193 44% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 210 28% 16%;
+    --sidebar-accent-foreground: 210 20% 90%;
+    --sidebar-border: 210 28% 18%;
+    --sidebar-ring: 193 44% 42%;
   }
 }
 
@@ -146,7 +157,7 @@ All colors MUST be HSL.
     right: -5%;
     width: 800px;
     height: 800px;
-    background: radial-gradient(circle, hsl(195 46% 27% / 0.06) 0%, transparent 70%);
+    background: radial-gradient(circle, hsl(195 47% 34% / 0.06) 0%, transparent 70%);
     border-radius: 50%;
     pointer-events: none;
     z-index: 0;
@@ -178,10 +189,12 @@ All colors MUST be HSL.
 @layer components {
   /* Cards com Glassmorphism */
   .card-glass {
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    background-color: rgba(255, 255, 255, 0.75);
-    @apply rounded-lg p-6 border border-border/60 shadow-sm;
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    background-color: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: var(--shadow-glass);
+    @apply rounded-2xl;
     position: relative;
     overflow: hidden;
   }
@@ -193,21 +206,74 @@ All colors MUST be HSL.
     right: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(circle, hsl(195 46% 27% / 0.03) 0%, transparent 70%);
+    background: radial-gradient(circle, hsl(195 47% 34% / 0.03) 0%, transparent 70%);
     pointer-events: none;
+  }
+
+  /* Stat Card — KPI/estatística */
+  .stat-card {
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: var(--shadow-glass);
+    @apply rounded-2xl transition-all duration-200;
+  }
+
+  .stat-card:hover {
+    box-shadow: var(--shadow-lg);
+    border-color: hsl(195 47% 34% / 0.2);
+    transform: translateY(-1px);
   }
 
   /* Glass utilities */
   .glass-light {
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px) saturate(150%);
+    -webkit-backdrop-filter: blur(10px) saturate(150%);
     background-color: rgba(255, 255, 255, 0.8);
   }
 
   .glass-medium {
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     background-color: rgba(255, 255, 255, 0.7);
+  }
+
+  /* Form section */
+  .form-section {
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    @apply rounded-xl p-6;
+  }
+
+  /* Data table */
+  .data-table thead th {
+    @apply bg-white/30 text-muted-foreground;
+  }
+
+  .data-table tbody tr:hover {
+    @apply bg-white/20;
+  }
+
+  .data-table td,
+  .data-table th {
+    @apply border-border/50;
+  }
+
+  /* Page layout */
+  .page-container {
+    @apply p-6 lg:p-8;
+  }
+
+  .page-title {
+    font-family: 'Sora', sans-serif;
+    @apply text-2xl font-bold text-foreground;
+  }
+
+  .page-description {
+    @apply text-sm text-muted-foreground;
   }
 }
 
@@ -219,7 +285,7 @@ All colors MUST be HSL.
   /* Custom Scrollbar */
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: hsl(195 46% 27% / 0.3) transparent;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
@@ -232,12 +298,12 @@ All colors MUST be HSL.
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: hsl(195 46% 27% / 0.3);
+    background-color: hsl(var(--muted-foreground) / 0.3);
     border-radius: 3px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background-color: hsl(195 46% 27% / 0.5);
+    background-color: hsl(var(--muted-foreground) / 0.5);
   }
 
   /* Hover Lift Effect */
@@ -257,7 +323,7 @@ All colors MUST be HSL.
   background-size: 48px 48px;
 }
 
-/* Decorative shapes (legacy) */
+/* Decorative shapes */
 .decorative-blob {
   position: absolute;
   border-radius: 50%;
@@ -267,7 +333,7 @@ All colors MUST be HSL.
 }
 
 .decorative-blob-1 {
-  background: hsl(195 46% 27% / 0.15);
+  background: hsl(195 47% 34% / 0.15);
   width: 400px;
   height: 400px;
   top: -100px;
@@ -275,7 +341,7 @@ All colors MUST be HSL.
 }
 
 .decorative-blob-2 {
-  background: hsl(142 69% 58% / 0.1);
+  background: hsl(152 60% 40% / 0.1);
   width: 300px;
   height: 300px;
   bottom: 10%;
@@ -291,7 +357,7 @@ All colors MUST be HSL.
 }
 
 /* ============================================
-   ANIMATIONS (delayed fade/scale)
+   ANIMATIONS
    ============================================ */
 
 .fade-in-up {
@@ -301,6 +367,33 @@ All colors MUST be HSL.
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out both;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out both;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.5s ease-out both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 /* ============================================
