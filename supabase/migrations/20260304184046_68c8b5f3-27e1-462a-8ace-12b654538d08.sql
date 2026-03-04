@@ -1,0 +1,2 @@
+INSERT INTO public.digest_dispatch_queue (doctor_id, article_id, scheduled_for, status)
+VALUES ('a2c10ae4-0324-4b15-ae01-8e770f567440', '0b49598f-c503-4733-b497-82017e3a466f', CURRENT_DATE, 'pending');
