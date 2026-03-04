@@ -72,10 +72,11 @@ export function ExternalLink({
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (external) {
       e.preventDefault();
-      const opened = window.open(normalizedHref, '_blank', 'noopener,noreferrer');
-      if (!opened) {
-        window.location.href = normalizedHref;
-      }
+      e.stopPropagation();
+      // Use setTimeout to avoid blocking the current tab's event loop
+      setTimeout(() => {
+        window.open(normalizedHref, '_blank', 'noopener,noreferrer');
+      }, 0);
     }
     onClick?.(e);
   };
