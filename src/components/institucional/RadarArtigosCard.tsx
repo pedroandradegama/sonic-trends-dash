@@ -52,6 +52,8 @@ const JOURNAL_SOURCES = [
   { key: 'radiology', label: 'Radiology' },
   { key: 'ajr', label: 'AJR' },
   { key: 'jum', label: 'J Ultrasound Med' },
+  { key: 'european_radiology', label: 'European Radiology' },
+  { key: 'jcu', label: 'J Clinical Ultrasound' },
 ];
 
 function isNew(date: string | null): boolean {
