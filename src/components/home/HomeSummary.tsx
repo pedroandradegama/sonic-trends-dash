@@ -34,6 +34,9 @@ export function HomeSummary() {
   const { cases: interestingCases, loading: casesLoading } = useInterestingCases();
   const { comunicacoes, isLoading: agendaLoading } = useAgendaComunicacoes();
   const { data: articles } = useUltrasoundArticles({ });
+  const { data: repasseRaw } = useRepasseData();
+  const { holidays } = useAdminHolidays();
+  const { dates: radioburgerDates } = useAdminRadioburger();
 
   const topExams = useMemo(() => examDistribution.slice(0, 3), [examDistribution]);
 
@@ -56,13 +59,17 @@ export function HomeSummary() {
   }, [npsData]);
 
   const nextFeriado = useMemo(() => {
-    return FERIADOS_2026.find(f => isFuture(parseISO(f.date)) || isToday(parseISO(f.date)));
-  }, []);
+    return holidays.find(f => isFuture(parseISO(f.date)) || isToday(parseISO(f.date)));
+  }, [holidays]);
 
   const radioburgerDaysUntil = useMemo(() => {
-    const d = differenceInDays(parseISO(NEXT_RADIOBURGER), new Date());
-    return d >= 0 ? d : null;
-  }, []);
+    const next = radioburgerDates.find(d => {
+      const diff = differenceInDays(parseISO(d.date), new Date());
+      return diff >= 0;
+    });
+    if (!next) return null;
+    return differenceInDays(parseISO(next.date), new Date());
+  }, [radioburgerDates]);
 
   const latestArticle = useMemo(() => {
     if (!articles || articles.length === 0) return null;
