@@ -11,7 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Plus, UserCheck, UserX, Trash2, Users, Shield, Clock, MessageCircle, Send, CheckCircle2, XCircle, Loader2, Newspaper, Globe } from 'lucide-react';
+import { ArrowLeft, Plus, UserCheck, UserX, Trash2, Users, Shield, Clock, MessageCircle, Send, CheckCircle2, XCircle, Loader2, Newspaper, Globe, Settings } from 'lucide-react';
+import { AdminConfigTab } from '@/components/admin/AdminConfigTab';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -307,6 +308,9 @@ export default function Admin() {
             </TabsTrigger>
             <TabsTrigger value="whatsapp" className="flex items-center gap-2">
               <MessageCircle className="h-4 w-4" /> WhatsApp
+            </TabsTrigger>
+            <TabsTrigger value="config" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" /> Configurações
             </TabsTrigger>
           </TabsList>
 
@@ -606,6 +610,11 @@ export default function Admin() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          {/* ── ABA CONFIGURAÇÕES ── */}
+          <TabsContent value="config">
+            <AdminConfigTab />
           </TabsContent>
         </Tabs>
       </div>

@@ -7,7 +7,7 @@ import { CalendarIcon } from "lucide-react";
 import { format, startOfDay, endOfDay, subDays, startOfMonth, startOfYear, isAfter, isBefore, isWithinInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-export type PeriodType = 'today' | '7d' | 'mtd' | 'ytd' | 'custom' | 'month';
+export type PeriodType = 'today' | '7d' | 'mtd' | 'ytd' | 'custom' | 'month' | 'all';
 
 interface PeriodFilterProps {
   period: PeriodType;
@@ -128,6 +128,7 @@ export function PeriodFilter({
             Ano atual
           </SelectItem>
           <SelectItem value="month">Por mês</SelectItem>
+          <SelectItem value="all">Todo o período</SelectItem>
           <SelectItem value="custom">Personalizado</SelectItem>
         </SelectContent>
       </Select>

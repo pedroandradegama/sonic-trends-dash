@@ -9,6 +9,8 @@ export interface InterestingCase {
   diagnostic_hypothesis: string | null;
   wants_followup: boolean;
   followup_days: number | null;
+  shared_with_team: boolean;
+  request_opinion: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -46,6 +48,8 @@ export function useInterestingCases() {
     diagnostic_hypothesis?: string;
     wants_followup: boolean;
     followup_days?: number;
+    shared_with_team?: boolean;
+    request_opinion?: boolean;
   }) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Não autenticado');
@@ -57,6 +61,8 @@ export function useInterestingCases() {
       diagnostic_hypothesis: newCase.diagnostic_hypothesis || null,
       wants_followup: newCase.wants_followup,
       followup_days: newCase.wants_followup ? newCase.followup_days : null,
+      shared_with_team: newCase.shared_with_team || false,
+      request_opinion: newCase.request_opinion || false,
     }]);
 
     if (error) throw error;

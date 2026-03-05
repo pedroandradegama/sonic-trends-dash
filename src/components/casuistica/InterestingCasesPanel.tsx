@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Share2, MessageCircle as MessageCircleIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +20,8 @@ export function InterestingCasesPanel() {
   const [hypothesis, setHypothesis] = useState('');
   const [wantsFollowup, setWantsFollowup] = useState(false);
   const [followupDays, setFollowupDays] = useState<number>(30);
+  const [sharedWithTeam, setSharedWithTeam] = useState(false);
+  const [requestOpinion, setRequestOpinion] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const resetForm = () => {
@@ -27,6 +30,8 @@ export function InterestingCasesPanel() {
     setHypothesis('');
     setWantsFollowup(false);
     setFollowupDays(30);
+    setSharedWithTeam(false);
+    setRequestOpinion(false);
     setShowForm(false);
   };
 
@@ -43,6 +48,8 @@ export function InterestingCasesPanel() {
         diagnostic_hypothesis: hypothesis.trim() || undefined,
         wants_followup: wantsFollowup,
         followup_days: wantsFollowup ? followupDays : undefined,
+        shared_with_team: sharedWithTeam,
+        request_opinion: requestOpinion,
       });
       toast.success('Caso adicionado com sucesso.');
       resetForm();
@@ -145,6 +152,16 @@ export function InterestingCasesPanel() {
                 </div>
               )}
             </div>
+            <div className="flex items-center gap-6 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Switch checked={sharedWithTeam} onCheckedChange={setSharedWithTeam} />
+                <Label className="flex items-center gap-1"><Share2 className="h-3.5 w-3.5" /> Compartilhar com a equipe</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={requestOpinion} onCheckedChange={setRequestOpinion} />
+                <Label className="flex items-center gap-1"><MessageCircleIcon className="h-3.5 w-3.5" /> Solicitar opinião da equipe</Label>
+              </div>
+            </div>
             <div className="flex gap-2">
               <Button onClick={handleSubmit} disabled={submitting} size="sm">
                 {submitting ? 'Salvando...' : 'Salvar'}
@@ -177,6 +194,18 @@ export function InterestingCasesPanel() {
                         <Badge variant="secondary" className="text-xs gap-1">
                           <Stethoscope className="h-3 w-3" />
                           {c.diagnostic_hypothesis}
+                        </Badge>
+                      )}
+                      {c.shared_with_team && (
+                        <Badge variant="outline" className="text-xs gap-1 border-primary/30 text-primary">
+                          <Share2 className="h-3 w-3" />
+                          Compartilhado
+                        </Badge>
+                      )}
+                      {c.request_opinion && (
+                        <Badge variant="outline" className="text-xs gap-1 border-[hsl(var(--warning))]/30 text-[hsl(var(--warning))]">
+                          <MessageCircleIcon className="h-3 w-3" />
+                          Opinião solicitada
                         </Badge>
                       )}
                     </div>

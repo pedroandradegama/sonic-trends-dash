@@ -3,24 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO, isPast, isFuture, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-
-interface Feriado {
-  date: string;
-  name: string;
-}
-
-const FERIADOS_2026: Feriado[] = [
-  { date: '2026-01-01', name: 'Confraternização Universal' },
-  { date: '2026-02-15', name: 'Domingo de Carnaval' },
-  { date: '2026-02-17', name: 'Terça-feira de Carnaval' },
-  { date: '2026-04-03', name: 'Sexta-feira Santa' },
-  { date: '2026-05-01', name: 'Dia do Trabalhador' },
-  { date: '2026-09-07', name: 'Independência do Brasil' },
-  { date: '2026-11-02', name: 'Finados' },
-  { date: '2026-12-25', name: 'Natal' },
-];
+import { useAdminHolidays } from '@/hooks/useAdminSettings';
+import { Loader2 } from 'lucide-react';
 
 const FeriadosCard = () => {
+  const { holidays, loading } = useAdminHolidays();
+
   const getStatus = (dateStr: string) => {
     const date = parseISO(dateStr);
     if (isToday(date)) return 'today';
@@ -33,14 +21,24 @@ const FeriadosCard = () => {
     return format(date, "dd 'de' MMMM (EEEE)", { locale: ptBR });
   };
 
-  const nextFeriado = FERIADOS_2026.find(f => isFuture(parseISO(f.date)) || isToday(parseISO(f.date)));
+  const nextFeriado = holidays.find(f => isFuture(parseISO(f.date)) || isToday(parseISO(f.date)));
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="flex justify-center py-8">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="bg-card border-border">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-semibold flex items-center gap-2">
           <CalendarOff className="h-5 w-5 text-destructive" />
-          Feriados 2026 - IMAG Fechado
+          Feriados – IMAG Fechado
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -54,12 +52,12 @@ const FeriadosCard = () => {
           </div>
         )}
 
-        <div className="space-y-2">
-          {FERIADOS_2026.map((feriado) => {
+        <div className="space-y-2 max-h-[300px] overflow-y-auto scrollbar-thin">
+          {holidays.map((feriado) => {
             const status = getStatus(feriado.date);
             return (
               <div 
-                key={feriado.date}
+                key={feriado.id}
                 className={`flex items-center justify-between p-2 rounded-lg transition-colors ${
                   status === 'past' ? 'opacity-50' : 
                   status === 'today' ? 'bg-destructive/10 border border-destructive/20' : 
@@ -75,18 +73,17 @@ const FeriadosCard = () => {
                   </p>
                 </div>
                 {status === 'today' && (
-                  <Badge variant="destructive" className="text-xs">
-                    Hoje
-                  </Badge>
+                  <Badge variant="destructive" className="text-xs">Hoje</Badge>
                 )}
                 {status === 'future' && (
-                  <Badge variant="outline" className="text-xs">
-                    Próximo
-                  </Badge>
+                  <Badge variant="outline" className="text-xs">Próximo</Badge>
                 )}
               </div>
             );
           })}
+          {holidays.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4">Nenhum feriado cadastrado.</p>
+          )}
         </div>
       </CardContent>
     </Card>

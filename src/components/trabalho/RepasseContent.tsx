@@ -38,6 +38,7 @@ export function RepasseContent() {
           return { start: startOfMonth(monthDate), end: endOfDay(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0)) };
         }
         return { start: startOfMonth(now), end: endOfDay(now) };
+      case 'all': return undefined;
       case 'custom':
         return startDate && endDate ? { start: startDate, end: endDate } : undefined;
       default: return undefined;

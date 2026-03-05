@@ -13,6 +13,9 @@ import { useNPSData } from '@/hooks/useNPSData';
 import { useInterestingCases } from '@/hooks/useInterestingCases';
 import { useAgendaComunicacoes } from '@/hooks/useAgendaComunicacoes';
 import { useUltrasoundArticles } from '@/hooks/useUltrasoundArticles';
+import { useAdminHolidays, useAdminRadioburger } from '@/hooks/useAdminSettings';
+import { useRepasseData } from '@/hooks/useRepasseData';
+import { DestaquesCard } from '@/components/home/DestaquesCard';
 import {
   DollarSign, BarChart3, ThumbsUp, ArrowRight,
   Baby, Stethoscope, BookOpen, ChevronRight, Bookmark,
@@ -21,20 +24,6 @@ import {
 } from 'lucide-react';
 import { format, parseISO, isFuture, isToday, addMonths, startOfMonth, endOfMonth, isWithinInterval, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-
-// Feriados 2026
-const FERIADOS_2026 = [
-  { date: '2026-01-01', name: 'Confraternização Universal' },
-  { date: '2026-02-15', name: 'Domingo de Carnaval' },
-  { date: '2026-02-17', name: 'Terça-feira de Carnaval' },
-  { date: '2026-04-03', name: 'Sexta-feira Santa' },
-  { date: '2026-05-01', name: 'Dia do Trabalhador' },
-  { date: '2026-09-07', name: 'Independência do Brasil' },
-  { date: '2026-11-02', name: 'Finados' },
-  { date: '2026-12-25', name: 'Natal' },
-];
-
-const NEXT_RADIOBURGER = '2026-02-20';
 
 export function HomeSummary() {
   const navigate = useNavigate();
@@ -45,6 +34,9 @@ export function HomeSummary() {
   const { cases: interestingCases, loading: casesLoading } = useInterestingCases();
   const { comunicacoes, isLoading: agendaLoading } = useAgendaComunicacoes();
   const { data: articles } = useUltrasoundArticles({ });
+  const { data: repasseRaw } = useRepasseData();
+  const { holidays } = useAdminHolidays();
+  const { dates: radioburgerDates } = useAdminRadioburger();
 
   const topExams = useMemo(() => examDistribution.slice(0, 3), [examDistribution]);
 
@@ -67,13 +59,17 @@ export function HomeSummary() {
   }, [npsData]);
 
   const nextFeriado = useMemo(() => {
-    return FERIADOS_2026.find(f => isFuture(parseISO(f.date)) || isToday(parseISO(f.date)));
-  }, []);
+    return holidays.find(f => isFuture(parseISO(f.date)) || isToday(parseISO(f.date)));
+  }, [holidays]);
 
   const radioburgerDaysUntil = useMemo(() => {
-    const d = differenceInDays(parseISO(NEXT_RADIOBURGER), new Date());
-    return d >= 0 ? d : null;
-  }, []);
+    const next = radioburgerDates.find(d => {
+      const diff = differenceInDays(parseISO(d.date), new Date());
+      return diff >= 0;
+    });
+    if (!next) return null;
+    return differenceInDays(parseISO(next.date), new Date());
+  }, [radioburgerDates]);
 
   const latestArticle = useMemo(() => {
     if (!articles || articles.length === 0) return null;
@@ -281,6 +277,14 @@ export function HomeSummary() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Row 1.5 — Destaques */}
+          <DestaquesCard
+            repasseData={repasseRaw}
+            npsData={npsData}
+            casuisticaData={casuisticaData}
+            totalExames={kpis.totalExames}
+          />
 
           {/* Row 2 — Context & Tools (1:2 proportion) */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
