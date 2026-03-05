@@ -278,6 +278,14 @@ export function HomeSummary() {
             </Card>
           </div>
 
+          {/* Row 1.5 — Destaques */}
+          <DestaquesCard
+            repasseData={repasseRaw}
+            npsData={npsData}
+            casuisticaData={casuisticaData}
+            totalExames={kpis.totalExames}
+          />
+
           {/* Row 2 — Context & Tools (1:2 proportion) */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Card: Minha Imag (1/3) */}
