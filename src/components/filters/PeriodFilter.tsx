@@ -7,7 +7,7 @@ import { CalendarIcon } from "lucide-react";
 import { format, startOfDay, endOfDay, subDays, startOfMonth, startOfYear, isAfter, isBefore, isWithinInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-export type PeriodType = 'today' | '7d' | 'mtd' | 'ytd' | 'custom' | 'month';
+export type PeriodType = 'today' | '7d' | 'mtd' | 'ytd' | 'custom' | 'month' | 'all';
 
 interface PeriodFilterProps {
   period: PeriodType;
