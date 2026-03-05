@@ -13,6 +13,9 @@ import { useNPSData } from '@/hooks/useNPSData';
 import { useInterestingCases } from '@/hooks/useInterestingCases';
 import { useAgendaComunicacoes } from '@/hooks/useAgendaComunicacoes';
 import { useUltrasoundArticles } from '@/hooks/useUltrasoundArticles';
+import { useAdminHolidays, useAdminRadioburger } from '@/hooks/useAdminSettings';
+import { useRepasseData } from '@/hooks/useRepasseData';
+import { DestaquesCard } from '@/components/home/DestaquesCard';
 import {
   DollarSign, BarChart3, ThumbsUp, ArrowRight,
   Baby, Stethoscope, BookOpen, ChevronRight, Bookmark,
@@ -21,20 +24,6 @@ import {
 } from 'lucide-react';
 import { format, parseISO, isFuture, isToday, addMonths, startOfMonth, endOfMonth, isWithinInterval, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-
-// Feriados 2026
-const FERIADOS_2026 = [
-  { date: '2026-01-01', name: 'Confraternização Universal' },
-  { date: '2026-02-15', name: 'Domingo de Carnaval' },
-  { date: '2026-02-17', name: 'Terça-feira de Carnaval' },
-  { date: '2026-04-03', name: 'Sexta-feira Santa' },
-  { date: '2026-05-01', name: 'Dia do Trabalhador' },
-  { date: '2026-09-07', name: 'Independência do Brasil' },
-  { date: '2026-11-02', name: 'Finados' },
-  { date: '2026-12-25', name: 'Natal' },
-];
-
-const NEXT_RADIOBURGER = '2026-02-20';
 
 export function HomeSummary() {
   const navigate = useNavigate();
