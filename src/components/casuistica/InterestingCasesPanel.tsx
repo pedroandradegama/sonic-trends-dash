@@ -47,6 +47,8 @@ export function InterestingCasesPanel() {
         diagnostic_hypothesis: hypothesis.trim() || undefined,
         wants_followup: wantsFollowup,
         followup_days: wantsFollowup ? followupDays : undefined,
+        shared_with_team: sharedWithTeam,
+        request_opinion: requestOpinion,
       });
       toast.success('Caso adicionado com sucesso.');
       resetForm();
