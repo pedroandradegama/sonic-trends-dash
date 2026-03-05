@@ -196,6 +196,18 @@ export function InterestingCasesPanel() {
                           {c.diagnostic_hypothesis}
                         </Badge>
                       )}
+                      {c.shared_with_team && (
+                        <Badge variant="outline" className="text-xs gap-1 border-primary/30 text-primary">
+                          <Share2 className="h-3 w-3" />
+                          Compartilhado
+                        </Badge>
+                      )}
+                      {c.request_opinion && (
+                        <Badge variant="outline" className="text-xs gap-1 border-[hsl(var(--warning))]/30 text-[hsl(var(--warning))]">
+                          <MessageCircleIcon className="h-3 w-3" />
+                          Opinião solicitada
+                        </Badge>
+                      )}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
