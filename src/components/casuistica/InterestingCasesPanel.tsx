@@ -152,6 +152,16 @@ export function InterestingCasesPanel() {
                 </div>
               )}
             </div>
+            <div className="flex items-center gap-6 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Switch checked={sharedWithTeam} onCheckedChange={setSharedWithTeam} />
+                <Label className="flex items-center gap-1"><Share2 className="h-3.5 w-3.5" /> Compartilhar com a equipe</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={requestOpinion} onCheckedChange={setRequestOpinion} />
+                <Label className="flex items-center gap-1"><MessageCircleIcon className="h-3.5 w-3.5" /> Solicitar opinião da equipe</Label>
+              </div>
+            </div>
             <div className="flex gap-2">
               <Button onClick={handleSubmit} disabled={submitting} size="sm">
                 {submitting ? 'Salvando...' : 'Salvar'}

@@ -611,6 +611,11 @@ export default function Admin() {
               </Card>
             )}
           </TabsContent>
+
+          {/* ── ABA CONFIGURAÇÕES ── */}
+          <TabsContent value="config">
+            <AdminConfigTab />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
