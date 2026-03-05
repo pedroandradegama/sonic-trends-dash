@@ -25,7 +25,7 @@ export function TopHeader() {
         {/* Left: Logo + Title */}
         <div className="flex items-center gap-3">
           <img src={imagLogoNew} alt="IMAG - Medicina Diagnóstica" className="h-8" />
-          <span className="text-base font-display font-semibold text-foreground hidden sm:inline">
+          <span className="text-lg font-display font-bold text-primary hidden sm:inline">
             Portal do Médico
           </span>
         </div>
