@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_agenda_emails: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+        }
+        Relationships: []
+      }
+      admin_holidays: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      admin_radioburger_dates: {
+        Row: {
+          created_at: string
+          date: string
+          description: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          description?: string | null
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          description?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
       adult_reference_favorites: {
         Row: {
           created_at: string
@@ -504,6 +567,8 @@ export type Database = {
           followup_days: number | null
           id: string
           patient_name: string
+          request_opinion: boolean
+          shared_with_team: boolean
           updated_at: string
           user_id: string
           wants_followup: boolean
@@ -515,6 +580,8 @@ export type Database = {
           followup_days?: number | null
           id?: string
           patient_name: string
+          request_opinion?: boolean
+          shared_with_team?: boolean
           updated_at?: string
           user_id: string
           wants_followup?: boolean
@@ -526,6 +593,8 @@ export type Database = {
           followup_days?: number | null
           id?: string
           patient_name?: string
+          request_opinion?: boolean
+          shared_with_team?: boolean
           updated_at?: string
           user_id?: string
           wants_followup?: boolean
