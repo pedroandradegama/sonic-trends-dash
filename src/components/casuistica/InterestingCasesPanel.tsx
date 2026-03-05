@@ -29,6 +29,8 @@ export function InterestingCasesPanel() {
     setHypothesis('');
     setWantsFollowup(false);
     setFollowupDays(30);
+    setSharedWithTeam(false);
+    setRequestOpinion(false);
     setShowForm(false);
   };
 
