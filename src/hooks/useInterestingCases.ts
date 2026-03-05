@@ -9,6 +9,8 @@ export interface InterestingCase {
   diagnostic_hypothesis: string | null;
   wants_followup: boolean;
   followup_days: number | null;
+  shared_with_team: boolean;
+  request_opinion: boolean;
   created_at: string;
   updated_at: string;
 }
