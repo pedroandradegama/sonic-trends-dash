@@ -128,6 +128,7 @@ export function PeriodFilter({
             Ano atual
           </SelectItem>
           <SelectItem value="month">Por mês</SelectItem>
+          <SelectItem value="all">Todo o período</SelectItem>
           <SelectItem value="custom">Personalizado</SelectItem>
         </SelectContent>
       </Select>

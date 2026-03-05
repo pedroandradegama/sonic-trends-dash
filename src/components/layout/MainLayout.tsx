@@ -1,22 +1,25 @@
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode } from 'react';
 import { AppSidebar } from './AppSidebar';
 import { MobileSidebar } from './MobileSidebar';
 import { TopHeader } from './TopHeader';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { SidebarProvider, useSidebar } from '@/contexts/SidebarContext';
+import { cn } from '@/lib/utils';
 
 interface MainLayoutProps {
   children: ReactNode;
 }
 
-export function MainLayout({ children }: MainLayoutProps) {
+function LayoutInner({ children }: MainLayoutProps) {
   const isMobile = useIsMobile();
+  const { collapsed } = useSidebar();
 
   return (
     <div className="min-h-screen bg-background">
       {isMobile ? (
         <>
           <MobileSidebar />
-          <main className="pt-14 px-4 pb-6">
+          <main className="pt-16 px-4 pb-6">
             {children}
           </main>
         </>
@@ -24,7 +27,10 @@ export function MainLayout({ children }: MainLayoutProps) {
         <>
           <TopHeader />
           <AppSidebar />
-          <main className="transition-all duration-300 min-h-screen pt-16 ml-64 p-6">
+          <main className={cn(
+            "transition-all duration-300 min-h-screen pt-20 p-6",
+            collapsed ? "ml-16" : "ml-64"
+          )}>
             <div className="mx-auto">
               {children}
             </div>
@@ -32,5 +38,13 @@ export function MainLayout({ children }: MainLayoutProps) {
         </>
       )}
     </div>
+  );
+}
+
+export function MainLayout({ children }: MainLayoutProps) {
+  return (
+    <SidebarProvider>
+      <LayoutInner>{children}</LayoutInner>
+    </SidebarProvider>
   );
 }

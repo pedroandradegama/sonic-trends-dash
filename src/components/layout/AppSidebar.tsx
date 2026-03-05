@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useSidebar } from '@/contexts/SidebarContext';
 
 const navItems = [
   { path: '/home', label: 'Home', icon: LayoutDashboard },
@@ -21,7 +21,7 @@ const navItems = [
 
 export function AppSidebar() {
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
+  const { collapsed, toggle } = useSidebar();
 
   return (
     <aside 
@@ -31,7 +31,6 @@ export function AppSidebar() {
         collapsed ? "w-16" : "w-64"
       )}
     >
-      {/* Navigation */}
       <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto scrollbar-thin">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
@@ -58,20 +57,15 @@ export function AppSidebar() {
         })}
       </nav>
 
-      {/* Collapse button */}
       <div className="p-2 border-t border-border/50">
         <button
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={toggle}
           className={cn(
             "w-full flex items-center justify-center p-2 rounded-full",
             "text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
           )}
         >
-          {collapsed ? (
-            <ChevronRight className="h-5 w-5" />
-          ) : (
-            <ChevronLeft className="h-5 w-5" />
-          )}
+          {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
         </button>
       </div>
     </aside>
