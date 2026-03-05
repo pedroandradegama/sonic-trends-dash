@@ -19,6 +19,8 @@ export function InterestingCasesPanel() {
   const [hypothesis, setHypothesis] = useState('');
   const [wantsFollowup, setWantsFollowup] = useState(false);
   const [followupDays, setFollowupDays] = useState<number>(30);
+  const [sharedWithTeam, setSharedWithTeam] = useState(false);
+  const [requestOpinion, setRequestOpinion] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const resetForm = () => {
