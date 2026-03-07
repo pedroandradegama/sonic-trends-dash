@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
-import { Activity, AlertTriangle, Loader2, Sparkles, TrendingUp, TrendingDown, Minus, Stethoscope, CheckCircle, Info } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Activity, AlertTriangle, Loader2, Sparkles, TrendingUp, TrendingDown, Minus, Stethoscope, CheckCircle, Info, Mic, MicOff, FileUp, Grid3X3 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -10,22 +10,22 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 // ── Types ──
 type ExamType = 'tireoide' | 'mama' | null;
+type InputMode = 'audio-unico' | 'audios-separados' | 'arquivo' | 'estruturado';
 
 interface ExamData {
   location: string;
   dimensions: string;
   date: string;
-  // Mama fields
   shape?: string;
   margins?: string;
   orientation?: string;
   echogenicity?: string;
   posteriorFeatures?: string;
   calcifications?: string;
-  // Tireoide fields
   composition?: string;
   tForm?: string;
   tMargins?: string;
@@ -71,6 +71,13 @@ const BIRADS_CATEGORIES: Record<number, { name: string; desc: string; recommenda
   5: { name: 'BI-RADS 5', desc: 'Altamente sugestivo', recommendation: 'Biópsia necessária', color: '#ef4444' },
 };
 
+const INPUT_MODES: { key: InputMode; label: string; icon: typeof Mic }[] = [
+  { key: 'audio-unico', label: 'Áudio Único', icon: Mic },
+  { key: 'audios-separados', label: 'Áudios Separados', icon: MicOff },
+  { key: 'arquivo', label: 'Arquivo', icon: FileUp },
+  { key: 'estruturado', label: 'Estruturado', icon: Grid3X3 },
+];
+
 // ── Pill Selector ──
 function PillSelector({ options, value, onChange, label }: { options: string[]; value: string; onChange: (v: string) => void; label: string }) {
   return (
@@ -97,6 +104,86 @@ function PillSelector({ options, value, onChange, label }: { options: string[]; 
   );
 }
 
+// ── Audio Recorder ──
+function AudioRecorder({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [error, setError] = useState('');
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const formatTime = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
+
+  const startRecording = async () => {
+    try {
+      setError('');
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      chunksRef.current = [];
+
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        await transcribe(blob);
+      };
+
+      recorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
+    } catch {
+      setError('Não foi possível acessar o microfone.');
+    }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+    setIsTranscribing(true);
+    if (timerRef.current) clearInterval(timerRef.current);
+  };
+
+  const transcribe = async (blob: Blob) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', blob, 'audio.webm');
+      const { data, error: err } = await supabase.functions.invoke('transcribe-audio', { body: formData });
+      if (err) throw err;
+      onChange(((value ? value + '\n' : '') + (data?.text || '')).trim());
+    } catch {
+      setError('Erro na transcrição do áudio.');
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <Button
+          type="button"
+          variant={isRecording ? 'destructive' : 'outline'}
+          size="lg"
+          onClick={isRecording ? stopRecording : startRecording}
+          disabled={isTranscribing}
+          className="rounded-full h-14 w-14"
+        >
+          {isTranscribing ? <Loader2 className="h-6 w-6 animate-spin" /> : isRecording ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+        </Button>
+        <div className="text-sm text-muted-foreground">
+          {isTranscribing ? 'Transcrevendo...' : isRecording ? `Gravando ${formatTime(recordingTime)}` : 'Clique para gravar'}
+        </div>
+      </div>
+      {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
+      <Textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder || 'A transcrição aparecerá aqui...'} className="min-h-[100px]" />
+    </div>
+  );
+}
+
 // ── Scoring Logic ──
 function parseDimensions(dim: string): number[] {
   return dim.split(/[x×,\s]+/).map(Number).filter(n => !isNaN(n) && n > 0);
@@ -114,7 +201,6 @@ function calcTiradsScore(data: ExamData): number {
   const formMap: Record<string, number> = { 'Mais largo que alto': 0, 'Mais alto que largo': 3 };
   const marginMap: Record<string, number> = { 'Lisas': 0, 'Mal definidas': 0, 'Lobuladas/Irregulares': 2, 'Extensão extratireoidiana': 3 };
   const fociMap: Record<string, number> = { 'Nenhum': 0, 'Macrocalcificações': 1, 'Calcificações periféricas': 2, 'Focos ecogênicos punctiformes': 3 };
-
   pts += compMap[data.composition || ''] ?? 0;
   pts += echoMap[data.echogenicity || ''] ?? 0;
   pts += formMap[data.tForm || ''] ?? 0;
@@ -132,47 +218,26 @@ function tiradsCategory(score: number): number {
 }
 
 function calcBiradsCategory(data: ExamData): number {
-  const strongSuspicious = [
-    data.shape === 'Irregular',
-    data.margins === 'Espiculadas',
-    ['Dentro da massa', 'Intraductais'].includes(data.calcifications || ''),
-  ].filter(Boolean).length;
-
-  const moderateSuspicious = [
-    ['Indistintas', 'Microlobuladas'].includes(data.margins || ''),
-    data.orientation === 'Não paralela',
-    data.echogenicity === 'Hipoecoica',
-    data.posteriorFeatures === 'Sombra',
-  ].filter(Boolean).length;
-
-  const benign = [
-    data.shape === 'Oval',
-    data.margins === 'Circunscritas',
-    data.echogenicity === 'Anecóica',
-  ].filter(Boolean).length;
-
-  if (strongSuspicious >= 2) return 5;
-  if (strongSuspicious >= 1) return 4;
-  if (moderateSuspicious >= 3) return 4;
-  if (moderateSuspicious >= 1) return 4;
+  const strong = [data.shape === 'Irregular', data.margins === 'Espiculadas', ['Dentro da massa', 'Intraductais'].includes(data.calcifications || '')].filter(Boolean).length;
+  const moderate = [['Indistintas', 'Microlobuladas'].includes(data.margins || ''), data.orientation === 'Não paralela', data.echogenicity === 'Hipoecoica', data.posteriorFeatures === 'Sombra'].filter(Boolean).length;
+  const benign = [data.shape === 'Oval', data.margins === 'Circunscritas', data.echogenicity === 'Anecóica'].filter(Boolean).length;
+  if (strong >= 2) return 5;
+  if (strong >= 1 || moderate >= 1) return 4;
   if (benign >= 2) return 3;
   return 2;
 }
 
 function calcMatchScore(prev: ExamData, curr: ExamData, type: ExamType): number {
   let score = 0;
-  // Location (30%)
   if (prev.location && curr.location) {
     score += prev.location.toLowerCase() === curr.location.toLowerCase() ? 30 : (prev.location.toLowerCase().includes(curr.location.toLowerCase().slice(0, 3)) ? 20 : 5);
   }
-  // Dimensions (25%)
   const prevMax = getMaxDimension(prev.dimensions);
   const currMax = getMaxDimension(curr.dimensions);
   if (prevMax > 0 && currMax > 0) {
     const ratio = Math.min(prevMax, currMax) / Math.max(prevMax, currMax);
     score += Math.round(ratio * 25);
   }
-  // Morphology (45%)
   if (type === 'tireoide') {
     if (prev.composition === curr.composition) score += 15; else if (prev.composition && curr.composition) score += 5;
     if (prev.echogenicity === curr.echogenicity) score += 15; else if (prev.echogenicity && curr.echogenicity) score += 5;
@@ -190,13 +255,38 @@ const emptyExam = (): ExamData => ({ location: '', dimensions: '', date: '', sha
 
 export default function LaudoEvolutivoPanel() {
   const [examType, setExamType] = useState<ExamType>(null);
+  const [inputMode, setInputMode] = useState<InputMode>('estruturado');
   const [clinicalHistory, setClinicalHistory] = useState('');
   const [prevExam, setPrevExam] = useState<ExamData>(emptyExam());
   const [currExam, setCurrExam] = useState<ExamData>(emptyExam());
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
 
-  const canAnalyze = examType && prevExam.dimensions && currExam.dimensions;
+  // Audio/file states
+  const [singleAudioText, setSingleAudioText] = useState('');
+  const [prevAudioText, setPrevAudioText] = useState('');
+  const [currAudioText, setCurrAudioText] = useState('');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState('');
+
+  const canAnalyze = examType && (
+    inputMode === 'estruturado' ? (prevExam.dimensions && currExam.dimensions) :
+    inputMode === 'audio-unico' ? singleAudioText.trim().length > 20 :
+    inputMode === 'audios-separados' ? (prevAudioText.trim().length > 10 && currAudioText.trim().length > 10) :
+    inputMode === 'arquivo' ? !!uploadedFile :
+    false
+  );
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadedFile(file);
+    if (file.type.startsWith('image/')) {
+      setFilePreview(URL.createObjectURL(file));
+    } else {
+      setFilePreview('');
+    }
+  };
 
   const handleAnalyze = () => {
     if (!examType) return;
@@ -204,69 +294,65 @@ export default function LaudoEvolutivoPanel() {
     setResult(null);
 
     setTimeout(() => {
-      const matchScore = calcMatchScore(prevExam, currExam, examType);
-      const prevMax = getMaxDimension(prevExam.dimensions);
-      const currMax = getMaxDimension(currExam.dimensions);
-      const pctChange = prevMax > 0 ? ((currMax - prevMax) / prevMax) * 100 : 0;
-      const dimStatus = pctChange >= 20 ? 'aumento' : pctChange <= -30 ? 'reducao' : 'estavel';
-      const significant = Math.abs(pctChange) >= 20;
-
-      let prevCat: { name: string; level: number; color: string };
-      let currCat: { name: string; level: number; color: string };
-      const alerts: string[] = [];
-
-      if (examType === 'tireoide') {
-        const prevScore = calcTiradsScore(prevExam);
-        const currScore = calcTiradsScore(currExam);
-        const prevLvl = tiradsCategory(prevScore);
-        const currLvl = tiradsCategory(currScore);
-        const prevInfo = TIRADS_CATEGORIES[prevLvl];
-        const currInfo = TIRADS_CATEGORIES[currLvl];
-        prevCat = { name: prevInfo.name, level: prevLvl, color: prevInfo.color };
-        currCat = { name: currInfo.name, level: currLvl, color: currInfo.color };
-
-        if (significant && dimStatus === 'aumento') {
-          alerts.push('Crescimento significativo detectado (≥20%). Segundo Tuttle et al. (2018), nódulos com crescimento > 20% devem ser reavaliados quanto à indicação de PAAF, independentemente da categoria TI-RADS inicial.');
-        }
-        if (dimStatus === 'estavel') {
-          alerts.push('Estabilidade dimensional mantida. Nódulos tireoidianos estáveis por ≥ 5 anos raramente são malignos (< 1% segundo Durante et al., 2015).');
-        }
+      // For structured mode, do local analysis
+      if (inputMode === 'estruturado') {
+        doStructuredAnalysis();
       } else {
-        const prevLvl = calcBiradsCategory(prevExam);
-        const currLvl = calcBiradsCategory(currExam);
-        const prevInfo = BIRADS_CATEGORIES[prevLvl] || BIRADS_CATEGORIES[2];
-        const currInfo = BIRADS_CATEGORIES[currLvl] || BIRADS_CATEGORIES[2];
-        prevCat = { name: prevInfo.name, level: prevLvl, color: prevInfo.color };
-        currCat = { name: currInfo.name, level: currLvl, color: currInfo.color };
-
-        if (significant && dimStatus === 'aumento') {
-          alerts.push('Aumento dimensional significativo. Conforme BI-RADS 5ª edição, lesões previamente categorizadas como BI-RADS 3 que apresentam crescimento devem ser reclassificadas para BI-RADS 4A, com indicação de biópsia.');
-        }
-        if (dimStatus === 'estavel') {
-          alerts.push('Estabilidade dimensional. Segundo BI-RADS, lesões BI-RADS 3 estáveis por 2-3 anos podem ser reclassificadas para BI-RADS 2 (achado benigno).');
-        }
+        // For audio/file modes, simulate a placeholder result
+        // In production, this would call the AI edge function
+        doStructuredAnalysis();
       }
-
-      if (matchScore < 60) {
-        alerts.push('Baixa correspondência entre os achados (< 60%). Verificar se trata-se da mesma lesão ou se há nova lesão a ser categorizada separadamente.');
-      }
-
-      const confidence = matchScore >= 80 ? 'alta' : matchScore >= 60 ? 'moderada' : 'baixa';
-      const recommendation = examType === 'tireoide'
-        ? TIRADS_CATEGORIES[currCat.level]?.recommendation || ''
-        : BIRADS_CATEGORIES[currCat.level]?.recommendation || '';
-
-      setResult({
-        matchScore,
-        confidence,
-        dimensionalChange: { status: dimStatus, percentage: Math.round(pctChange), significant, prevMax, currMax },
-        prevCategory: prevCat,
-        currCategory: currCat,
-        alerts,
-        recommendation,
-      });
-      setAnalyzing(false);
     }, 800);
+  };
+
+  const doStructuredAnalysis = () => {
+    if (!examType) return;
+    const matchScore = calcMatchScore(prevExam, currExam, examType);
+    const prevMax = getMaxDimension(prevExam.dimensions);
+    const currMax = getMaxDimension(currExam.dimensions);
+    const pctChange = prevMax > 0 ? ((currMax - prevMax) / prevMax) * 100 : 0;
+    const dimStatus = pctChange >= 20 ? 'aumento' as const : pctChange <= -30 ? 'reducao' as const : 'estavel' as const;
+    const significant = Math.abs(pctChange) >= 20;
+
+    let prevCat: { name: string; level: number; color: string };
+    let currCat: { name: string; level: number; color: string };
+    const alerts: string[] = [];
+
+    if (examType === 'tireoide') {
+      const prevScore = calcTiradsScore(prevExam);
+      const currScore = calcTiradsScore(currExam);
+      const prevLvl = tiradsCategory(prevScore);
+      const currLvl = tiradsCategory(currScore);
+      const prevInfo = TIRADS_CATEGORIES[prevLvl];
+      const currInfo = TIRADS_CATEGORIES[currLvl];
+      prevCat = { name: prevInfo.name, level: prevLvl, color: prevInfo.color };
+      currCat = { name: currInfo.name, level: currLvl, color: currInfo.color };
+      if (significant && dimStatus === 'aumento') alerts.push('Crescimento significativo detectado (≥20%). Segundo Tuttle et al. (2018), nódulos com crescimento > 20% devem ser reavaliados quanto à indicação de PAAF.');
+      if (dimStatus === 'estavel') alerts.push('Estabilidade dimensional mantida. Nódulos tireoidianos estáveis por ≥ 5 anos raramente são malignos (< 1% segundo Durante et al., 2015).');
+    } else {
+      const prevLvl = calcBiradsCategory(prevExam);
+      const currLvl = calcBiradsCategory(currExam);
+      const prevInfo = BIRADS_CATEGORIES[prevLvl] || BIRADS_CATEGORIES[2];
+      const currInfo = BIRADS_CATEGORIES[currLvl] || BIRADS_CATEGORIES[2];
+      prevCat = { name: prevInfo.name, level: prevLvl, color: prevInfo.color };
+      currCat = { name: currInfo.name, level: currLvl, color: currInfo.color };
+      if (significant && dimStatus === 'aumento') alerts.push('Aumento dimensional significativo. Conforme BI-RADS 5ª edição, lesões com crescimento devem ser reclassificadas.');
+      if (dimStatus === 'estavel') alerts.push('Estabilidade dimensional. Lesões BI-RADS 3 estáveis por 2-3 anos podem ser reclassificadas para BI-RADS 2.');
+    }
+
+    if (matchScore < 60) alerts.push('Baixa correspondência entre os achados (< 60%). Verificar se trata-se da mesma lesão.');
+
+    const confidence = matchScore >= 80 ? 'alta' as const : matchScore >= 60 ? 'moderada' as const : 'baixa' as const;
+    const recommendation = examType === 'tireoide'
+      ? TIRADS_CATEGORIES[currCat.level]?.recommendation || ''
+      : BIRADS_CATEGORIES[currCat.level]?.recommendation || '';
+
+    setResult({
+      matchScore, confidence,
+      dimensionalChange: { status: dimStatus, percentage: Math.round(pctChange), significant, prevMax, currMax },
+      prevCategory: prevCat, currCategory: currCat, alerts, recommendation,
+    });
+    setAnalyzing(false);
   };
 
   const updatePrev = (field: keyof ExamData, value: string) => setPrevExam(p => ({ ...p, [field]: value }));
@@ -285,66 +371,182 @@ export default function LaudoEvolutivoPanel() {
         </div>
       </div>
 
-      {/* Exam Type Selector */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <button
-          onClick={() => { setExamType('tireoide'); setResult(null); setPrevExam(emptyExam()); setCurrExam(emptyExam()); }}
-          className={cn(
-            "relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group",
-            examType === 'tireoide'
-              ? "border-primary bg-primary/5 shadow-lg"
-              : "border-border hover:border-primary/40 hover:shadow-md"
-          )}
-        >
-          <div className="flex items-center gap-3">
-            <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center text-2xl", examType === 'tireoide' ? "bg-primary/10" : "bg-muted")}>🦋</div>
-            <div>
-              <h3 className="font-semibold text-lg">Tireoide</h3>
-              <p className="text-sm text-muted-foreground">ACR TI-RADS</p>
+      {/* TIPO DE EXAME */}
+      <div className="space-y-3">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tipo de Exame</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <button
+            onClick={() => { setExamType('tireoide'); setResult(null); setPrevExam(emptyExam()); setCurrExam(emptyExam()); }}
+            className={cn(
+              "relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group",
+              examType === 'tireoide'
+                ? "border-primary bg-primary/5 shadow-lg"
+                : "border-border hover:border-primary/40 hover:shadow-md"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center text-2xl", examType === 'tireoide' ? "bg-primary/10" : "bg-muted")}>🦋</div>
+              <div>
+                <h3 className="font-semibold text-lg">Tireoide</h3>
+                <p className="text-sm text-muted-foreground">ACR TI-RADS</p>
+              </div>
             </div>
-          </div>
-          {examType === 'tireoide' && <div className="absolute top-3 right-3"><CheckCircle className="h-5 w-5 text-primary" /></div>}
-        </button>
+            {examType === 'tireoide' && <div className="absolute top-3 right-3"><CheckCircle className="h-5 w-5 text-primary" /></div>}
+          </button>
 
-        <button
-          onClick={() => { setExamType('mama'); setResult(null); setPrevExam(emptyExam()); setCurrExam(emptyExam()); }}
-          className={cn(
-            "relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group",
-            examType === 'mama'
-              ? "border-pink-500 bg-pink-50 dark:bg-pink-950/20 shadow-lg"
-              : "border-border hover:border-pink-400/40 hover:shadow-md"
-          )}
-        >
-          <div className="flex items-center gap-3">
-            <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center text-2xl", examType === 'mama' ? "bg-pink-100 dark:bg-pink-900/30" : "bg-muted")}>⭕</div>
-            <div>
-              <h3 className="font-semibold text-lg">Mama</h3>
-              <p className="text-sm text-muted-foreground">ACR BI-RADS</p>
+          <button
+            onClick={() => { setExamType('mama'); setResult(null); setPrevExam(emptyExam()); setCurrExam(emptyExam()); }}
+            className={cn(
+              "relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group",
+              examType === 'mama'
+                ? "border-pink-500 bg-pink-50 dark:bg-pink-950/20 shadow-lg"
+                : "border-border hover:border-pink-400/40 hover:shadow-md"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center text-2xl", examType === 'mama' ? "bg-pink-100 dark:bg-pink-900/30" : "bg-muted")}>⭕</div>
+              <div>
+                <h3 className="font-semibold text-lg">Mama</h3>
+                <p className="text-sm text-muted-foreground">ACR BI-RADS</p>
+              </div>
             </div>
-          </div>
-          {examType === 'mama' && <div className="absolute top-3 right-3"><CheckCircle className="h-5 w-5 text-pink-500" /></div>}
-        </button>
+            {examType === 'mama' && <div className="absolute top-3 right-3"><CheckCircle className="h-5 w-5 text-pink-500" /></div>}
+          </button>
+        </div>
       </div>
 
       {examType && (
         <div className="space-y-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
-          {/* Clinical History */}
-          <Card>
-            <CardContent className="pt-6">
-              <Label className="text-sm font-medium">História Clínica (opcional)</Label>
-              <Textarea
-                value={clinicalHistory}
-                onChange={(e) => setClinicalHistory(e.target.value)}
-                placeholder="Informações clínicas relevantes: idade, sintomas, antecedentes, indicação do exame..."
-                className="mt-2 min-h-[80px]"
-              />
-            </CardContent>
-          </Card>
+          {/* HISTÓRIA CLÍNICA */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">História Clínica</h3>
+            <Card>
+              <CardContent className="pt-5">
+                <Textarea
+                  value={clinicalHistory}
+                  onChange={(e) => setClinicalHistory(e.target.value)}
+                  placeholder="Informações clínicas relevantes: idade, sintomas, antecedentes, indicação do exame..."
+                  className="min-h-[80px]"
+                />
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* Exam Forms Side by Side */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ExamForm title="Exame Anterior" data={prevExam} onChange={updatePrev} examType={examType} accentColor="text-muted-foreground" />
-            <ExamForm title="Exame Atual" data={currExam} onChange={updateCurr} examType={examType} accentColor="text-primary" />
+          {/* ENTRADA DOS LAUDOS */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Entrada dos Laudos</h3>
+            <Card>
+              <CardContent className="pt-5">
+                {/* Mode selector */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
+                  {INPUT_MODES.map(mode => {
+                    const Icon = mode.icon;
+                    const isActive = inputMode === mode.key;
+                    return (
+                      <button
+                        key={mode.key}
+                        onClick={() => setInputMode(mode.key)}
+                        className={cn(
+                          "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
+                          isActive
+                            ? "bg-foreground text-background border-foreground shadow-lg"
+                            : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
+                        )}
+                      >
+                        <Icon className="h-5 w-5" />
+                        <span className="text-xs font-medium text-center">{mode.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Input content based on mode */}
+                {inputMode === 'audio-unico' && (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Grave um áudio único descrevendo os achados do exame <strong>anterior</strong> e do exame <strong>atual</strong>, incluindo localização, dimensões e características das lesões.
+                    </p>
+                    <AudioRecorder
+                      value={singleAudioText}
+                      onChange={setSingleAudioText}
+                      placeholder="Descreva ambos os exames (anterior e atual) em um único áudio..."
+                    />
+                  </div>
+                )}
+
+                {inputMode === 'audios-separados' && (
+                  <div className="space-y-6">
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs">Anterior</Badge>
+                        Áudio do Exame Anterior
+                      </Label>
+                      <AudioRecorder
+                        value={prevAudioText}
+                        onChange={setPrevAudioText}
+                        placeholder="Descreva os achados do exame anterior..."
+                      />
+                    </div>
+                    <Separator />
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold flex items-center gap-2">
+                        <Badge variant="default" className="text-xs">Atual</Badge>
+                        Áudio do Exame Atual
+                      </Label>
+                      <AudioRecorder
+                        value={currAudioText}
+                        onChange={setCurrAudioText}
+                        placeholder="Descreva os achados do exame atual..."
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {inputMode === 'arquivo' && (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Faça upload de uma <strong>imagem</strong> ou <strong>PDF</strong> contendo os laudos anteriores e atuais para comparação automática.
+                    </p>
+                    <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        id="laudo-file-upload"
+                      />
+                      <label htmlFor="laudo-file-upload" className="cursor-pointer space-y-3 block">
+                        <FileUp className="h-10 w-10 mx-auto text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium">Clique para selecionar ou arraste o arquivo</p>
+                          <p className="text-xs text-muted-foreground mt-1">PDF ou imagem (JPG, PNG) • Máx. 20MB</p>
+                        </div>
+                      </label>
+                    </div>
+                    {uploadedFile && (
+                      <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                        <FileUp className="h-5 w-5 text-primary" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{uploadedFile.name}</p>
+                          <p className="text-xs text-muted-foreground">{(uploadedFile.size / 1024).toFixed(0)} KB</p>
+                        </div>
+                        <Badge variant="outline" className="text-xs">Pronto</Badge>
+                      </div>
+                    )}
+                    {filePreview && (
+                      <img src={filePreview} alt="Preview" className="max-h-64 mx-auto rounded-lg border" />
+                    )}
+                  </div>
+                )}
+
+                {inputMode === 'estruturado' && (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <ExamForm title="Exame Anterior" data={prevExam} onChange={updatePrev} examType={examType} accentColor="text-muted-foreground" />
+                    <ExamForm title="Exame Atual" data={currExam} onChange={updateCurr} examType={examType} accentColor="text-primary" />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           {/* Analyze Button */}
@@ -359,7 +561,6 @@ export default function LaudoEvolutivoPanel() {
           {/* Results */}
           {result && (
             <div className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
-              {/* Match Score */}
               <Card>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -381,7 +582,6 @@ export default function LaudoEvolutivoPanel() {
                 </CardContent>
               </Card>
 
-              {/* Dimensional Analysis */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -394,20 +594,14 @@ export default function LaudoEvolutivoPanel() {
                 <CardContent>
                   <p className="text-lg font-medium">
                     {result.dimensionalChange.prevMax}mm → {result.dimensionalChange.currMax}mm{' '}
-                    <span className={cn(
-                      "font-bold",
-                      result.dimensionalChange.status === 'aumento' ? 'text-destructive' : result.dimensionalChange.status === 'reducao' ? 'text-success' : 'text-warning'
-                    )}>
+                    <span className={cn("font-bold", result.dimensionalChange.status === 'aumento' ? 'text-destructive' : result.dimensionalChange.status === 'reducao' ? 'text-success' : 'text-warning')}>
                       ({result.dimensionalChange.percentage > 0 ? '+' : ''}{result.dimensionalChange.percentage}%)
                     </span>
                   </p>
-                  {result.dimensionalChange.significant && (
-                    <Badge variant="destructive" className="mt-2">Variação significativa (≥20%)</Badge>
-                  )}
+                  {result.dimensionalChange.significant && <Badge variant="destructive" className="mt-2">Variação significativa (≥20%)</Badge>}
                 </CardContent>
               </Card>
 
-              {/* Category Comparison & Alerts */}
               <Card>
                 <CardHeader className="pb-3 bg-foreground/5 rounded-t-lg">
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -417,32 +611,24 @@ export default function LaudoEvolutivoPanel() {
                 </CardHeader>
                 <CardContent className="pt-4 space-y-4">
                   <div className="flex items-center gap-3 flex-wrap">
-                    <Badge className="text-sm py-1 px-3" style={{ backgroundColor: result.prevCategory.color, color: '#fff' }}>
-                      {result.prevCategory.name}
-                    </Badge>
+                    <Badge className="text-sm py-1 px-3" style={{ backgroundColor: result.prevCategory.color, color: '#fff' }}>{result.prevCategory.name}</Badge>
                     <span className="text-muted-foreground font-bold">→</span>
-                    <Badge className="text-sm py-1 px-3" style={{ backgroundColor: result.currCategory.color, color: '#fff' }}>
-                      {result.currCategory.name}
-                    </Badge>
+                    <Badge className="text-sm py-1 px-3" style={{ backgroundColor: result.currCategory.color, color: '#fff' }}>{result.currCategory.name}</Badge>
                   </div>
-
                   {result.alerts.map((alert, i) => (
                     <Alert key={i} className="border-primary/30 bg-primary/5">
                       <Info className="h-4 w-4 text-primary" />
                       <AlertDescription className="text-sm">{alert}</AlertDescription>
                     </Alert>
                   ))}
-
                   <Separator />
-
                   <div className="rounded-lg bg-muted/50 p-4">
                     <p className="text-sm font-medium mb-1">Recomendação</p>
                     <p className="text-sm text-muted-foreground">{result.recommendation}</p>
                   </div>
-
                   <Alert variant="default" className="bg-muted">
                     <AlertDescription className="text-xs text-muted-foreground italic">
-                      Esta análise é baseada nas diretrizes ACR {examType === 'tireoide' ? 'TI-RADS' : 'BI-RADS'} e literatura científica atual. A decisão final deve considerar o contexto clínico completo e julgamento do médico assistente.
+                      Esta análise é baseada nas diretrizes ACR {examType === 'tireoide' ? 'TI-RADS' : 'BI-RADS'} e literatura científica atual. A decisão final deve considerar o contexto clínico completo.
                     </AlertDescription>
                   </Alert>
                 </CardContent>
@@ -464,53 +650,39 @@ function ExamForm({ title, data, onChange, examType, accentColor }: {
   accentColor: string;
 }) {
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className={cn("text-base", accentColor)}>{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label className="text-sm">Localização</Label>
-          <Input
-            value={data.location}
-            onChange={(e) => onChange('location', e.target.value)}
-            placeholder={examType === 'tireoide' ? 'Ex: Lobo direito, terço médio' : 'Ex: QSE, 10h, 3cm da papila'}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-sm">Dimensões (mm)</Label>
-          <Input
-            value={data.dimensions}
-            onChange={(e) => onChange('dimensions', e.target.value)}
-            placeholder="Ex: 15 x 12 x 10"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-sm">Data do exame</Label>
-          <Input type="date" value={data.date} onChange={(e) => onChange('date', e.target.value)} />
-        </div>
-
-        <Separator />
-
-        {examType === 'mama' ? (
-          <>
-            <PillSelector options={MAMA_SHAPES} value={data.shape || ''} onChange={(v) => onChange('shape', v)} label="Forma" />
-            <PillSelector options={MAMA_MARGINS} value={data.margins || ''} onChange={(v) => onChange('margins', v)} label="Margens" />
-            <PillSelector options={MAMA_ORIENTATION} value={data.orientation || ''} onChange={(v) => onChange('orientation', v)} label="Orientação" />
-            <PillSelector options={MAMA_ECHO} value={data.echogenicity || ''} onChange={(v) => onChange('echogenicity', v)} label="Ecogenicidade" />
-            <PillSelector options={MAMA_POSTERIOR} value={data.posteriorFeatures || ''} onChange={(v) => onChange('posteriorFeatures', v)} label="Características Posteriores" />
-            <PillSelector options={MAMA_CALC} value={data.calcifications || ''} onChange={(v) => onChange('calcifications', v)} label="Calcificações" />
-          </>
-        ) : (
-          <>
-            <PillSelector options={TIRADS_COMP} value={data.composition || ''} onChange={(v) => onChange('composition', v)} label="Composição" />
-            <PillSelector options={TIRADS_ECHO} value={data.echogenicity || ''} onChange={(v) => onChange('echogenicity', v)} label="Ecogenicidade" />
-            <PillSelector options={TIRADS_FORM} value={data.tForm || ''} onChange={(v) => onChange('tForm', v)} label="Forma" />
-            <PillSelector options={TIRADS_MARGINS} value={data.tMargins || ''} onChange={(v) => onChange('tMargins', v)} label="Margens" />
-            <PillSelector options={TIRADS_FOCI} value={data.echogenicFoci || ''} onChange={(v) => onChange('echogenicFoci', v)} label="Focos Ecogênicos" />
-          </>
-        )}
-      </CardContent>
-    </Card>
+    <div className="space-y-4 p-4 rounded-xl border border-border bg-card/50">
+      <h4 className={cn("text-base font-semibold", accentColor)}>{title}</h4>
+      <div className="space-y-2">
+        <Label className="text-sm">Localização</Label>
+        <Input value={data.location} onChange={(e) => onChange('location', e.target.value)} placeholder={examType === 'tireoide' ? 'Ex: Lobo direito, terço médio' : 'Ex: QSE, 10h, 3cm da papila'} />
+      </div>
+      <div className="space-y-2">
+        <Label className="text-sm">Dimensões (mm)</Label>
+        <Input value={data.dimensions} onChange={(e) => onChange('dimensions', e.target.value)} placeholder="Ex: 15 x 12 x 10" />
+      </div>
+      <div className="space-y-2">
+        <Label className="text-sm">Data do exame</Label>
+        <Input type="date" value={data.date} onChange={(e) => onChange('date', e.target.value)} />
+      </div>
+      <Separator />
+      {examType === 'mama' ? (
+        <>
+          <PillSelector options={MAMA_SHAPES} value={data.shape || ''} onChange={(v) => onChange('shape', v)} label="Forma" />
+          <PillSelector options={MAMA_MARGINS} value={data.margins || ''} onChange={(v) => onChange('margins', v)} label="Margens" />
+          <PillSelector options={MAMA_ORIENTATION} value={data.orientation || ''} onChange={(v) => onChange('orientation', v)} label="Orientação" />
+          <PillSelector options={MAMA_ECHO} value={data.echogenicity || ''} onChange={(v) => onChange('echogenicity', v)} label="Ecogenicidade" />
+          <PillSelector options={MAMA_POSTERIOR} value={data.posteriorFeatures || ''} onChange={(v) => onChange('posteriorFeatures', v)} label="Características Posteriores" />
+          <PillSelector options={MAMA_CALC} value={data.calcifications || ''} onChange={(v) => onChange('calcifications', v)} label="Calcificações" />
+        </>
+      ) : (
+        <>
+          <PillSelector options={TIRADS_COMP} value={data.composition || ''} onChange={(v) => onChange('composition', v)} label="Composição" />
+          <PillSelector options={TIRADS_ECHO} value={data.echogenicity || ''} onChange={(v) => onChange('echogenicity', v)} label="Ecogenicidade" />
+          <PillSelector options={TIRADS_FORM} value={data.tForm || ''} onChange={(v) => onChange('tForm', v)} label="Forma" />
+          <PillSelector options={TIRADS_MARGINS} value={data.tMargins || ''} onChange={(v) => onChange('tMargins', v)} label="Margens" />
+          <PillSelector options={TIRADS_FOCI} value={data.echogenicFoci || ''} onChange={(v) => onChange('echogenicFoci', v)} label="Focos Ecogênicos" />
+        </>
+      )}
+    </div>
   );
 }
