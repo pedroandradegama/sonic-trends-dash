@@ -266,26 +266,33 @@ export default function LaudoEvolutivoPanel() {
   const [singleAudioText, setSingleAudioText] = useState('');
   const [prevAudioText, setPrevAudioText] = useState('');
   const [currAudioText, setCurrAudioText] = useState('');
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [filePreview, setFilePreview] = useState('');
+  const [prevUploadedFile, setPrevUploadedFile] = useState<File | null>(null);
+  const [currUploadedFile, setCurrUploadedFile] = useState<File | null>(null);
+  const [prevFilePreview, setPrevFilePreview] = useState('');
+  const [currFilePreview, setCurrFilePreview] = useState('');
 
   const canAnalyze = examType && (
     inputMode === 'estruturado' ? (prevExam.dimensions && currExam.dimensions) :
     inputMode === 'audio-unico' ? singleAudioText.trim().length > 20 :
     inputMode === 'audios-separados' ? (prevAudioText.trim().length > 10 && currAudioText.trim().length > 10) :
-    inputMode === 'arquivo' ? !!uploadedFile :
+    inputMode === 'arquivo' ? (!!prevUploadedFile && !!currUploadedFile) :
     false
   );
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (exam: 'prev' | 'curr', e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploadedFile(file);
-    if (file.type.startsWith('image/')) {
-      setFilePreview(URL.createObjectURL(file));
-    } else {
-      setFilePreview('');
+
+    const preview = file.type.startsWith('image/') ? URL.createObjectURL(file) : '';
+
+    if (exam === 'prev') {
+      setPrevUploadedFile(file);
+      setPrevFilePreview(preview);
+      return;
     }
+
+    setCurrUploadedFile(file);
+    setCurrFilePreview(preview);
   };
 
   const handleAnalyze = () => {
@@ -449,7 +456,7 @@ export default function LaudoEvolutivoPanel() {
                         className={cn(
                           "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
                           isActive
-                            ? "bg-foreground text-background border-foreground shadow-lg"
+                            ? "bg-primary text-primary-foreground border-primary shadow-lg"
                             : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
                         )}
                       >
@@ -503,39 +510,80 @@ export default function LaudoEvolutivoPanel() {
                 )}
 
                 {inputMode === 'arquivo' && (
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     <p className="text-sm text-muted-foreground">
-                      Faça upload de uma <strong>imagem</strong> ou <strong>PDF</strong> contendo os laudos anteriores e atuais para comparação automática.
+                      Faça upload de uma <strong>imagem</strong> ou <strong>PDF</strong> de cada exame para comparação automática.
                     </p>
-                    <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-colors">
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                        id="laudo-file-upload"
-                      />
-                      <label htmlFor="laudo-file-upload" className="cursor-pointer space-y-3 block">
-                        <FileUp className="h-10 w-10 mx-auto text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium">Clique para selecionar ou arraste o arquivo</p>
-                          <p className="text-xs text-muted-foreground mt-1">PDF ou imagem (JPG, PNG) • Máx. 20MB</p>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className="space-y-3 p-4 rounded-xl border border-border bg-card/50">
+                        <Label className="text-sm font-semibold flex items-center gap-2">
+                          <Badge variant="secondary" className="text-xs">Anterior</Badge>
+                          Arquivo do Exame Anterior
+                        </Label>
+                        <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
+                          <input
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={(e) => handleFileUpload('prev', e)}
+                            className="hidden"
+                            id="laudo-file-upload-prev"
+                          />
+                          <label htmlFor="laudo-file-upload-prev" className="cursor-pointer space-y-3 block">
+                            <FileUp className="h-8 w-8 mx-auto text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-medium">Selecionar arquivo anterior</p>
+                              <p className="text-xs text-muted-foreground mt-1">PDF ou imagem (JPG, PNG) • Máx. 20MB</p>
+                            </div>
+                          </label>
                         </div>
-                      </label>
-                    </div>
-                    {uploadedFile && (
-                      <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                        <FileUp className="h-5 w-5 text-primary" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{uploadedFile.name}</p>
-                          <p className="text-xs text-muted-foreground">{(uploadedFile.size / 1024).toFixed(0)} KB</p>
-                        </div>
-                        <Badge variant="outline" className="text-xs">Pronto</Badge>
+                        {prevUploadedFile && (
+                          <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                            <FileUp className="h-5 w-5 text-primary" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{prevUploadedFile.name}</p>
+                              <p className="text-xs text-muted-foreground">{(prevUploadedFile.size / 1024).toFixed(0)} KB</p>
+                            </div>
+                            <Badge variant="outline" className="text-xs">Pronto</Badge>
+                          </div>
+                        )}
+                        {prevFilePreview && <img src={prevFilePreview} alt="Preview do exame anterior" className="max-h-48 mx-auto rounded-lg border border-border" />}
                       </div>
-                    )}
-                    {filePreview && (
-                      <img src={filePreview} alt="Preview" className="max-h-64 mx-auto rounded-lg border" />
-                    )}
+
+                      <div className="space-y-3 p-4 rounded-xl border border-border bg-card/50">
+                        <Label className="text-sm font-semibold flex items-center gap-2">
+                          <Badge variant="default" className="text-xs">Atual</Badge>
+                          Arquivo do Exame Atual
+                        </Label>
+                        <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
+                          <input
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={(e) => handleFileUpload('curr', e)}
+                            className="hidden"
+                            id="laudo-file-upload-curr"
+                          />
+                          <label htmlFor="laudo-file-upload-curr" className="cursor-pointer space-y-3 block">
+                            <FileUp className="h-8 w-8 mx-auto text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-medium">Selecionar arquivo atual</p>
+                              <p className="text-xs text-muted-foreground mt-1">PDF ou imagem (JPG, PNG) • Máx. 20MB</p>
+                            </div>
+                          </label>
+                        </div>
+                        {currUploadedFile && (
+                          <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                            <FileUp className="h-5 w-5 text-primary" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{currUploadedFile.name}</p>
+                              <p className="text-xs text-muted-foreground">{(currUploadedFile.size / 1024).toFixed(0)} KB</p>
+                            </div>
+                            <Badge variant="outline" className="text-xs">Pronto</Badge>
+                          </div>
+                        )}
+                        {currFilePreview && <img src={currFilePreview} alt="Preview do exame atual" className="max-h-48 mx-auto rounded-lg border border-border" />}
+                      </div>
+                    </div>
                   </div>
                 )}
 
