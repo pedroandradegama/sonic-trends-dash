@@ -1,0 +1,1 @@
+ALTER TABLE public.doctor_preferences ADD COLUMN IF NOT EXISTS water boolean NOT NULL DEFAULT false;
