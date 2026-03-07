@@ -461,6 +461,7 @@ export type Database = {
           tea: boolean
           updated_at: string
           user_id: string
+          water: boolean
         }
         Insert: {
           ambient_music?: boolean
@@ -480,6 +481,7 @@ export type Database = {
           tea?: boolean
           updated_at?: string
           user_id: string
+          water?: boolean
         }
         Update: {
           ambient_music?: boolean
@@ -499,6 +501,7 @@ export type Database = {
           tea?: boolean
           updated_at?: string
           user_id?: string
+          water?: boolean
         }
         Relationships: []
       }

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { MainLayout } from "@/components/layout/MainLayout";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -29,6 +30,14 @@ import ORADSCalculator from "./pages/ORADSCalculator";
 
 const queryClient = new QueryClient();
 
+function ProtectedWithLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ProtectedRoute>
+      <MainLayout>{children}</MainLayout>
+    </ProtectedRoute>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -39,27 +48,26 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-            <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+            <Route path="/home" element={<ProtectedWithLayout><Home /></ProtectedWithLayout>} />
             <Route path="/" element={<Navigate to="/home" replace />} />
-            <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
-            <Route path="/minha-agenda" element={<ProtectedRoute><MinhaAgenda /></ProtectedRoute>} />
-            <Route path="/meu-trabalho" element={<ProtectedRoute><MeuTrabalho /></ProtectedRoute>} />
-            <Route path="/ferramentas-ia" element={<ProtectedRoute><FerramentasIA /></ProtectedRoute>} />
-            <Route path="/comunidade" element={<ProtectedRoute><Comunidade /></ProtectedRoute>} />
+            <Route path="/perfil" element={<ProtectedWithLayout><Perfil /></ProtectedWithLayout>} />
+            <Route path="/minha-agenda" element={<ProtectedWithLayout><MinhaAgenda /></ProtectedWithLayout>} />
+            <Route path="/meu-trabalho" element={<ProtectedWithLayout><MeuTrabalho /></ProtectedWithLayout>} />
+            <Route path="/ferramentas-ia" element={<ProtectedWithLayout><FerramentasIA /></ProtectedWithLayout>} />
+            <Route path="/comunidade" element={<ProtectedWithLayout><Comunidade /></ProtectedWithLayout>} />
             {/* Legacy standalone pages (for deep links / sub-content) */}
-            <Route path="/repasse" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/casuistica" element={<ProtectedRoute><Casuistica /></ProtectedRoute>} />
-            <Route path="/nps" element={<ProtectedRoute><NPS /></ProtectedRoute>} />
+            <Route path="/repasse" element={<ProtectedWithLayout><Index /></ProtectedWithLayout>} />
+            <Route path="/casuistica" element={<ProtectedWithLayout><Casuistica /></ProtectedWithLayout>} />
+            <Route path="/nps" element={<ProtectedWithLayout><NPS /></ProtectedWithLayout>} />
             {/* Tool sub-pages */}
-            <Route path="/ferramentas/percentis-us" element={<ProtectedRoute><PercentisUS /></ProtectedRoute>} />
-            <Route path="/ferramentas/ti-rads" element={<ProtectedRoute><TiRads /></ProtectedRoute>} />
-            <Route path="/ferramentas/medidas-adulto" element={<ProtectedRoute><MedidasAdulto /></ProtectedRoute>} />
-            <Route path="/ferramentas/prova-motora-vb" element={<ProtectedRoute><ProvaMotoraVB /></ProtectedRoute>} />
-            <Route path="/ferramentas/volume-vesical-ped" element={<ProtectedRoute><VolumeVesicalPed /></ProtectedRoute>} />
-            <Route path="/ferramentas/cimt-percentile" element={<ProtectedRoute><CIMTPercentile /></ProtectedRoute>} />
-            <Route path="/ferramentas/orads-us" element={<ProtectedRoute><ORADSCalculator /></ProtectedRoute>} />
+            <Route path="/ferramentas/percentis-us" element={<ProtectedWithLayout><PercentisUS /></ProtectedWithLayout>} />
+            <Route path="/ferramentas/ti-rads" element={<ProtectedWithLayout><TiRads /></ProtectedWithLayout>} />
+            <Route path="/ferramentas/medidas-adulto" element={<ProtectedWithLayout><MedidasAdulto /></ProtectedWithLayout>} />
+            <Route path="/ferramentas/prova-motora-vb" element={<ProtectedWithLayout><ProvaMotoraVB /></ProtectedWithLayout>} />
+            <Route path="/ferramentas/volume-vesical-ped" element={<ProtectedWithLayout><VolumeVesicalPed /></ProtectedWithLayout>} />
+            <Route path="/ferramentas/cimt-percentile" element={<ProtectedWithLayout><CIMTPercentile /></ProtectedWithLayout>} />
+            <Route path="/ferramentas/orads-us" element={<ProtectedWithLayout><ORADSCalculator /></ProtectedWithLayout>} />
             {/* Legacy redirects */}
-            {/* Legacy redirects - removed /perfil redirect since it's now a real page */}
             <Route path="/institucional" element={<Navigate to="/comunidade" replace />} />
             <Route path="/magia" element={<Navigate to="/ferramentas-ia" replace />} />
             <Route path="/ferramentas" element={<Navigate to="/ferramentas-ia" replace />} />
