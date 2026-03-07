@@ -456,7 +456,7 @@ export default function LaudoEvolutivoPanel() {
                         className={cn(
                           "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
                           isActive
-                            ? "bg-foreground text-background border-foreground shadow-lg"
+                            ? "bg-primary text-primary-foreground border-primary shadow-lg"
                             : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
                         )}
                       >
