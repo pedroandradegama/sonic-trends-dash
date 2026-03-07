@@ -266,26 +266,33 @@ export default function LaudoEvolutivoPanel() {
   const [singleAudioText, setSingleAudioText] = useState('');
   const [prevAudioText, setPrevAudioText] = useState('');
   const [currAudioText, setCurrAudioText] = useState('');
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [filePreview, setFilePreview] = useState('');
+  const [prevUploadedFile, setPrevUploadedFile] = useState<File | null>(null);
+  const [currUploadedFile, setCurrUploadedFile] = useState<File | null>(null);
+  const [prevFilePreview, setPrevFilePreview] = useState('');
+  const [currFilePreview, setCurrFilePreview] = useState('');
 
   const canAnalyze = examType && (
     inputMode === 'estruturado' ? (prevExam.dimensions && currExam.dimensions) :
     inputMode === 'audio-unico' ? singleAudioText.trim().length > 20 :
     inputMode === 'audios-separados' ? (prevAudioText.trim().length > 10 && currAudioText.trim().length > 10) :
-    inputMode === 'arquivo' ? !!uploadedFile :
+    inputMode === 'arquivo' ? (!!prevUploadedFile && !!currUploadedFile) :
     false
   );
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (exam: 'prev' | 'curr', e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploadedFile(file);
-    if (file.type.startsWith('image/')) {
-      setFilePreview(URL.createObjectURL(file));
-    } else {
-      setFilePreview('');
+
+    const preview = file.type.startsWith('image/') ? URL.createObjectURL(file) : '';
+
+    if (exam === 'prev') {
+      setPrevUploadedFile(file);
+      setPrevFilePreview(preview);
+      return;
     }
+
+    setCurrUploadedFile(file);
+    setCurrFilePreview(preview);
   };
 
   const handleAnalyze = () => {
