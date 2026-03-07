@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar, Music, Coffee, Loader2, Save } from "lucide-react";
+import { Calendar, Music, Coffee, Loader2, Save, Droplets } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -20,6 +20,7 @@ export function PerfilPanel() {
   const [musicGenre, setMusicGenre] = useState("");
   const [coffee, setCoffee] = useState(false);
   const [tea, setTea] = useState(false);
+  const [water, setWater] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
@@ -32,6 +33,7 @@ export function PerfilPanel() {
       setMusicGenre(preferences.music_genre || "");
       setCoffee(preferences.coffee);
       setTea(preferences.tea);
+      setWater((preferences as any).water ?? false);
     }
   }, [preferences]);
 
@@ -48,9 +50,10 @@ export function PerfilPanel() {
       ambientMusic !== preferences.ambient_music ||
       (ambientMusic && musicGenre !== (preferences.music_genre || "")) ||
       coffee !== preferences.coffee ||
-      tea !== preferences.tea;
+      tea !== preferences.tea ||
+      water !== ((preferences as any).water ?? false);
     setHasChanges(changed);
-  }, [schedulingProfile, overbookingEnabled, overbookingPercentage, overbookingTimeSlot, ambientMusic, musicGenre, coffee, tea, preferences]);
+  }, [schedulingProfile, overbookingEnabled, overbookingPercentage, overbookingTimeSlot, ambientMusic, musicGenre, coffee, tea, water, preferences]);
 
   const handleSave = () => {
     savePreferences({
@@ -62,7 +65,8 @@ export function PerfilPanel() {
       music_genre: ambientMusic ? musicGenre : null,
       coffee,
       tea,
-    });
+      water,
+    } as any);
   };
 
   if (isLoading) {
@@ -75,7 +79,6 @@ export function PerfilPanel() {
 
   return (
     <div className="space-y-6">
-      {/* Scheduling Preferences */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -85,11 +88,7 @@ export function PerfilPanel() {
           <CardDescription>Indique sua preferência para organização da agenda</CardDescription>
         </CardHeader>
         <CardContent>
-          <RadioGroup
-            value={schedulingProfile}
-            onValueChange={(v) => setSchedulingProfile(v as "combo" | "rotatividade")}
-            className="space-y-3"
-          >
+          <RadioGroup value={schedulingProfile} onValueChange={(v) => setSchedulingProfile(v as "combo" | "rotatividade")} className="space-y-3">
             <div className="flex items-start space-x-3 rounded-lg border p-4 hover:bg-accent/50 transition-colors">
               <RadioGroupItem value="combo" id="combo" className="mt-0.5" />
               <div>
@@ -108,7 +107,6 @@ export function PerfilPanel() {
         </CardContent>
       </Card>
 
-      {/* Overbooking */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -154,7 +152,6 @@ export function PerfilPanel() {
         </CardContent>
       </Card>
 
-      {/* Amenities */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -185,7 +182,7 @@ export function PerfilPanel() {
           <Separator />
           <div className="space-y-3">
             <Label className="text-base flex items-center gap-2"><Coffee className="h-4 w-4" /> Bebidas durante atendimentos</Label>
-            <div className="flex gap-4">
+            <div className="flex gap-4 flex-wrap">
               <div className="flex items-center space-x-2 rounded-lg border px-4 py-3 hover:bg-accent/50 transition-colors">
                 <Switch id="coffee" checked={coffee} onCheckedChange={setCoffee} />
                 <Label htmlFor="coffee" className="cursor-pointer">☕ Café</Label>
@@ -194,12 +191,15 @@ export function PerfilPanel() {
                 <Switch id="tea" checked={tea} onCheckedChange={setTea} />
                 <Label htmlFor="tea" className="cursor-pointer">🍵 Chá</Label>
               </div>
+              <div className="flex items-center space-x-2 rounded-lg border px-4 py-3 hover:bg-accent/50 transition-colors">
+                <Switch id="water" checked={water} onCheckedChange={setWater} />
+                <Label htmlFor="water" className="cursor-pointer">💧 Água</Label>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Save Button */}
       <Button onClick={handleSave} disabled={!hasChanges || isSaving} className="w-full" size="lg">
         {isSaving ? (
           <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...</>

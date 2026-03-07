@@ -1,5 +1,3 @@
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { MainLayout } from '@/components/layout/MainLayout';
 import { Users } from 'lucide-react';
 import RadarArtigosCard from '@/components/institucional/RadarArtigosCard';
 import FeriadosCard from '@/components/institucional/FeriadosCard';
@@ -18,32 +16,25 @@ export default function Comunidade() {
   }, [radioburgerDates]);
 
   return (
-    <TooltipProvider>
-      <MainLayout>
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <Users className="h-6 w-6 text-primary" />
-              Comunidade
-            </h1>
-            <p className="text-muted-foreground mt-1">Casos compartilhados, artigos, eventos e feriados</p>
-          </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+          <Users className="h-6 w-6 text-primary" />
+          Comunidade
+        </h1>
+        <p className="text-muted-foreground mt-1">Casos compartilhados, artigos, eventos e feriados</p>
+      </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            {/* Left column: 40% */}
-            <div className="lg:col-span-2 space-y-6">
-              <SharedCasesCard />
-              {nextRadioburgerDate && <RadioburgerCard nextDate={nextRadioburgerDate} />}
-              <FeriadosCard />
-            </div>
-
-            {/* Right column: 60% */}
-            <div className="lg:col-span-3">
-              <RadarArtigosCard />
-            </div>
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <SharedCasesCard />
+          {nextRadioburgerDate && <RadioburgerCard nextDate={nextRadioburgerDate} />}
+          <FeriadosCard />
         </div>
-      </MainLayout>
-    </TooltipProvider>
+        <div className="lg:col-span-3">
+          <RadarArtigosCard />
+        </div>
+      </div>
+    </div>
   );
 }
