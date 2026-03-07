@@ -28,7 +28,7 @@ function LayoutInner({ children }: MainLayoutProps) {
           <TopHeader />
           <AppSidebar />
           <main className={cn(
-            "transition-all duration-300 min-h-screen pt-28 p-6",
+            "transition-all duration-300 min-h-screen px-6 pb-6 pt-28",
             collapsed ? "ml-16" : "ml-64"
           )}>
             <div className="mx-auto">
