@@ -61,6 +61,14 @@ const tools = [
     path: '/ferramentas/orads-us',
     badge: 'Novo',
   },
+  {
+    id: 'crescimento-fetal',
+    title: 'Crescimento Fetal — Biometria e EFW',
+    description: 'Percentis de HC, AC e FL (Snijders 1994) e peso fetal estimado (Hadlock 1985) com centis Nicolaides 2018.',
+    icon: HeartPulse,
+    path: '/ferramentas/crescimento-fetal',
+    badge: 'Novo',
+  },
 ];
 
 export function FerramentasGrid() {
