@@ -27,6 +27,7 @@ import ProvaMotoraVB from "./pages/ProvaMotoraVB";
 import VolumeVesicalPed from "./pages/VolumeVesicalPed";
 import CIMTPercentile from "./pages/CIMTPercentile";
 import ORADSCalculator from "./pages/ORADSCalculator";
+import FetalGrowth from "./pages/FetalGrowth";
 
 const queryClient = new QueryClient();
 
