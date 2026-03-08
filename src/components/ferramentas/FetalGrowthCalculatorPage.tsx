@@ -15,7 +15,6 @@ import {
 
 export default function FetalGrowthCalculatorPage() {
   const navigate = useNavigate();
-  const { logUsage } = useToolUsageLog();
 
   const [weeks, setWeeks] = useState('');
   const [days, setDays] = useState('');
