@@ -19,7 +19,7 @@ function LayoutInner({ children }: MainLayoutProps) {
       {isMobile ? (
         <>
           <MobileSidebar />
-          <main className="pt-24 px-4 pb-6">
+          <main className="pt-18 px-4 pb-6">
             {children}
           </main>
         </>
