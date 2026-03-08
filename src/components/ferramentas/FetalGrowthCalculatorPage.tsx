@@ -57,7 +57,7 @@ export default function FetalGrowthCalculatorPage() {
     }
 
     setCalculated(true);
-    logUsage('fetal-growth', { weeks, days, hc, ac, fl });
+    logToolUsage('fetal-growth', { weeks, days, hc, ac, fl });
   }
 
   function handleClear() {
