@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { Baby, Stethoscope, BookOpen, ArrowRight, FlaskConical, Droplets, Activity, CircleDot } from 'lucide-react';
+import { Baby, Stethoscope, BookOpen, ArrowRight, FlaskConical, Droplets, Activity, CircleDot, HeartPulse } from 'lucide-react';
 
 const tools = [
   {
@@ -59,6 +59,14 @@ const tools = [
     description: 'Classificação O-RADS 0–5 com recomendação de conduta baseada no algoritmo ACR (v2022).',
     icon: CircleDot,
     path: '/ferramentas/orads-us',
+    badge: 'Novo',
+  },
+  {
+    id: 'crescimento-fetal',
+    title: 'Crescimento Fetal — Biometria e EFW',
+    description: 'Percentis de HC, AC e FL (Snijders 1994) e peso fetal estimado (Hadlock 1985) com centis Nicolaides 2018.',
+    icon: HeartPulse,
+    path: '/ferramentas/crescimento-fetal',
     badge: 'Novo',
   },
 ];

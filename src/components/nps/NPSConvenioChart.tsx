@@ -13,10 +13,10 @@ export function NPSConvenioChart({ data }: NPSConvenioChartProps) {
   }));
 
   const getBarColor = (nps: number) => {
-    if (nps >= 75) return 'hsl(var(--chart-1))'; // Excelente - verde
-    if (nps >= 50) return 'hsl(var(--chart-2))'; // Muito bom - azul
-    if (nps >= 0) return 'hsl(var(--chart-3))'; // Regular - amarelo
-    return 'hsl(var(--chart-5))'; // Crítico - vermelho
+    if (nps >= 75) return 'hsl(152 60% 40%)'; // Excelente - verde (success)
+    if (nps >= 50) return 'hsl(195 47% 34%)'; // Muito bom - azul petróleo (primary)
+    if (nps >= 0) return 'hsl(38 92% 50%)'; // Regular - amarelo (warning)
+    return 'hsl(0 72% 51%)'; // Crítico - vermelho (destructive)
   };
 
   return (
