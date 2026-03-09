@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import TypeformExamWizard from './TypeformExamWizard';
 
 // ── Types ──
 type ExamType = 'tireoide' | 'mama' | null;
