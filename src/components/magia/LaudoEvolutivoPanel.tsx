@@ -387,8 +387,8 @@ export default function LaudoEvolutivoPanel() {
             className={cn(
               "relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group",
               examType === 'tireoide'
-                ? "border-primary bg-primary/5 shadow-lg"
-                : "border-border hover:border-primary/40 hover:shadow-md"
+                ? "border-purple-500 bg-purple-50 dark:bg-purple-950/20 shadow-lg"
+                : "border-border hover:border-purple-400/40 hover:shadow-md"
             )}
           >
             <div className="flex items-center gap-3">
