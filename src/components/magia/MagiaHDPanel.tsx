@@ -36,6 +36,13 @@ const TEST_CASE = 'Mulher 34 anos, dor pélvica crônica há 6 meses. US TV: cis
 
 type RequestStatus = 'idle' | 'loading' | 'success' | 'error';
 
+type AIModel = 'gpt' | 'claude';
+
+const AI_MODELS: { value: AIModel; label: string; description: string }[] = [
+  { value: 'gpt', label: 'GPT-4o mini', description: 'OpenAI — rápido e eficiente' },
+  { value: 'claude', label: 'Claude Sonnet', description: 'Anthropic — raciocínio avançado' },
+];
+
 export default function MagiaHDPanel() {
   const { user } = useAuth();
   const { isAdmin } = useAdminCheck();
@@ -48,6 +55,7 @@ export default function MagiaHDPanel() {
   const [caseText, setCaseText] = useState('');
   const [requestStatus, setRequestStatus] = useState<RequestStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [aiModel, setAiModel] = useState<AIModel>('gpt');
   const [result, setResult] = useState<DiagnosisResult | null>(null);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -63,7 +71,7 @@ export default function MagiaHDPanel() {
     }
     setRequestStatus('loading'); setErrorMessage(''); setResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-dx', { body: { case_text: textToSend, area: testMode ? 'gineco_obst' : area, doctor_id: user?.id } });
+      const { data, error } = await supabase.functions.invoke('generate-dx', { body: { case_text: textToSend, area: testMode ? 'gineco_obst' : area, doctor_id: user?.id, model: aiModel } });
       if (error) {
         if (error.message?.includes('401') || error.message?.includes('403')) setErrorMessage('Falha de autenticação (401). Verifique se a Edge Function está ativa.');
         else if (error.message?.includes('500') || error.message?.includes('502')) setErrorMessage('Falha no backend/IA. Verifique Logs do Supabase Edge Function.');
@@ -167,6 +175,28 @@ export default function MagiaHDPanel() {
               <SelectTrigger id="area" className="rounded-xl"><SelectValue placeholder="Selecione a área" /></SelectTrigger>
               <SelectContent>{AREAS.map(a => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}</SelectContent>
             </Select>
+          </div>
+
+          {/* AI Model */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Modelo de IA</Label>
+            <div className="flex gap-2">
+              {AI_MODELS.map(m => (
+                <button
+                  key={m.value}
+                  onClick={() => setAiModel(m.value)}
+                  className={cn(
+                    "flex-1 p-3 rounded-xl border-2 transition-all duration-200 text-left",
+                    aiModel === m.value
+                      ? "border-primary bg-primary/5 shadow-sm"
+                      : "border-border hover:border-primary/40"
+                  )}
+                >
+                  <p className="text-sm font-semibold">{m.label}</p>
+                  <p className="text-xs text-muted-foreground">{m.description}</p>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Input Mode */}
