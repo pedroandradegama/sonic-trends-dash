@@ -597,8 +597,8 @@ export default function LaudoEvolutivoPanel() {
 
                 {inputMode === 'estruturado' && (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <ExamForm title="Exame Anterior" data={prevExam} onChange={updatePrev} examType={examType} accentColor="text-muted-foreground" />
-                    <ExamForm title="Exame Atual" data={currExam} onChange={updateCurr} examType={examType} accentColor="text-primary" />
+                    <TypeformExamWizard title="Exame Anterior" data={prevExam} onChange={updatePrev} examType={examType} accentColor="text-muted-foreground" />
+                    <TypeformExamWizard title="Exame Atual" data={currExam} onChange={updateCurr} examType={examType} accentColor="text-primary" />
                   </div>
                 )}
               </CardContent>
