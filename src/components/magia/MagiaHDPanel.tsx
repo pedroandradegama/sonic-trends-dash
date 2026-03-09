@@ -268,7 +268,7 @@ export default function MagiaHDPanel() {
 
           {/* Generate */}
           <div className="space-y-2">
-            <Button onClick={() => handleGenerate(false)} disabled={isGenerateDisabled || (!usage.canUse(consultMode) && requestStatus !== 'loading')} className="w-full rounded-xl" size="lg">
+            <Button onClick={() => handleGenerate(false)} disabled={isGenerateDisabled || !usage.canUse(consultMode)} className="w-full rounded-xl" size="lg">
               {requestStatus === 'loading' ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{consultMode === 'board' ? 'Consultando 3 modelos...' : 'Gerando hipóteses...'}</>
               ) : (
