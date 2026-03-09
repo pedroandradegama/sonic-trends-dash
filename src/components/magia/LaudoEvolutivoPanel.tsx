@@ -406,7 +406,7 @@ export default function LaudoEvolutivoPanel() {
                 <p className="text-sm text-muted-foreground">ACR TI-RADS</p>
               </div>
             </div>
-            {examType === 'tireoide' && <div className="absolute top-3 right-3"><CheckCircle className="h-5 w-5 text-primary" /></div>}
+            {examType === 'tireoide' && <div className="absolute top-3 right-3"><CheckCircle className="h-5 w-5 text-purple-500" /></div>}
           </button>
 
           <button
