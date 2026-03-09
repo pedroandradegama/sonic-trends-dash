@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { AlertTriangle, Brain, Copy, CheckCircle, Loader2, TestTube, Sparkles, History, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, Brain, Copy, CheckCircle, Loader2, TestTube, Sparkles, History, ShieldCheck, Users, User } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,11 +7,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { useMagiaHistory, DiagnosisResult, MagiaHistoryItem } from '@/hooks/useMagiaHistory';
+import { useMagiaUsage, ConsultMode } from '@/hooks/useMagiaUsage';
+import { logToolUsage } from '@/hooks/useToolUsageLog';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -36,19 +37,12 @@ const TEST_CASE = 'Mulher 34 anos, dor pélvica crônica há 6 meses. US TV: cis
 
 type RequestStatus = 'idle' | 'loading' | 'success' | 'error';
 
-type AIModel = 'gpt' | 'claude' | 'medgemma';
-
-const AI_MODELS: { value: AIModel; label: string; description: string }[] = [
-  { value: 'gpt', label: 'GPT-4o mini', description: 'OpenAI — rápido e eficiente' },
-  { value: 'claude', label: 'Claude Sonnet', description: 'Anthropic — raciocínio avançado' },
-  { value: 'medgemma', label: 'MedGemma', description: 'Google — IA médica especializada' },
-];
-
 export default function MagiaHDPanel() {
   const { user } = useAuth();
   const { isAdmin } = useAdminCheck();
   const { toast } = useToast();
   const { history, addToHistory } = useMagiaHistory();
+  const usage = useMagiaUsage();
 
   const [confirmedAnonymized, setConfirmedAnonymized] = useState(false);
   const [area, setArea] = useState('outro');
@@ -56,7 +50,7 @@ export default function MagiaHDPanel() {
   const [caseText, setCaseText] = useState('');
   const [requestStatus, setRequestStatus] = useState<RequestStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
-  const [aiModel, setAiModel] = useState<AIModel>('gpt');
+  const [consultMode, setConsultMode] = useState<ConsultMode>('individual');
   const [result, setResult] = useState<DiagnosisResult | null>(null);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -69,10 +63,23 @@ export default function MagiaHDPanel() {
     if (!testMode) {
       if (!confirmedAnonymized) { setErrorMessage('Marque a confirmação de anonimização antes de enviar.'); setRequestStatus('error'); return; }
       if (textToSend.length < 20) { setErrorMessage('Descreva o caso com mais detalhes (mínimo 20 caracteres).'); setRequestStatus('error'); return; }
+      if (!usage.canUse(consultMode)) {
+        setErrorMessage(`Você atingiu o limite mensal de consultas ${consultMode === 'board' ? 'Board' : 'Individual'}.`);
+        setRequestStatus('error');
+        return;
+      }
     }
     setRequestStatus('loading'); setErrorMessage(''); setResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-dx', { body: { case_text: textToSend, area: testMode ? 'gineco_obst' : area, doctor_id: user?.id, model: aiModel } });
+      const { data, error } = await supabase.functions.invoke('generate-dx', {
+        body: {
+          case_text: textToSend,
+          area: testMode ? 'gineco_obst' : area,
+          doctor_id: user?.id,
+          mode: 'dx',
+          consult_mode: testMode ? 'individual' : consultMode,
+        }
+      });
       if (error) {
         if (error.message?.includes('401') || error.message?.includes('403')) setErrorMessage('Falha de autenticação (401). Verifique se a Edge Function está ativa.');
         else if (error.message?.includes('500') || error.message?.includes('502')) setErrorMessage('Falha no backend/IA. Verifique Logs do Supabase Edge Function.');
@@ -81,8 +88,12 @@ export default function MagiaHDPanel() {
       }
       if (data?.error) { setErrorMessage(data.error); setRequestStatus('error'); return; }
       setResult(data as DiagnosisResult); setRequestStatus('success');
-      if (!testMode) addToHistory(textToSend, area, data as DiagnosisResult);
-      toast({ title: 'Análise gerada com sucesso', description: 'As hipóteses diagnósticas foram geradas.' });
+      if (!testMode) {
+        addToHistory(textToSend, area, data as DiagnosisResult);
+        await logToolUsage('magia_hd', { consult_mode: consultMode, area });
+        usage.refetch();
+      }
+      toast({ title: 'Análise gerada com sucesso', description: consultMode === 'board' ? 'Consenso entre os 3 modelos gerado.' : 'Hipóteses diagnósticas geradas.' });
     } catch { setErrorMessage('Não foi possível gerar a análise. Tente novamente.'); setRequestStatus('error'); }
   };
 
@@ -178,25 +189,59 @@ export default function MagiaHDPanel() {
             </Select>
           </div>
 
-          {/* AI Model */}
+          {/* Consult Mode: Individual vs Board */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Modelo de IA</Label>
-            <div className="flex gap-2">
-              {AI_MODELS.map(m => (
-                <button
-                  key={m.value}
-                  onClick={() => setAiModel(m.value)}
-                  className={cn(
-                    "flex-1 p-3 rounded-xl border-2 transition-all duration-200 text-left",
-                    aiModel === m.value
-                      ? "border-primary bg-primary/5 shadow-sm"
-                      : "border-border hover:border-primary/40"
-                  )}
-                >
-                  <p className="text-sm font-semibold">{m.label}</p>
-                  <p className="text-xs text-muted-foreground">{m.description}</p>
-                </button>
-              ))}
+            <Label className="text-sm font-medium">Tipo de Consulta</Label>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Individual */}
+              <button
+                onClick={() => setConsultMode('individual')}
+                className={cn(
+                  "relative p-4 rounded-xl border-2 transition-all duration-200 text-left",
+                  consultMode === 'individual'
+                    ? "border-primary bg-primary/5 shadow-sm"
+                    : "border-border hover:border-primary/40"
+                )}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <User className="h-4 w-4 text-primary" />
+                  <p className="text-sm font-semibold">Opinião Individual</p>
+                </div>
+                <p className="text-xs text-muted-foreground">Análise rápida por 1 modelo de IA</p>
+                <div className="mt-2 flex items-center gap-1.5">
+                  <Badge
+                    variant={usage.remaining('individual') > 5 ? 'secondary' : 'destructive'}
+                    className="text-[10px] px-1.5 py-0"
+                  >
+                    {usage.remaining('individual')}/{usage.limits.individual} restantes
+                  </Badge>
+                </div>
+              </button>
+
+              {/* Board */}
+              <button
+                onClick={() => setConsultMode('board')}
+                className={cn(
+                  "relative p-4 rounded-xl border-2 transition-all duration-200 text-left",
+                  consultMode === 'board'
+                    ? "border-primary bg-primary/5 shadow-sm"
+                    : "border-border hover:border-primary/40"
+                )}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <Users className="h-4 w-4 text-primary" />
+                  <p className="text-sm font-semibold">Opinião Board</p>
+                </div>
+                <p className="text-xs text-muted-foreground">Consenso entre 3 modelos de IA</p>
+                <div className="mt-2 flex items-center gap-1.5">
+                  <Badge
+                    variant={usage.remaining('board') > 3 ? 'secondary' : 'destructive'}
+                    className="text-[10px] px-1.5 py-0"
+                  >
+                    {usage.remaining('board')}/{usage.limits.board} restantes
+                  </Badge>
+                </div>
+              </button>
             </div>
           </div>
 
@@ -223,10 +268,19 @@ export default function MagiaHDPanel() {
 
           {/* Generate */}
           <div className="space-y-2">
-            <Button onClick={() => handleGenerate(false)} disabled={isGenerateDisabled} className="w-full rounded-xl" size="lg">
-              {requestStatus === 'loading' ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Gerando hipóteses...</> : <><Sparkles className="h-4 w-4 mr-2" />Gerar hipóteses diagnósticas</>}
+            <Button onClick={() => handleGenerate(false)} disabled={isGenerateDisabled || (!usage.canUse(consultMode) && requestStatus !== 'loading')} className="w-full rounded-xl" size="lg">
+              {requestStatus === 'loading' ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{consultMode === 'board' ? 'Consultando 3 modelos...' : 'Gerando hipóteses...'}</>
+              ) : (
+                <><Sparkles className="h-4 w-4 mr-2" />{consultMode === 'board' ? 'Gerar consenso Board' : 'Gerar hipóteses diagnósticas'}</>
+              )}
             </Button>
-            {isGenerateDisabled && requestStatus !== 'loading' && (
+            {!usage.canUse(consultMode) && (
+              <p className="text-xs text-destructive text-center font-medium">
+                Limite mensal de consultas {consultMode === 'board' ? 'Board' : 'Individual'} atingido.
+              </p>
+            )}
+            {isGenerateDisabled && usage.canUse(consultMode) && requestStatus !== 'loading' && (
               <p className="text-xs text-muted-foreground text-center">
                 {!confirmedAnonymized && 'Marque a confirmação de anonimização. '}
                 {caseText.length < 20 && `Texto insuficiente (${caseText.length}/20 caracteres).`}
@@ -253,6 +307,7 @@ export default function MagiaHDPanel() {
             <CardTitle className="flex items-center gap-2">
               <Brain className="h-5 w-5 text-primary" />
               Resultado da Análise
+              {consultMode === 'board' && <Badge variant="outline" className="ml-1 text-xs">Board</Badge>}
             </CardTitle>
             <div className="flex items-center gap-2">
               <Badge variant={result.confidence === 'alta' ? 'default' : result.confidence === 'média' ? 'secondary' : 'outline'}>
@@ -272,7 +327,7 @@ export default function MagiaHDPanel() {
 
             {/* Hypotheses */}
             <div className="space-y-3">
-              <h3 className="font-semibold">Hipóteses Principais</h3>
+              <h3 className="font-semibold">{consultMode === 'board' ? 'Hipóteses Consensuais' : 'Hipóteses Principais'}</h3>
               {result.hypotheses.map(h => (
                 <Card key={h.rank} className="border-l-4 border-l-primary rounded-xl">
                   <CardContent className="pt-4">
