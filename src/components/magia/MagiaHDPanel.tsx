@@ -36,6 +36,13 @@ const TEST_CASE = 'Mulher 34 anos, dor pélvica crônica há 6 meses. US TV: cis
 
 type RequestStatus = 'idle' | 'loading' | 'success' | 'error';
 
+type AIModel = 'gpt' | 'claude';
+
+const AI_MODELS: { value: AIModel; label: string; description: string }[] = [
+  { value: 'gpt', label: 'GPT-4o mini', description: 'OpenAI — rápido e eficiente' },
+  { value: 'claude', label: 'Claude Sonnet', description: 'Anthropic — raciocínio avançado' },
+];
+
 export default function MagiaHDPanel() {
   const { user } = useAuth();
   const { isAdmin } = useAdminCheck();
@@ -48,6 +55,7 @@ export default function MagiaHDPanel() {
   const [caseText, setCaseText] = useState('');
   const [requestStatus, setRequestStatus] = useState<RequestStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [aiModel, setAiModel] = useState<AIModel>('gpt');
   const [result, setResult] = useState<DiagnosisResult | null>(null);
   const [showHistory, setShowHistory] = useState(false);
 
