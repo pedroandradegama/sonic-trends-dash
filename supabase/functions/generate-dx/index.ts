@@ -34,6 +34,30 @@ Ao receber um caso, você deve retornar um JSON estruturado com:
 
 Responda APENAS com o JSON válido, sem texto adicional antes ou depois.`;
 
+const SYSTEM_PROMPT_BOARD = `Você é um moderador de junta médica virtual especializada em ultrassonografia. Você recebeu as hipóteses diagnósticas de 3 modelos de IA distintos para o mesmo caso clínico.
+
+Seu papel é:
+1. Analisar as hipóteses de todos os modelos
+2. Identificar diagnósticos CONSENSUAIS (citados por 2 ou mais modelos)
+3. Consolidar em NO MÁXIMO 4 hipóteses consensuais, priorizando as mais citadas
+4. Sintetizar justificativas e contra-argumentos de todos os modelos
+
+Retorne um JSON com:
+1. "summary": Resumo conciso do caso (2-3 frases)
+2. "hypotheses": Array de até 4 hipóteses consensuais, cada uma contendo:
+   - "rank": Posição no ranking (1 a 4)
+   - "diagnosis": Nome do diagnóstico
+   - "justification": Justificativa consolidada dos modelos que concordaram
+   - "arguments_against": Contra-argumentos consolidados
+   - "confirmation_questions": Array de perguntas para confirmar/descartar
+   - "agreement": Quantos modelos concordaram (ex: "3/3" ou "2/3")
+3. "red_flags": Array consolidado de sinais de alerta
+4. "next_steps": Array consolidado de próximos passos
+5. "confidence": Nível de confiança baseado no grau de consenso ("alta" se 3/3, "média" se 2/3, "baixa" se divergente)
+6. "disclaimer": "Análise consensual gerada por junta de 3 modelos de IA. Não substitui o julgamento clínico do médico responsável."
+
+Responda APENAS com o JSON válido.`;
+
 const SYSTEM_PROMPT_REVIEW = `Você é um revisor de laudos radiológicos especializado em ultrassonografia. Seu papel é revisar e aprimorar laudos médicos com base nas melhores práticas da literatura (ACR, RSNA Radiographics, Radiology Assistant, OpenEvidence, PubMed, NEJM, JAMA).
 
 DIRETRIZES:
@@ -56,8 +80,6 @@ Retorne um JSON com:
 Responda APENAS com o JSON válido.`;
 
 // ── Provider helpers ──
-
-// ── Vertex AI / MedGemma auth helpers ──
 
 function base64url(input: Uint8Array): string {
   return btoa(String.fromCharCode(...input))
@@ -136,9 +158,9 @@ async function callMedGemma(serviceAccount: { client_email: string; private_key:
   if (!response.ok) {
     const errorText = await response.text();
     console.error('MedGemma API error:', response.status, errorText);
-    if (response.status === 403) throw new Error('Sem permissão para acessar MedGemma. Verifique as permissões da conta de serviço.');
-    if (response.status === 404) throw new Error('Modelo MedGemma não encontrado. Verifique se está disponível na região configurada.');
-    throw new Error('Erro ao processar a análise via MedGemma.');
+    if (response.status === 403) throw new Error('Sem permissão para acessar MedGemma.');
+    if (response.status === 404) throw new Error('Modelo MedGemma não encontrado.');
+    throw new Error('Erro ao processar via MedGemma.');
   }
 
   const data = await response.json();
@@ -159,8 +181,7 @@ async function callOpenAI(apiKey: string, systemPrompt: string, userMessage: str
   if (!response.ok) {
     const errorText = await response.text();
     console.error('OpenAI API error:', response.status, errorText);
-    if (response.status === 401) throw new Error('Falha de autenticação com OpenAI. Verifique a API key.');
-    throw new Error('Erro ao processar a análise via OpenAI.');
+    throw new Error('Erro ao processar via OpenAI.');
   }
   const data = await response.json();
   return data.choices?.[0]?.message?.content;
@@ -185,11 +206,62 @@ async function callClaude(apiKey: string, systemPrompt: string, userMessage: str
   if (!response.ok) {
     const errorText = await response.text();
     console.error('Claude API error:', response.status, errorText);
-    if (response.status === 401) throw new Error('Falha de autenticação com Claude. Verifique a API key.');
-    throw new Error('Erro ao processar a análise via Claude.');
+    throw new Error('Erro ao processar via Claude.');
   }
   const data = await response.json();
   return data.content?.[0]?.text;
+}
+
+function parseJSON(content: string | undefined) {
+  if (!content) return null;
+  const clean = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  return JSON.parse(clean);
+}
+
+async function handleBoardConsensus(userMessage: string): Promise<any> {
+  const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+  const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
+
+  if (!OPENAI_API_KEY || !ANTHROPIC_API_KEY) {
+    throw new Error('API keys para Board não configuradas.');
+  }
+
+  // Call GPT and Claude in parallel; MedGemma is optional
+  const promises: Promise<string | undefined>[] = [
+    callOpenAI(OPENAI_API_KEY, SYSTEM_PROMPT_DX, userMessage),
+    callClaude(ANTHROPIC_API_KEY, SYSTEM_PROMPT_DX, userMessage),
+  ];
+
+  let hasMedGemma = false;
+  const saKeyRaw = Deno.env.get('GOOGLE_VERTEX_SERVICE_ACCOUNT_KEY');
+  if (saKeyRaw) {
+    try {
+      const sa = JSON.parse(saKeyRaw);
+      promises.push(callMedGemma(sa, SYSTEM_PROMPT_DX, userMessage));
+      hasMedGemma = true;
+    } catch { /* skip MedGemma if config is invalid */ }
+  }
+
+  const results = await Promise.allSettled(promises);
+  const modelOutputs: string[] = [];
+  const modelNames = ['GPT-4o mini', 'Claude Sonnet', ...(hasMedGemma ? ['MedGemma'] : [])];
+
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled' && r.value) {
+      modelOutputs.push(`--- Modelo ${modelNames[i]} ---\n${r.value}`);
+    } else {
+      console.error(`Board: ${modelNames[i]} falhou:`, r.status === 'rejected' ? r.reason : 'empty');
+    }
+  });
+
+  if (modelOutputs.length < 2) {
+    throw new Error('Não foi possível obter respostas suficientes dos modelos para formar o Board.');
+  }
+
+  // Use GPT to synthesize consensus
+  const synthesisMessage = `Caso clínico original:\n${userMessage}\n\nRespostas dos modelos:\n\n${modelOutputs.join('\n\n')}\n\nConsolide as hipóteses consensuais conforme as instruções.`;
+  const consensusRaw = await callOpenAI(OPENAI_API_KEY, SYSTEM_PROMPT_BOARD, synthesisMessage);
+  return parseJSON(consensusRaw);
 }
 
 serve(async (req) => {
@@ -198,7 +270,7 @@ serve(async (req) => {
   }
 
   try {
-    const { case_text, area, doctor_id, mode, model } = await req.json();
+    const { case_text, area, doctor_id, mode, consult_mode, model } = await req.json();
 
     if (!case_text || case_text.length < 20) {
       return new Response(
@@ -208,63 +280,45 @@ serve(async (req) => {
     }
 
     const isReview = mode === 'review';
-    const systemPrompt = isReview ? SYSTEM_PROMPT_REVIEW : SYSTEM_PROMPT_DX;
-    const useClaude = model === 'claude';
-    const useMedGemma = model === 'medgemma';
+    const isBoard = consult_mode === 'board';
 
     const userMessage = isReview
       ? `Área: ${area || 'Não especificada'}\n\nTexto do laudo para revisão:\n${case_text}\n\nRevise e aprimore este laudo conforme as diretrizes.`
       : `Área de especialidade: ${area || 'Não especificada'}\n\nCaso clínico:\n${case_text}\n\nAnalise o caso e forneça as hipóteses diagnósticas estruturadas conforme o formato JSON especificado.`;
 
-    console.log(`Processing ${isReview ? 'review' : 'dx'} via ${useMedGemma ? 'MedGemma' : useClaude ? 'Claude' : 'GPT-4o-mini'} for doctor: ${doctor_id}, area: ${area}`);
-
-    let content: string | undefined;
-
-    if (useMedGemma) {
-      const saKeyRaw = Deno.env.get('GOOGLE_VERTEX_SERVICE_ACCOUNT_KEY');
-      if (!saKeyRaw) {
-        return new Response(
-          JSON.stringify({ error: 'GOOGLE_VERTEX_SERVICE_ACCOUNT_KEY não configurada.' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      const serviceAccount = JSON.parse(saKeyRaw);
-      content = await callMedGemma(serviceAccount, systemPrompt, userMessage);
-    } else if (useClaude) {
-      const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
-      if (!ANTHROPIC_API_KEY) {
-        return new Response(
-          JSON.stringify({ error: 'ANTHROPIC_API_KEY não configurada. Contate o administrador.' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      content = await callClaude(ANTHROPIC_API_KEY, systemPrompt, userMessage);
-    } else {
-      const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-      if (!OPENAI_API_KEY) {
-        return new Response(
-          JSON.stringify({ error: 'OPENAI_API_KEY não configurada. Contate o administrador.' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      content = await callOpenAI(OPENAI_API_KEY, systemPrompt, userMessage);
-    }
-
-    if (!content) {
-      return new Response(
-        JSON.stringify({ error: 'Resposta vazia da IA. Tente novamente.' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    console.log(`Processing ${isReview ? 'review' : isBoard ? 'board' : 'individual'} for doctor: ${doctor_id}, area: ${area}`);
 
     let parsedResponse;
-    try {
-      const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      parsedResponse = JSON.parse(cleanContent);
-    } catch (parseError) {
-      console.error('Failed to parse response:', content);
+
+    if (isBoard && !isReview) {
+      parsedResponse = await handleBoardConsensus(userMessage);
+    } else {
+      // Individual mode or review: use cheapest model (GPT-4o-mini) or specified model
+      const systemPrompt = isReview ? SYSTEM_PROMPT_REVIEW : SYSTEM_PROMPT_DX;
+      const selectedModel = isReview ? (model || 'gpt') : 'gpt'; // Individual always uses GPT
+
+      let content: string | undefined;
+
+      if (selectedModel === 'medgemma') {
+        const saKeyRaw = Deno.env.get('GOOGLE_VERTEX_SERVICE_ACCOUNT_KEY');
+        if (!saKeyRaw) throw new Error('GOOGLE_VERTEX_SERVICE_ACCOUNT_KEY não configurada.');
+        content = await callMedGemma(JSON.parse(saKeyRaw), systemPrompt, userMessage);
+      } else if (selectedModel === 'claude') {
+        const key = Deno.env.get('ANTHROPIC_API_KEY');
+        if (!key) throw new Error('ANTHROPIC_API_KEY não configurada.');
+        content = await callClaude(key, systemPrompt, userMessage);
+      } else {
+        const key = Deno.env.get('OPENAI_API_KEY');
+        if (!key) throw new Error('OPENAI_API_KEY não configurada.');
+        content = await callOpenAI(key, systemPrompt, userMessage);
+      }
+
+      parsedResponse = parseJSON(content);
+    }
+
+    if (!parsedResponse) {
       return new Response(
-        JSON.stringify({ error: 'Erro ao processar resposta da IA.', raw_content: content }),
+        JSON.stringify({ error: 'Resposta vazia da IA. Tente novamente.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
