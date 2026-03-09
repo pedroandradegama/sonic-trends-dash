@@ -220,7 +220,17 @@ serve(async (req) => {
 
     let content: string | undefined;
 
-    if (useClaude) {
+    if (useMedGemma) {
+      const saKeyRaw = Deno.env.get('GOOGLE_VERTEX_SERVICE_ACCOUNT_KEY');
+      if (!saKeyRaw) {
+        return new Response(
+          JSON.stringify({ error: 'GOOGLE_VERTEX_SERVICE_ACCOUNT_KEY não configurada.' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      const serviceAccount = JSON.parse(saKeyRaw);
+      content = await callMedGemma(serviceAccount, systemPrompt, userMessage);
+    } else if (useClaude) {
       const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
       if (!ANTHROPIC_API_KEY) {
         return new Response(

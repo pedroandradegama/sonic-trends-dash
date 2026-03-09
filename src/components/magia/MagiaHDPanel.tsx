@@ -36,11 +36,12 @@ const TEST_CASE = 'Mulher 34 anos, dor pélvica crônica há 6 meses. US TV: cis
 
 type RequestStatus = 'idle' | 'loading' | 'success' | 'error';
 
-type AIModel = 'gpt' | 'claude';
+type AIModel = 'gpt' | 'claude' | 'medgemma';
 
 const AI_MODELS: { value: AIModel; label: string; description: string }[] = [
   { value: 'gpt', label: 'GPT-4o mini', description: 'OpenAI — rápido e eficiente' },
   { value: 'claude', label: 'Claude Sonnet', description: 'Anthropic — raciocínio avançado' },
+  { value: 'medgemma', label: 'MedGemma', description: 'Google — IA médica especializada' },
 ];
 
 export default function MagiaHDPanel() {
