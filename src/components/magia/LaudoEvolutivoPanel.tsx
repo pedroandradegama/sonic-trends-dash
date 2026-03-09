@@ -698,48 +698,4 @@ export default function LaudoEvolutivoPanel() {
   );
 }
 
-// ── Exam Form Sub-component ──
-function ExamForm({ title, data, onChange, examType, accentColor }: {
-  title: string;
-  data: ExamData;
-  onChange: (field: keyof ExamData, value: string) => void;
-  examType: ExamType;
-  accentColor: string;
-}) {
-  return (
-    <div className="space-y-4 p-4 rounded-xl border border-border bg-card/50">
-      <h4 className={cn("text-base font-semibold", accentColor)}>{title}</h4>
-      <div className="space-y-2">
-        <Label className="text-sm">Localização</Label>
-        <Input value={data.location} onChange={(e) => onChange('location', e.target.value)} placeholder={examType === 'tireoide' ? 'Ex: Lobo direito, terço médio' : 'Ex: QSE, 10h, 3cm da papila'} />
-      </div>
-      <div className="space-y-2">
-        <Label className="text-sm">Dimensões (mm)</Label>
-        <Input value={data.dimensions} onChange={(e) => onChange('dimensions', e.target.value)} placeholder="Ex: 15 x 12 x 10" />
-      </div>
-      <div className="space-y-2">
-        <Label className="text-sm">Data do exame</Label>
-        <Input type="date" value={data.date} onChange={(e) => onChange('date', e.target.value)} />
-      </div>
-      <Separator />
-      {examType === 'mama' ? (
-        <>
-          <PillSelector options={MAMA_SHAPES} value={data.shape || ''} onChange={(v) => onChange('shape', v)} label="Forma" />
-          <PillSelector options={MAMA_MARGINS} value={data.margins || ''} onChange={(v) => onChange('margins', v)} label="Margens" />
-          <PillSelector options={MAMA_ORIENTATION} value={data.orientation || ''} onChange={(v) => onChange('orientation', v)} label="Orientação" />
-          <PillSelector options={MAMA_ECHO} value={data.echogenicity || ''} onChange={(v) => onChange('echogenicity', v)} label="Ecogenicidade" />
-          <PillSelector options={MAMA_POSTERIOR} value={data.posteriorFeatures || ''} onChange={(v) => onChange('posteriorFeatures', v)} label="Características Posteriores" />
-          <PillSelector options={MAMA_CALC} value={data.calcifications || ''} onChange={(v) => onChange('calcifications', v)} label="Calcificações" />
-        </>
-      ) : (
-        <>
-          <PillSelector options={TIRADS_COMP} value={data.composition || ''} onChange={(v) => onChange('composition', v)} label="Composição" />
-          <PillSelector options={TIRADS_ECHO} value={data.echogenicity || ''} onChange={(v) => onChange('echogenicity', v)} label="Ecogenicidade" />
-          <PillSelector options={TIRADS_FORM} value={data.tForm || ''} onChange={(v) => onChange('tForm', v)} label="Forma" />
-          <PillSelector options={TIRADS_MARGINS} value={data.tMargins || ''} onChange={(v) => onChange('tMargins', v)} label="Margens" />
-          <PillSelector options={TIRADS_FOCI} value={data.echogenicFoci || ''} onChange={(v) => onChange('echogenicFoci', v)} label="Focos Ecogênicos" />
-        </>
-      )}
-    </div>
-  );
-}
+// ExamForm replaced by TypeformExamWizard
