@@ -65,7 +65,6 @@ const INPUT_MODES: { key: InputMode; label: string; icon: typeof Mic }[] = [
   { key: 'arquivo', label: 'Arquivo', icon: FileUp },
   { key: 'estruturado', label: 'Estruturado', icon: Grid3X3 },
 ];
-}
 
 // ── Audio Recorder ──
 function AudioRecorder({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
