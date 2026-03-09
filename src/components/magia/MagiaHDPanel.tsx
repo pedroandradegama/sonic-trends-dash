@@ -71,7 +71,7 @@ export default function MagiaHDPanel() {
     }
     setRequestStatus('loading'); setErrorMessage(''); setResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-dx', { body: { case_text: textToSend, area: testMode ? 'gineco_obst' : area, doctor_id: user?.id } });
+      const { data, error } = await supabase.functions.invoke('generate-dx', { body: { case_text: textToSend, area: testMode ? 'gineco_obst' : area, doctor_id: user?.id, model: aiModel } });
       if (error) {
         if (error.message?.includes('401') || error.message?.includes('403')) setErrorMessage('Falha de autenticação (401). Verifique se a Edge Function está ativa.');
         else if (error.message?.includes('500') || error.message?.includes('502')) setErrorMessage('Falha no backend/IA. Verifique Logs do Supabase Edge Function.');

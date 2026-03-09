@@ -392,7 +392,15 @@ export default function LaudoEvolutivoPanel() {
             )}
           >
             <div className="flex items-center gap-3">
-              <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center text-2xl", examType === 'tireoide' ? "bg-primary/10" : "bg-muted")}>🦋</div>
+              <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center", examType === 'tireoide' ? "bg-purple-100 dark:bg-purple-900/30" : "bg-muted")}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={cn("h-7 w-7", examType === 'tireoide' ? "text-purple-600" : "text-muted-foreground")}>
+                  <path d="M12 16V20" />
+                  <path d="M12 16C12 16 8 15 6 12C4 9 5.5 6 8 5C9.5 4.3 11 5 12 6.5" />
+                  <path d="M12 16C12 16 16 15 18 12C20 9 18.5 6 16 5C14.5 4.3 13 5 12 6.5" />
+                  <circle cx="9" cy="9" r="1.5" />
+                  <circle cx="15" cy="9" r="1.5" />
+                </svg>
+              </div>
               <div>
                 <h3 className="font-semibold text-lg">Tireoide</h3>
                 <p className="text-sm text-muted-foreground">ACR TI-RADS</p>
