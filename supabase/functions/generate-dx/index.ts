@@ -57,6 +57,94 @@ Responda APENAS com o JSON válido.`;
 
 // ── Provider helpers ──
 
+// ── Vertex AI / MedGemma auth helpers ──
+
+function base64url(input: Uint8Array): string {
+  return btoa(String.fromCharCode(...input))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function base64urlStr(input: string): string {
+  return btoa(input).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function importPKCS8(pem: string): Promise<CryptoKey> {
+  const pemBody = pem.replace(/-----BEGIN PRIVATE KEY-----/g, '')
+    .replace(/-----END PRIVATE KEY-----/g, '')
+    .replace(/\s/g, '');
+  const binaryDer = Uint8Array.from(atob(pemBody), c => c.charCodeAt(0));
+  return crypto.subtle.importKey(
+    'pkcs8', binaryDer,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false, ['sign']
+  );
+}
+
+async function getVertexAccessToken(serviceAccount: { client_email: string; private_key: string }): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header = base64urlStr(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+  const payload = base64urlStr(JSON.stringify({
+    iss: serviceAccount.client_email,
+    scope: 'https://www.googleapis.com/auth/cloud-platform',
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: now + 3600,
+  }));
+  const signingInput = `${header}.${payload}`;
+  const key = await importPKCS8(serviceAccount.private_key);
+  const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(signingInput));
+  const jwt = `${signingInput}.${base64url(new Uint8Array(sig))}`;
+
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
+  });
+  if (!tokenRes.ok) {
+    const err = await tokenRes.text();
+    console.error('Vertex token error:', err);
+    throw new Error('Falha na autenticação com Google Cloud.');
+  }
+  const { access_token } = await tokenRes.json();
+  return access_token;
+}
+
+async function callMedGemma(serviceAccount: { client_email: string; private_key: string; project_id: string }, systemPrompt: string, userMessage: string) {
+  const accessToken = await getVertexAccessToken(serviceAccount);
+  const projectId = serviceAccount.project_id;
+  const location = 'us-central1';
+  const model = 'medgemma-27b-text-it';
+  const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${model}:generateContent`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      contents: [
+        { role: 'user', parts: [{ text: `${systemPrompt}\n\n${userMessage}` }] },
+      ],
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 3000,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('MedGemma API error:', response.status, errorText);
+    if (response.status === 403) throw new Error('Sem permissão para acessar MedGemma. Verifique as permissões da conta de serviço.');
+    if (response.status === 404) throw new Error('Modelo MedGemma não encontrado. Verifique se está disponível na região configurada.');
+    throw new Error('Erro ao processar a análise via MedGemma.');
+  }
+
+  const data = await response.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text;
+}
+
 async function callOpenAI(apiKey: string, systemPrompt: string, userMessage: string) {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
