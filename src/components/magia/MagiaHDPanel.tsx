@@ -280,7 +280,7 @@ export default function MagiaHDPanel() {
                 Limite mensal de consultas {consultMode === 'board' ? 'Board' : 'Individual'} atingido.
               </p>
             )}
-            {isGenerateDisabled && usage.canUse(consultMode) && requestStatus !== 'loading' && (
+            {isGenerateDisabled && usage.canUse(consultMode) && requestStatus === 'idle' && (
               <p className="text-xs text-muted-foreground text-center">
                 {!confirmedAnonymized && 'Marque a confirmação de anonimização. '}
                 {caseText.length < 20 && `Texto insuficiente (${caseText.length}/20 caracteres).`}
