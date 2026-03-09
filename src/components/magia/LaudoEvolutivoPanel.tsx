@@ -43,20 +43,7 @@ interface AnalysisResult {
   recommendation: string;
 }
 
-// ── Constants ──
-const MAMA_SHAPES = ['Oval', 'Redonda', 'Irregular'];
-const MAMA_MARGINS = ['Circunscritas', 'Obscurecidas', 'Microlobuladas', 'Indistintas', 'Espiculadas'];
-const MAMA_ORIENTATION = ['Paralela', 'Não paralela'];
-const MAMA_ECHO = ['Anecóica', 'Hiperecoica', 'Isoecoica', 'Hipoecoica', 'Complexa'];
-const MAMA_POSTERIOR = ['Sem alteração', 'Reforço', 'Sombra', 'Padrão combinado'];
-const MAMA_CALC = ['Ausentes', 'Dentro da massa', 'Fora da massa', 'Intraductais'];
-
-const TIRADS_COMP = ['Cística', 'Predominantemente cística', 'Esponjiforme', 'Predominantemente sólida', 'Sólida'];
-const TIRADS_ECHO = ['Anecoica', 'Hiperecoica/Isoecoica', 'Hipoecoica', 'Muito hipoecoica'];
-const TIRADS_FORM = ['Mais largo que alto', 'Mais alto que largo'];
-const TIRADS_MARGINS = ['Lisas', 'Mal definidas', 'Lobuladas/Irregulares', 'Extensão extratireoidiana'];
-const TIRADS_FOCI = ['Nenhum', 'Macrocalcificações', 'Calcificações periféricas', 'Focos ecogênicos punctiformes'];
-
+// ── Constants (kept for scoring logic) ──
 const TIRADS_CATEGORIES: Record<number, { name: string; risk: string; recommendation: string; color: string }> = {
   1: { name: 'TR1 - Benigno', risk: '< 2%', recommendation: 'Sem necessidade de PAAF', color: '#10b981' },
   2: { name: 'TR2 - Não suspeito', risk: '< 2%', recommendation: 'Sem necessidade de PAAF', color: '#10b981' },
@@ -78,31 +65,6 @@ const INPUT_MODES: { key: InputMode; label: string; icon: typeof Mic }[] = [
   { key: 'arquivo', label: 'Arquivo', icon: FileUp },
   { key: 'estruturado', label: 'Estruturado', icon: Grid3X3 },
 ];
-
-// ── Pill Selector ──
-function PillSelector({ options, value, onChange, label }: { options: string[]; value: string; onChange: (v: string) => void; label: string }) {
-  return (
-    <div className="space-y-2">
-      <Label className="text-sm font-medium">{label}</Label>
-      <div className="flex flex-wrap gap-1.5">
-        {options.map(opt => (
-          <button
-            key={opt}
-            type="button"
-            onClick={() => onChange(value === opt ? '' : opt)}
-            className={cn(
-              "px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200",
-              value === opt
-                ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
-            )}
-          >
-            {opt}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
 }
 
 // ── Audio Recorder ──
