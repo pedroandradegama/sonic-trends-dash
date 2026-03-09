@@ -177,6 +177,28 @@ export default function MagiaHDPanel() {
             </Select>
           </div>
 
+          {/* AI Model */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Modelo de IA</Label>
+            <div className="flex gap-2">
+              {AI_MODELS.map(m => (
+                <button
+                  key={m.value}
+                  onClick={() => setAiModel(m.value)}
+                  className={cn(
+                    "flex-1 p-3 rounded-xl border-2 transition-all duration-200 text-left",
+                    aiModel === m.value
+                      ? "border-primary bg-primary/5 shadow-sm"
+                      : "border-border hover:border-primary/40"
+                  )}
+                >
+                  <p className="text-sm font-semibold">{m.label}</p>
+                  <p className="text-xs text-muted-foreground">{m.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Input Mode */}
           <div className="space-y-3">
             <Label className="text-sm font-medium">Método de entrada</Label>
