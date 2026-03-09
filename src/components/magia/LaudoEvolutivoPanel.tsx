@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import TypeformExamWizard from './TypeformExamWizard';
 
 // ── Types ──
 type ExamType = 'tireoide' | 'mama' | null;
@@ -42,20 +43,7 @@ interface AnalysisResult {
   recommendation: string;
 }
 
-// ── Constants ──
-const MAMA_SHAPES = ['Oval', 'Redonda', 'Irregular'];
-const MAMA_MARGINS = ['Circunscritas', 'Obscurecidas', 'Microlobuladas', 'Indistintas', 'Espiculadas'];
-const MAMA_ORIENTATION = ['Paralela', 'Não paralela'];
-const MAMA_ECHO = ['Anecóica', 'Hiperecoica', 'Isoecoica', 'Hipoecoica', 'Complexa'];
-const MAMA_POSTERIOR = ['Sem alteração', 'Reforço', 'Sombra', 'Padrão combinado'];
-const MAMA_CALC = ['Ausentes', 'Dentro da massa', 'Fora da massa', 'Intraductais'];
-
-const TIRADS_COMP = ['Cística', 'Predominantemente cística', 'Esponjiforme', 'Predominantemente sólida', 'Sólida'];
-const TIRADS_ECHO = ['Anecoica', 'Hiperecoica/Isoecoica', 'Hipoecoica', 'Muito hipoecoica'];
-const TIRADS_FORM = ['Mais largo que alto', 'Mais alto que largo'];
-const TIRADS_MARGINS = ['Lisas', 'Mal definidas', 'Lobuladas/Irregulares', 'Extensão extratireoidiana'];
-const TIRADS_FOCI = ['Nenhum', 'Macrocalcificações', 'Calcificações periféricas', 'Focos ecogênicos punctiformes'];
-
+// ── Constants (kept for scoring logic) ──
 const TIRADS_CATEGORIES: Record<number, { name: string; risk: string; recommendation: string; color: string }> = {
   1: { name: 'TR1 - Benigno', risk: '< 2%', recommendation: 'Sem necessidade de PAAF', color: '#10b981' },
   2: { name: 'TR2 - Não suspeito', risk: '< 2%', recommendation: 'Sem necessidade de PAAF', color: '#10b981' },
@@ -77,32 +65,6 @@ const INPUT_MODES: { key: InputMode; label: string; icon: typeof Mic }[] = [
   { key: 'arquivo', label: 'Arquivo', icon: FileUp },
   { key: 'estruturado', label: 'Estruturado', icon: Grid3X3 },
 ];
-
-// ── Pill Selector ──
-function PillSelector({ options, value, onChange, label }: { options: string[]; value: string; onChange: (v: string) => void; label: string }) {
-  return (
-    <div className="space-y-2">
-      <Label className="text-sm font-medium">{label}</Label>
-      <div className="flex flex-wrap gap-1.5">
-        {options.map(opt => (
-          <button
-            key={opt}
-            type="button"
-            onClick={() => onChange(value === opt ? '' : opt)}
-            className={cn(
-              "px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200",
-              value === opt
-                ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
-            )}
-          >
-            {opt}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // ── Audio Recorder ──
 function AudioRecorder({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
@@ -597,8 +559,8 @@ export default function LaudoEvolutivoPanel() {
 
                 {inputMode === 'estruturado' && (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <ExamForm title="Exame Anterior" data={prevExam} onChange={updatePrev} examType={examType} accentColor="text-muted-foreground" />
-                    <ExamForm title="Exame Atual" data={currExam} onChange={updateCurr} examType={examType} accentColor="text-primary" />
+                    <TypeformExamWizard title="Exame Anterior" data={prevExam} onChange={updatePrev} examType={examType} accentColor="text-muted-foreground" />
+                    <TypeformExamWizard title="Exame Atual" data={currExam} onChange={updateCurr} examType={examType} accentColor="text-primary" />
                   </div>
                 )}
               </CardContent>
@@ -697,48 +659,4 @@ export default function LaudoEvolutivoPanel() {
   );
 }
 
-// ── Exam Form Sub-component ──
-function ExamForm({ title, data, onChange, examType, accentColor }: {
-  title: string;
-  data: ExamData;
-  onChange: (field: keyof ExamData, value: string) => void;
-  examType: ExamType;
-  accentColor: string;
-}) {
-  return (
-    <div className="space-y-4 p-4 rounded-xl border border-border bg-card/50">
-      <h4 className={cn("text-base font-semibold", accentColor)}>{title}</h4>
-      <div className="space-y-2">
-        <Label className="text-sm">Localização</Label>
-        <Input value={data.location} onChange={(e) => onChange('location', e.target.value)} placeholder={examType === 'tireoide' ? 'Ex: Lobo direito, terço médio' : 'Ex: QSE, 10h, 3cm da papila'} />
-      </div>
-      <div className="space-y-2">
-        <Label className="text-sm">Dimensões (mm)</Label>
-        <Input value={data.dimensions} onChange={(e) => onChange('dimensions', e.target.value)} placeholder="Ex: 15 x 12 x 10" />
-      </div>
-      <div className="space-y-2">
-        <Label className="text-sm">Data do exame</Label>
-        <Input type="date" value={data.date} onChange={(e) => onChange('date', e.target.value)} />
-      </div>
-      <Separator />
-      {examType === 'mama' ? (
-        <>
-          <PillSelector options={MAMA_SHAPES} value={data.shape || ''} onChange={(v) => onChange('shape', v)} label="Forma" />
-          <PillSelector options={MAMA_MARGINS} value={data.margins || ''} onChange={(v) => onChange('margins', v)} label="Margens" />
-          <PillSelector options={MAMA_ORIENTATION} value={data.orientation || ''} onChange={(v) => onChange('orientation', v)} label="Orientação" />
-          <PillSelector options={MAMA_ECHO} value={data.echogenicity || ''} onChange={(v) => onChange('echogenicity', v)} label="Ecogenicidade" />
-          <PillSelector options={MAMA_POSTERIOR} value={data.posteriorFeatures || ''} onChange={(v) => onChange('posteriorFeatures', v)} label="Características Posteriores" />
-          <PillSelector options={MAMA_CALC} value={data.calcifications || ''} onChange={(v) => onChange('calcifications', v)} label="Calcificações" />
-        </>
-      ) : (
-        <>
-          <PillSelector options={TIRADS_COMP} value={data.composition || ''} onChange={(v) => onChange('composition', v)} label="Composição" />
-          <PillSelector options={TIRADS_ECHO} value={data.echogenicity || ''} onChange={(v) => onChange('echogenicity', v)} label="Ecogenicidade" />
-          <PillSelector options={TIRADS_FORM} value={data.tForm || ''} onChange={(v) => onChange('tForm', v)} label="Forma" />
-          <PillSelector options={TIRADS_MARGINS} value={data.tMargins || ''} onChange={(v) => onChange('tMargins', v)} label="Margens" />
-          <PillSelector options={TIRADS_FOCI} value={data.echogenicFoci || ''} onChange={(v) => onChange('echogenicFoci', v)} label="Focos Ecogênicos" />
-        </>
-      )}
-    </div>
-  );
-}
+// ExamForm replaced by TypeformExamWizard
