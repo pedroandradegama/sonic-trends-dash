@@ -216,7 +216,7 @@ serve(async (req) => {
       ? `Área: ${area || 'Não especificada'}\n\nTexto do laudo para revisão:\n${case_text}\n\nRevise e aprimore este laudo conforme as diretrizes.`
       : `Área de especialidade: ${area || 'Não especificada'}\n\nCaso clínico:\n${case_text}\n\nAnalise o caso e forneça as hipóteses diagnósticas estruturadas conforme o formato JSON especificado.`;
 
-    console.log(`Processing ${isReview ? 'review' : 'dx'} via ${useClaude ? 'Claude' : 'GPT-4o-mini'} for doctor: ${doctor_id}, area: ${area}`);
+    console.log(`Processing ${isReview ? 'review' : 'dx'} via ${useMedGemma ? 'MedGemma' : useClaude ? 'Claude' : 'GPT-4o-mini'} for doctor: ${doctor_id}, area: ${area}`);
 
     let content: string | undefined;
 
