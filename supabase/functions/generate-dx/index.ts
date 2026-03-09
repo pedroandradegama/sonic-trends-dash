@@ -210,6 +210,7 @@ serve(async (req) => {
     const isReview = mode === 'review';
     const systemPrompt = isReview ? SYSTEM_PROMPT_REVIEW : SYSTEM_PROMPT_DX;
     const useClaude = model === 'claude';
+    const useMedGemma = model === 'medgemma';
 
     const userMessage = isReview
       ? `Área: ${area || 'Não especificada'}\n\nTexto do laudo para revisão:\n${case_text}\n\nRevise e aprimore este laudo conforme as diretrizes.`
