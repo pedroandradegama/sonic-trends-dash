@@ -12,6 +12,8 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useAppMode } from '@/contexts/ModeContext';
+import { useState } from 'react';
+import { PasswordConfirmDialog } from './PasswordConfirmDialog';
 
 type AppModeKey = 'agenda' | 'avancado';
 
@@ -28,17 +30,28 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const { collapsed, toggle } = useSidebar();
   const { mode, clearMode } = useAppMode();
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
   const navItems = allNavItems.filter(item => 
     !mode || item.modes.includes(mode as 'agenda' | 'avancado')
   );
 
   const handleSwitchMode = () => {
+    setShowPasswordDialog(true);
+  };
+
+  const handlePasswordConfirmed = () => {
     clearMode();
     navigate('/modo');
   };
 
   return (
+    <>
+    <PasswordConfirmDialog
+      open={showPasswordDialog}
+      onOpenChange={setShowPasswordDialog}
+      onConfirmed={handlePasswordConfirmed}
+    />
     <aside 
       className={cn(
         "fixed left-0 top-14 z-40 h-[calc(100vh-3.5rem)] transition-all duration-300 flex flex-col",
@@ -96,5 +109,6 @@ export function AppSidebar() {
         </button>
       </div>
     </aside>
+    </>
   );
 }

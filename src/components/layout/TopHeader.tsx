@@ -32,16 +32,18 @@ export function TopHeader() {
         </div>
 
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors outline-none">
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-sm overflow-hidden ring-2 ring-primary/5">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-              ) : (
-                firstName.charAt(0).toUpperCase()
-              )}
-            </div>
-            <span className="hidden sm:inline font-medium">{firstName}</span>
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors outline-none select-none">
+              <div className="h-8 w-8 flex-shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-sm overflow-hidden ring-2 ring-primary/5">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  firstName.charAt(0).toUpperCase()
+                )}
+              </div>
+              <span className="hidden sm:inline font-medium whitespace-nowrap">{firstName}</span>
+              <ChevronDown className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+            </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem onClick={() => navigate('/perfil')} className="cursor-pointer">
