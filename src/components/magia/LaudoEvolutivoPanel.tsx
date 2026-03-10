@@ -338,6 +338,12 @@ export default function LaudoEvolutivoPanel() {
     setAnalysisError('');
 
     setTimeout(() => {
+      if (inputMode === 'arquivo') {
+        setAnalysisError('No modo Arquivo, ainda não há extração automática de texto (OCR). Para comparação precisa, use o modo Texto e cole os laudos.');
+        setAnalyzing(false);
+        return;
+      }
+
       if (inputMode === 'estruturado') {
         // Single nodule comparison (structured mode)
         const result = analyzeNodulePair(prevExam, currExam, examType);
@@ -355,8 +361,9 @@ export default function LaudoEvolutivoPanel() {
         setParsedPreview({ prev: prevNodules, curr: currNodules });
 
         const pairs = matchNodulesBetweenExams(prevNodules, currNodules);
-        
+
         if (pairs.length === 0) {
+          setAnalysisError('Não foi possível correlacionar nódulos entre os dois exames.');
           setNoduleResults([]);
           setAnalyzing(false);
           return;
