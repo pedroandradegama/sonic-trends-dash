@@ -191,7 +191,13 @@ export function parseReport(text: string): ParsedNodule[] {
     
     return {
       id,
-      description: block.split('\n').find(l => l.match(/N\d+\s*[|:]/i))?.replace(/N\d+\s*[|:.\-–—]\s*/i, '').trim() || '',
+      description: block
+        .split('\n')
+        .map(l => l.trim())
+        .find(l => /^(\|\s*)?(N\d+|N[oó]dulo\s+\d+)\b/i.test(l))
+        ?.replace(/^(\|\s*)?(N\d+|N[oó]dulo\s+\d+)\s*[|:.\-–—]?\s*/i, '')
+        .replace(/\|\s*$/,'')
+        .trim() || '',
       location,
       dimensions,
       composition,
