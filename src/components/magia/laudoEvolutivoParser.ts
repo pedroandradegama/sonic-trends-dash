@@ -162,7 +162,7 @@ function extractDimensions(block: string): string {
   const lineMatch = block.match(/dimens[oõ]es?[^:\n]*:\s*([^\n]+)/i);
   if (lineMatch) {
     const cleaned = lineMatch[1].replace(/^\|+/, '').replace(/\|+$/,'').trim();
-    const parsed = parseDimensionsToMm(cleaned);
+    const parsed = parseDimensionsToCm(cleaned);
     if (parsed) return parsed;
   }
 
