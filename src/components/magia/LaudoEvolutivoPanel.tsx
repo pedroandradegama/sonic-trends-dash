@@ -679,7 +679,7 @@ export default function LaudoEvolutivoPanel() {
                       <div key={n.id} className="text-xs p-2 rounded-lg bg-muted/50 mb-1.5 space-y-0.5">
                         <span className="font-bold text-foreground">{n.id}</span>
                         {n.location && <span className="text-muted-foreground"> — {n.location}</span>}
-                        {n.dimensions && <p className="text-muted-foreground">Dim: {n.dimensions} mm</p>}
+                        {n.dimensions && <p className="text-muted-foreground">Dim: {n.dimensions} cm</p>}
                         {n.composition && <p className="text-muted-foreground">Comp: {n.composition}</p>}
                         {n.echogenicity && <p className="text-muted-foreground">Eco: {n.echogenicity}</p>}
                         {n.echogenicFoci && <p className="text-muted-foreground">Focos: {n.echogenicFoci}</p>}
@@ -692,7 +692,7 @@ export default function LaudoEvolutivoPanel() {
                       <div key={n.id} className="text-xs p-2 rounded-lg bg-muted/50 mb-1.5 space-y-0.5">
                         <span className="font-bold text-foreground">{n.id}</span>
                         {n.location && <span className="text-muted-foreground"> — {n.location}</span>}
-                        {n.dimensions && <p className="text-muted-foreground">Dim: {n.dimensions} mm</p>}
+                        {n.dimensions && <p className="text-muted-foreground">Dim: {n.dimensions} cm</p>}
                         {n.composition && <p className="text-muted-foreground">Comp: {n.composition}</p>}
                         {n.echogenicity && <p className="text-muted-foreground">Eco: {n.echogenicity}</p>}
                         {n.echogenicFoci && <p className="text-muted-foreground">Focos: {n.echogenicFoci}</p>}
@@ -758,14 +758,14 @@ export default function LaudoEvolutivoPanel() {
                     </CardHeader>
                     <CardContent>
                       <p className="text-lg font-medium">
-                        {result.dimensionalChange.prevMax}mm → {result.dimensionalChange.currMax}mm{' '}
+                        {result.dimensionalChange.prevMax}cm → {result.dimensionalChange.currMax}cm{' '}
                         <span className={cn("font-bold", result.dimensionalChange.status === 'aumento' ? 'text-destructive' : result.dimensionalChange.status === 'reducao' ? 'text-success' : 'text-warning')}>
                           ({result.dimensionalChange.percentage > 0 ? '+' : ''}{result.dimensionalChange.percentage}%)
                         </span>
                       </p>
                       {result.dimensionalChange.prevMax > 0 && result.dimensionalChange.currMax > 0 && (
                         <p className="text-sm text-muted-foreground mt-1">
-                          Maior eixo: {result.prevNodule.dimensions} mm → {result.currNodule.dimensions} mm
+                          Maior eixo: {result.prevNodule.dimensions} cm → {result.currNodule.dimensions} cm
                         </p>
                       )}
                       {result.dimensionalChange.significant && <Badge variant="destructive" className="mt-2">Variação significativa (≥20%)</Badge>}
