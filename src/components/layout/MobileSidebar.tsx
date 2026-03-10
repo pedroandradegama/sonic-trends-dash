@@ -37,14 +37,19 @@ export function MobileSidebar() {
   const [open, setOpen] = useState(false);
   const firstName = profile?.medico_nome?.split(' ')[0] || '';
   const { mode, clearMode } = useAppMode();
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
   const navItems = allNavItems.filter(item =>
     !mode || item.modes.includes(mode as AppModeKey)
   );
 
   const handleSwitchMode = () => {
-    clearMode();
     setOpen(false);
+    setShowPasswordDialog(true);
+  };
+
+  const handlePasswordConfirmed = () => {
+    clearMode();
     navigate('/modo');
   };
 
