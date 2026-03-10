@@ -765,7 +765,7 @@ export default function LaudoEvolutivoPanel() {
                       </p>
                       {result.dimensionalChange.prevMax > 0 && result.dimensionalChange.currMax > 0 && (
                         <p className="text-sm text-muted-foreground mt-1">
-                          Maior eixo: {result.prevNodule.dimensions} mm → {result.currNodule.dimensions} mm
+                          Maior eixo: {result.prevNodule.dimensions} cm → {result.currNodule.dimensions} cm
                         </p>
                       )}
                       {result.dimensionalChange.significant && <Badge variant="destructive" className="mt-2">Variação significativa (≥20%)</Badge>}
