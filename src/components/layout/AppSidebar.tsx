@@ -13,12 +13,14 @@ import { cn } from '@/lib/utils';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useAppMode } from '@/contexts/ModeContext';
 
-const allNavItems = [
-  { path: '/home', label: 'Home', icon: LayoutDashboard, modes: ['avancado'] as const },
-  { path: '/minha-agenda', label: 'Minha Agenda', icon: CalendarDays, modes: ['avancado'] as const },
-  { path: '/meu-trabalho', label: 'Meu Trabalho', icon: Briefcase, modes: ['avancado'] as const },
-  { path: '/ferramentas-ia', label: 'Ferramentas & IA', icon: Wrench, modes: ['agenda', 'avancado'] as const },
-  { path: '/comunidade', label: 'Comunidade', icon: Users, modes: ['avancado'] as const },
+type AppModeKey = 'agenda' | 'avancado';
+
+const allNavItems: { path: string; label: string; icon: typeof LayoutDashboard; modes: AppModeKey[] }[] = [
+  { path: '/home', label: 'Home', icon: LayoutDashboard, modes: ['avancado'] },
+  { path: '/minha-agenda', label: 'Minha Agenda', icon: CalendarDays, modes: ['avancado'] },
+  { path: '/meu-trabalho', label: 'Meu Trabalho', icon: Briefcase, modes: ['avancado'] },
+  { path: '/ferramentas-ia', label: 'Ferramentas & IA', icon: Wrench, modes: ['agenda', 'avancado'] },
+  { path: '/comunidade', label: 'Comunidade', icon: Users, modes: ['avancado'] },
 ];
 
 export function AppSidebar() {
