@@ -29,14 +29,15 @@ function normalizeText(text: string): string {
 }
 
 /**
- * Converts "0,8 x 0,5 x 0,3 cm" → "8 x 5 x 3" (mm)
- * Also handles "8 x 5 x 3 mm" directly
+ * Normalizes dimension strings to cm with consistent formatting.
+ * "0,8 x 0,5 x 0,3 cm" → "0.8 x 0.5 x 0.3"
+ * "8 x 5 x 3 mm" → "0.8 x 0.5 x 0.3"
+ * Assumes cm when no unit is specified.
  */
-function parseDimensionsToMm(raw: string): string {
+function parseDimensionsToCm(raw: string): string {
   if (!raw) return '';
 
   const cleaned = raw.trim();
-  const hasCm = /\bcm\b/i.test(cleaned);
   const hasMm = /\bmm\b/i.test(cleaned);
 
   const nums = cleaned
@@ -48,12 +49,9 @@ function parseDimensionsToMm(raw: string): string {
 
   if (nums.length === 0) return '';
 
-  // Heurística: sem unidade explícita + valores decimais pequenos geralmente vêm em cm
-  const inferredCm = !hasCm && !hasMm && nums.some(n => n % 1 !== 0) && Math.max(...nums) <= 3;
-  const isCm = hasCm || inferredCm;
-
-  const mmNums = isCm ? nums.map(n => Math.round(n * 10)) : nums.map(n => Math.round(n * 10) / 10);
-  return mmNums.join(' x ');
+  // Se está em mm, converte para cm; caso contrário mantém em cm
+  const cmNums = hasMm ? nums.map(n => Math.round(n / 10 * 100) / 100) : nums.map(n => Math.round(n * 100) / 100);
+  return cmNums.map(n => n.toFixed(1)).join(' x ');
 }
 
 function matchComposition(desc: string): string {
