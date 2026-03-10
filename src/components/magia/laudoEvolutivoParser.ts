@@ -168,7 +168,7 @@ function extractDimensions(block: string): string {
 
   // Match inline numeric dimensions with unit anywhere in the block
   const m2 = block.match(/(\d+[,.]?\d*\s*[x×X]\s*\d+[,.]?\d*(?:\s*[x×X]\s*\d+[,.]?\d*)?)\s*(cm|mm)\b/i);
-  if (m2) return parseDimensionsToMm(m2[0]);
+  if (m2) return parseDimensionsToCm(m2[0]);
 
   return '';
 }
