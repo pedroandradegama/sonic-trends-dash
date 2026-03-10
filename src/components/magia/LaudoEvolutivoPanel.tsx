@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Activity, AlertTriangle, Loader2, Sparkles, TrendingUp, TrendingDown, Minus, Stethoscope, CheckCircle, Info, Mic, MicOff, FileUp, Grid3X3 } from 'lucide-react';
+import { Activity, AlertTriangle, Loader2, Sparkles, TrendingUp, TrendingDown, Minus, Stethoscope, CheckCircle, Info, Mic, MicOff, FileUp, Grid3X3, FileText } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,10 +12,11 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import TypeformExamWizard from './TypeformExamWizard';
+import { parseReport, matchNodulesBetweenExams, noduleToExamData, type ParsedNodule } from './laudoEvolutivoParser';
 
 // ── Types ──
 type ExamType = 'tireoide' | 'mama' | null;
-type InputMode = 'audio-unico' | 'audios-separados' | 'arquivo' | 'estruturado';
+type InputMode = 'texto' | 'audio-unico' | 'audios-separados' | 'arquivo' | 'estruturado';
 
 interface ExamData {
   location: string;
@@ -33,7 +34,10 @@ interface ExamData {
   echogenicFoci?: string;
 }
 
-interface AnalysisResult {
+interface NoduleResult {
+  noduleId: string;
+  prevNodule: ParsedNodule;
+  currNodule: ParsedNodule;
   matchScore: number;
   confidence: 'alta' | 'moderada' | 'baixa';
   dimensionalChange: { status: 'aumento' | 'reducao' | 'estavel'; percentage: number; significant: boolean; prevMax: number; currMax: number };
@@ -43,7 +47,7 @@ interface AnalysisResult {
   recommendation: string;
 }
 
-// ── Constants (kept for scoring logic) ──
+// ── Constants ──
 const TIRADS_CATEGORIES: Record<number, { name: string; risk: string; recommendation: string; color: string }> = {
   1: { name: 'TR1 - Benigno', risk: '< 2%', recommendation: 'Sem necessidade de PAAF', color: '#10b981' },
   2: { name: 'TR2 - Não suspeito', risk: '< 2%', recommendation: 'Sem necessidade de PAAF', color: '#10b981' },
@@ -60,6 +64,7 @@ const BIRADS_CATEGORIES: Record<number, { name: string; desc: string; recommenda
 };
 
 const INPUT_MODES: { key: InputMode; label: string; icon: typeof Mic }[] = [
+  { key: 'texto', label: 'Texto', icon: FileText },
   { key: 'audio-unico', label: 'Áudio Único', icon: Mic },
   { key: 'audios-separados', label: 'Áudios Separados', icon: MicOff },
   { key: 'arquivo', label: 'Arquivo', icon: FileUp },
@@ -212,17 +217,71 @@ function calcMatchScore(prev: ExamData, curr: ExamData, type: ExamType): number 
   return Math.min(100, score);
 }
 
+function analyzeNodulePair(prevData: ExamData, currData: ExamData, examType: ExamType): Omit<NoduleResult, 'noduleId' | 'prevNodule' | 'currNodule'> {
+  const matchScore = calcMatchScore(prevData, currData, examType);
+  const prevMax = getMaxDimension(prevData.dimensions);
+  const currMax = getMaxDimension(currData.dimensions);
+  const pctChange = prevMax > 0 ? ((currMax - prevMax) / prevMax) * 100 : 0;
+  const dimStatus = pctChange >= 20 ? 'aumento' as const : pctChange <= -30 ? 'reducao' as const : 'estavel' as const;
+  const significant = Math.abs(pctChange) >= 20;
+
+  let prevCat: { name: string; level: number; color: string };
+  let currCat: { name: string; level: number; color: string };
+  const alerts: string[] = [];
+
+  if (examType === 'tireoide') {
+    const prevScore = calcTiradsScore(prevData);
+    const currScore = calcTiradsScore(currData);
+    const prevLvl = tiradsCategory(prevScore);
+    const currLvl = tiradsCategory(currScore);
+    const prevInfo = TIRADS_CATEGORIES[prevLvl];
+    const currInfo = TIRADS_CATEGORIES[currLvl];
+    prevCat = { name: prevInfo.name, level: prevLvl, color: prevInfo.color };
+    currCat = { name: currInfo.name, level: currLvl, color: currInfo.color };
+    if (significant && dimStatus === 'aumento') alerts.push('Crescimento significativo detectado (≥20%). Segundo Tuttle et al. (2018), nódulos com crescimento > 20% devem ser reavaliados quanto à indicação de PAAF.');
+    if (dimStatus === 'estavel') alerts.push('Estabilidade dimensional mantida. Nódulos tireoidianos estáveis por ≥ 5 anos raramente são malignos (< 1% segundo Durante et al., 2015).');
+    if (currLvl > prevLvl) alerts.push(`Aumento na classificação TI-RADS (TR${prevLvl} → TR${currLvl}). Reavaliação clínica recomendada.`);
+    if (currLvl < prevLvl) alerts.push(`Redução na classificação TI-RADS (TR${prevLvl} → TR${currLvl}).`);
+  } else {
+    const prevLvl = calcBiradsCategory(prevData);
+    const currLvl = calcBiradsCategory(currData);
+    const prevInfo = BIRADS_CATEGORIES[prevLvl] || BIRADS_CATEGORIES[2];
+    const currInfo = BIRADS_CATEGORIES[currLvl] || BIRADS_CATEGORIES[2];
+    prevCat = { name: prevInfo.name, level: prevLvl, color: prevInfo.color };
+    currCat = { name: currInfo.name, level: currLvl, color: currInfo.color };
+    if (significant && dimStatus === 'aumento') alerts.push('Aumento dimensional significativo. Conforme BI-RADS 5ª edição, lesões com crescimento devem ser reclassificadas.');
+    if (dimStatus === 'estavel') alerts.push('Estabilidade dimensional. Lesões BI-RADS 3 estáveis por 2-3 anos podem ser reclassificadas para BI-RADS 2.');
+  }
+
+  if (matchScore < 60) alerts.push('Baixa correspondência entre os achados (< 60%). Verificar se trata-se da mesma lesão.');
+
+  const confidence = matchScore >= 80 ? 'alta' as const : matchScore >= 60 ? 'moderada' as const : 'baixa' as const;
+  const recommendation = examType === 'tireoide'
+    ? TIRADS_CATEGORIES[currCat.level]?.recommendation || ''
+    : BIRADS_CATEGORIES[currCat.level]?.recommendation || '';
+
+  return {
+    matchScore, confidence,
+    dimensionalChange: { status: dimStatus, percentage: Math.round(pctChange), significant, prevMax, currMax },
+    prevCategory: prevCat, currCategory: currCat, alerts, recommendation,
+  };
+}
+
 // ── Component ──
 const emptyExam = (): ExamData => ({ location: '', dimensions: '', date: '', shape: '', margins: '', orientation: '', echogenicity: '', posteriorFeatures: '', calcifications: '', composition: '', tForm: '', tMargins: '', echogenicFoci: '' });
 
 export default function LaudoEvolutivoPanel() {
   const [examType, setExamType] = useState<ExamType>(null);
-  const [inputMode, setInputMode] = useState<InputMode>('estruturado');
+  const [inputMode, setInputMode] = useState<InputMode>('texto');
   const [clinicalHistory, setClinicalHistory] = useState('');
   const [prevExam, setPrevExam] = useState<ExamData>(emptyExam());
   const [currExam, setCurrExam] = useState<ExamData>(emptyExam());
   const [analyzing, setAnalyzing] = useState(false);
-  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [noduleResults, setNoduleResults] = useState<NoduleResult[]>([]);
+
+  // Text input states
+  const [prevText, setPrevText] = useState('');
+  const [currText, setCurrText] = useState('');
 
   // Audio/file states
   const [singleAudioText, setSingleAudioText] = useState('');
@@ -233,8 +292,12 @@ export default function LaudoEvolutivoPanel() {
   const [prevFilePreview, setPrevFilePreview] = useState('');
   const [currFilePreview, setCurrFilePreview] = useState('');
 
+  // Debug: parsed nodules preview
+  const [parsedPreview, setParsedPreview] = useState<{ prev: ParsedNodule[]; curr: ParsedNodule[] } | null>(null);
+
   const canAnalyze = examType && (
     inputMode === 'estruturado' ? (prevExam.dimensions && currExam.dimensions) :
+    inputMode === 'texto' ? (prevText.trim().length > 20 && currText.trim().length > 20) :
     inputMode === 'audio-unico' ? singleAudioText.trim().length > 20 :
     inputMode === 'audios-separados' ? (prevAudioText.trim().length > 10 && currAudioText.trim().length > 10) :
     inputMode === 'arquivo' ? (!!prevUploadedFile && !!currUploadedFile) :
@@ -244,84 +307,75 @@ export default function LaudoEvolutivoPanel() {
   const handleFileUpload = (exam: 'prev' | 'curr', e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const preview = file.type.startsWith('image/') ? URL.createObjectURL(file) : '';
+    if (exam === 'prev') { setPrevUploadedFile(file); setPrevFilePreview(preview); }
+    else { setCurrUploadedFile(file); setCurrFilePreview(preview); }
+  };
 
-    if (exam === 'prev') {
-      setPrevUploadedFile(file);
-      setPrevFilePreview(preview);
-      return;
+  const getTextInputs = (): { prevTextInput: string; currTextInput: string } => {
+    if (inputMode === 'texto') return { prevTextInput: prevText, currTextInput: currText };
+    if (inputMode === 'audios-separados') return { prevTextInput: prevAudioText, currTextInput: currAudioText };
+    if (inputMode === 'audio-unico') {
+      // Try to split single audio by "anterior" / "atual" markers
+      const text = singleAudioText;
+      const splitIdx = text.search(/\b(atual|exame\s+atual|segundo\s+exame)\b/i);
+      if (splitIdx > 0) {
+        return { prevTextInput: text.slice(0, splitIdx), currTextInput: text.slice(splitIdx) };
+      }
+      // If can't split, treat as two halves
+      const mid = Math.floor(text.length / 2);
+      return { prevTextInput: text.slice(0, mid), currTextInput: text.slice(mid) };
     }
-
-    setCurrUploadedFile(file);
-    setCurrFilePreview(preview);
+    return { prevTextInput: '', currTextInput: '' };
   };
 
   const handleAnalyze = () => {
     if (!examType) return;
     setAnalyzing(true);
-    setResult(null);
+    setNoduleResults([]);
+    setParsedPreview(null);
 
     setTimeout(() => {
-      // For structured mode, do local analysis
       if (inputMode === 'estruturado') {
-        doStructuredAnalysis();
+        // Single nodule comparison (structured mode)
+        const result = analyzeNodulePair(prevExam, currExam, examType);
+        setNoduleResults([{
+          ...result,
+          noduleId: 'N1',
+          prevNodule: { id: 'N1', description: '', location: prevExam.location, dimensions: prevExam.dimensions, composition: prevExam.composition || '', echogenicity: prevExam.echogenicity || '', form: prevExam.tForm || '', margins: prevExam.tMargins || '', echogenicFoci: prevExam.echogenicFoci || '', tiradsClassification: null, biradsClassification: null },
+          currNodule: { id: 'N1', description: '', location: currExam.location, dimensions: currExam.dimensions, composition: currExam.composition || '', echogenicity: currExam.echogenicity || '', form: currExam.tForm || '', margins: currExam.tMargins || '', echogenicFoci: currExam.echogenicFoci || '', tiradsClassification: null, biradsClassification: null },
+        }]);
       } else {
-        // For audio/file modes, simulate a placeholder result
-        // In production, this would call the AI edge function
-        doStructuredAnalysis();
+        // Text-based: parse and compare multiple nodules
+        const { prevTextInput, currTextInput } = getTextInputs();
+        const prevNodules = parseReport(prevTextInput);
+        const currNodules = parseReport(currTextInput);
+        setParsedPreview({ prev: prevNodules, curr: currNodules });
+
+        const pairs = matchNodulesBetweenExams(prevNodules, currNodules);
+        
+        if (pairs.length === 0) {
+          setNoduleResults([]);
+          setAnalyzing(false);
+          return;
+        }
+
+        const results: NoduleResult[] = pairs.map(({ prev, curr }) => {
+          const prevData = noduleToExamData(prev);
+          const currData = noduleToExamData(curr);
+          const analysis = analyzeNodulePair(prevData, currData, examType);
+          return {
+            ...analysis,
+            noduleId: prev.id,
+            prevNodule: prev,
+            currNodule: curr,
+          };
+        });
+
+        setNoduleResults(results);
       }
+      setAnalyzing(false);
     }, 800);
-  };
-
-  const doStructuredAnalysis = () => {
-    if (!examType) return;
-    const matchScore = calcMatchScore(prevExam, currExam, examType);
-    const prevMax = getMaxDimension(prevExam.dimensions);
-    const currMax = getMaxDimension(currExam.dimensions);
-    const pctChange = prevMax > 0 ? ((currMax - prevMax) / prevMax) * 100 : 0;
-    const dimStatus = pctChange >= 20 ? 'aumento' as const : pctChange <= -30 ? 'reducao' as const : 'estavel' as const;
-    const significant = Math.abs(pctChange) >= 20;
-
-    let prevCat: { name: string; level: number; color: string };
-    let currCat: { name: string; level: number; color: string };
-    const alerts: string[] = [];
-
-    if (examType === 'tireoide') {
-      const prevScore = calcTiradsScore(prevExam);
-      const currScore = calcTiradsScore(currExam);
-      const prevLvl = tiradsCategory(prevScore);
-      const currLvl = tiradsCategory(currScore);
-      const prevInfo = TIRADS_CATEGORIES[prevLvl];
-      const currInfo = TIRADS_CATEGORIES[currLvl];
-      prevCat = { name: prevInfo.name, level: prevLvl, color: prevInfo.color };
-      currCat = { name: currInfo.name, level: currLvl, color: currInfo.color };
-      if (significant && dimStatus === 'aumento') alerts.push('Crescimento significativo detectado (≥20%). Segundo Tuttle et al. (2018), nódulos com crescimento > 20% devem ser reavaliados quanto à indicação de PAAF.');
-      if (dimStatus === 'estavel') alerts.push('Estabilidade dimensional mantida. Nódulos tireoidianos estáveis por ≥ 5 anos raramente são malignos (< 1% segundo Durante et al., 2015).');
-    } else {
-      const prevLvl = calcBiradsCategory(prevExam);
-      const currLvl = calcBiradsCategory(currExam);
-      const prevInfo = BIRADS_CATEGORIES[prevLvl] || BIRADS_CATEGORIES[2];
-      const currInfo = BIRADS_CATEGORIES[currLvl] || BIRADS_CATEGORIES[2];
-      prevCat = { name: prevInfo.name, level: prevLvl, color: prevInfo.color };
-      currCat = { name: currInfo.name, level: currLvl, color: currInfo.color };
-      if (significant && dimStatus === 'aumento') alerts.push('Aumento dimensional significativo. Conforme BI-RADS 5ª edição, lesões com crescimento devem ser reclassificadas.');
-      if (dimStatus === 'estavel') alerts.push('Estabilidade dimensional. Lesões BI-RADS 3 estáveis por 2-3 anos podem ser reclassificadas para BI-RADS 2.');
-    }
-
-    if (matchScore < 60) alerts.push('Baixa correspondência entre os achados (< 60%). Verificar se trata-se da mesma lesão.');
-
-    const confidence = matchScore >= 80 ? 'alta' as const : matchScore >= 60 ? 'moderada' as const : 'baixa' as const;
-    const recommendation = examType === 'tireoide'
-      ? TIRADS_CATEGORIES[currCat.level]?.recommendation || ''
-      : BIRADS_CATEGORIES[currCat.level]?.recommendation || '';
-
-    setResult({
-      matchScore, confidence,
-      dimensionalChange: { status: dimStatus, percentage: Math.round(pctChange), significant, prevMax, currMax },
-      prevCategory: prevCat, currCategory: currCat, alerts, recommendation,
-    });
-    setAnalyzing(false);
   };
 
   const updatePrev = (field: keyof ExamData, value: string) => setPrevExam(p => ({ ...p, [field]: value }));
@@ -345,7 +399,7 @@ export default function LaudoEvolutivoPanel() {
         <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tipo de Exame</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button
-            onClick={() => { setExamType('tireoide'); setResult(null); setPrevExam(emptyExam()); setCurrExam(emptyExam()); }}
+            onClick={() => { setExamType('tireoide'); setNoduleResults([]); setPrevExam(emptyExam()); setCurrExam(emptyExam()); setParsedPreview(null); }}
             className={cn(
               "relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group",
               examType === 'tireoide'
@@ -372,7 +426,7 @@ export default function LaudoEvolutivoPanel() {
           </button>
 
           <button
-            onClick={() => { setExamType('mama'); setResult(null); setPrevExam(emptyExam()); setCurrExam(emptyExam()); }}
+            onClick={() => { setExamType('mama'); setNoduleResults([]); setPrevExam(emptyExam()); setCurrExam(emptyExam()); setParsedPreview(null); }}
             className={cn(
               "relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group",
               examType === 'mama'
@@ -415,7 +469,7 @@ export default function LaudoEvolutivoPanel() {
             <Card>
               <CardContent className="pt-5">
                 {/* Mode selector */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-6">
                   {INPUT_MODES.map(mode => {
                     const Icon = mode.icon;
                     const isActive = inputMode === mode.key;
@@ -424,7 +478,7 @@ export default function LaudoEvolutivoPanel() {
                         key={mode.key}
                         onClick={() => setInputMode(mode.key)}
                         className={cn(
-                          "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
+                          "flex flex-col items-center gap-2 p-3 sm:p-4 rounded-xl border-2 transition-all duration-200",
                           isActive
                             ? "bg-primary text-primary-foreground border-primary shadow-lg"
                             : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
@@ -437,20 +491,55 @@ export default function LaudoEvolutivoPanel() {
                   })}
                 </div>
 
-                {/* Input content based on mode */}
+                {/* TEXT MODE */}
+                {inputMode === 'texto' && (
+                  <div className="space-y-6">
+                    <Alert className="border-primary/30 bg-primary/5">
+                      <Info className="h-4 w-4 text-primary" />
+                      <AlertDescription className="text-sm">
+                        Cole o texto do laudo de cada exame. O sistema identificará automaticamente os nódulos (N1, N2...) e comparará cada um individualmente.
+                      </AlertDescription>
+                    </Alert>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold flex items-center gap-2">
+                          <Badge variant="secondary" className="text-xs">Anterior</Badge>
+                          Laudo do Exame Anterior
+                        </Label>
+                        <Textarea
+                          value={prevText}
+                          onChange={(e) => setPrevText(e.target.value)}
+                          placeholder={"ANÁLISE:\nTireoide\nN1 | Nódulo espongiforme...\n- Localização: ...\n- Dimensões: 0,8 x 0,5 x 0,3 cm.\n- Classificação ACR TI-RADS: 4."}
+                          className="min-h-[200px] font-mono text-sm"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold flex items-center gap-2">
+                          <Badge variant="default" className="text-xs">Atual</Badge>
+                          Laudo do Exame Atual
+                        </Label>
+                        <Textarea
+                          value={currText}
+                          onChange={(e) => setCurrText(e.target.value)}
+                          placeholder={"ANÁLISE:\nTireoide\nN1 | Nódulo espongiforme...\n- Localização: ...\n- Dimensões: 0,6 x 0,5 x 0,4 cm.\n- Classificação ACR TI-RADS: 4."}
+                          className="min-h-[200px] font-mono text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* AUDIO UNICO */}
                 {inputMode === 'audio-unico' && (
                   <div className="space-y-3">
                     <p className="text-sm text-muted-foreground">
                       Grave um áudio único descrevendo os achados do exame <strong>anterior</strong> e do exame <strong>atual</strong>, incluindo localização, dimensões e características das lesões.
                     </p>
-                    <AudioRecorder
-                      value={singleAudioText}
-                      onChange={setSingleAudioText}
-                      placeholder="Descreva ambos os exames (anterior e atual) em um único áudio..."
-                    />
+                    <AudioRecorder value={singleAudioText} onChange={setSingleAudioText} placeholder="Descreva ambos os exames (anterior e atual) em um único áudio..." />
                   </div>
                 )}
 
+                {/* AUDIOS SEPARADOS */}
                 {inputMode === 'audios-separados' && (
                   <div className="space-y-6">
                     <div className="space-y-3">
@@ -458,11 +547,7 @@ export default function LaudoEvolutivoPanel() {
                         <Badge variant="secondary" className="text-xs">Anterior</Badge>
                         Áudio do Exame Anterior
                       </Label>
-                      <AudioRecorder
-                        value={prevAudioText}
-                        onChange={setPrevAudioText}
-                        placeholder="Descreva os achados do exame anterior..."
-                      />
+                      <AudioRecorder value={prevAudioText} onChange={setPrevAudioText} placeholder="Descreva os achados do exame anterior..." />
                     </div>
                     <Separator />
                     <div className="space-y-3">
@@ -470,21 +555,17 @@ export default function LaudoEvolutivoPanel() {
                         <Badge variant="default" className="text-xs">Atual</Badge>
                         Áudio do Exame Atual
                       </Label>
-                      <AudioRecorder
-                        value={currAudioText}
-                        onChange={setCurrAudioText}
-                        placeholder="Descreva os achados do exame atual..."
-                      />
+                      <AudioRecorder value={currAudioText} onChange={setCurrAudioText} placeholder="Descreva os achados do exame atual..." />
                     </div>
                   </div>
                 )}
 
+                {/* ARQUIVO */}
                 {inputMode === 'arquivo' && (
                   <div className="space-y-6">
                     <p className="text-sm text-muted-foreground">
                       Faça upload de uma <strong>imagem</strong> ou <strong>PDF</strong> de cada exame para comparação automática.
                     </p>
-
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <div className="space-y-3 p-4 rounded-xl border border-border bg-card/50">
                         <Label className="text-sm font-semibold flex items-center gap-2">
@@ -492,13 +573,7 @@ export default function LaudoEvolutivoPanel() {
                           Arquivo do Exame Anterior
                         </Label>
                         <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
-                          <input
-                            type="file"
-                            accept="image/*,.pdf"
-                            onChange={(e) => handleFileUpload('prev', e)}
-                            className="hidden"
-                            id="laudo-file-upload-prev"
-                          />
+                          <input type="file" accept="image/*,.pdf" onChange={(e) => handleFileUpload('prev', e)} className="hidden" id="laudo-file-upload-prev" />
                           <label htmlFor="laudo-file-upload-prev" className="cursor-pointer space-y-3 block">
                             <FileUp className="h-8 w-8 mx-auto text-muted-foreground" />
                             <div>
@@ -526,13 +601,7 @@ export default function LaudoEvolutivoPanel() {
                           Arquivo do Exame Atual
                         </Label>
                         <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
-                          <input
-                            type="file"
-                            accept="image/*,.pdf"
-                            onChange={(e) => handleFileUpload('curr', e)}
-                            className="hidden"
-                            id="laudo-file-upload-curr"
-                          />
+                          <input type="file" accept="image/*,.pdf" onChange={(e) => handleFileUpload('curr', e)} className="hidden" id="laudo-file-upload-curr" />
                           <label htmlFor="laudo-file-upload-curr" className="cursor-pointer space-y-3 block">
                             <FileUp className="h-8 w-8 mx-auto text-muted-foreground" />
                             <div>
@@ -557,6 +626,7 @@ export default function LaudoEvolutivoPanel() {
                   </div>
                 )}
 
+                {/* ESTRUTURADO */}
                 {inputMode === 'estruturado' && (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <TypeformExamWizard title="Exame Anterior" data={prevExam} onChange={updatePrev} examType={examType} accentColor="text-muted-foreground" />
@@ -576,87 +646,166 @@ export default function LaudoEvolutivoPanel() {
             )}
           </Button>
 
-          {/* Results */}
-          {result && (
-            <div className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">Correspondência dos Achados</CardTitle>
-                    <Badge variant={result.confidence === 'alta' ? 'default' : result.confidence === 'moderada' ? 'secondary' : 'outline'}>
-                      Confiança: {result.confidence}
-                    </Badge>
+          {/* Parsed Preview (for text modes) */}
+          {parsedPreview && (
+            <Card className="border-primary/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Info className="h-4 w-4 text-primary" />
+                  Nódulos Identificados
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-2">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">Exame Anterior ({parsedPreview.prev.length} nódulo{parsedPreview.prev.length > 1 ? 's' : ''})</p>
+                    {parsedPreview.prev.map(n => (
+                      <div key={n.id} className="text-xs p-2 rounded-lg bg-muted/50 mb-1.5 space-y-0.5">
+                        <span className="font-bold text-foreground">{n.id}</span>
+                        {n.location && <span className="text-muted-foreground"> — {n.location}</span>}
+                        {n.dimensions && <p className="text-muted-foreground">Dim: {n.dimensions} mm</p>}
+                        {n.composition && <p className="text-muted-foreground">Comp: {n.composition}</p>}
+                        {n.echogenicity && <p className="text-muted-foreground">Eco: {n.echogenicity}</p>}
+                        {n.echogenicFoci && <p className="text-muted-foreground">Focos: {n.echogenicFoci}</p>}
+                      </div>
+                    ))}
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-4">
-                    <span className="text-4xl font-bold" style={{ color: result.matchScore >= 80 ? '#10b981' : result.matchScore >= 60 ? '#f59e0b' : '#ef4444' }}>
-                      {result.matchScore}%
-                    </span>
-                    <div className="flex-1">
-                      <Progress value={result.matchScore} className="h-3" />
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">Exame Atual ({parsedPreview.curr.length} nódulo{parsedPreview.curr.length > 1 ? 's' : ''})</p>
+                    {parsedPreview.curr.map(n => (
+                      <div key={n.id} className="text-xs p-2 rounded-lg bg-muted/50 mb-1.5 space-y-0.5">
+                        <span className="font-bold text-foreground">{n.id}</span>
+                        {n.location && <span className="text-muted-foreground"> — {n.location}</span>}
+                        {n.dimensions && <p className="text-muted-foreground">Dim: {n.dimensions} mm</p>}
+                        {n.composition && <p className="text-muted-foreground">Comp: {n.composition}</p>}
+                        {n.echogenicity && <p className="text-muted-foreground">Eco: {n.echogenicity}</p>}
+                        {n.echogenicFoci && <p className="text-muted-foreground">Focos: {n.echogenicFoci}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Results - Per Nodule */}
+          {noduleResults.length > 0 && (
+            <div className="space-y-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+              {noduleResults.length > 1 && (
+                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                  {noduleResults.length} nódulos comparados
+                </h3>
+              )}
+
+              {noduleResults.map((result, idx) => (
+                <div key={result.noduleId} className="space-y-4">
+                  {noduleResults.length > 1 && (
+                    <div className="flex items-center gap-3">
+                      <Badge variant="outline" className="text-base font-bold px-3 py-1">{result.noduleId}</Badge>
+                      <span className="text-sm text-muted-foreground">
+                        {result.prevNodule.location || result.currNodule.location}
+                      </span>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  )}
 
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    {result.dimensionalChange.status === 'aumento' && <TrendingUp className="h-5 w-5 text-destructive" />}
-                    {result.dimensionalChange.status === 'reducao' && <TrendingDown className="h-5 w-5 text-success" />}
-                    {result.dimensionalChange.status === 'estavel' && <Minus className="h-5 w-5 text-warning" />}
-                    Análise Dimensional
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-lg font-medium">
-                    {result.dimensionalChange.prevMax}mm → {result.dimensionalChange.currMax}mm{' '}
-                    <span className={cn("font-bold", result.dimensionalChange.status === 'aumento' ? 'text-destructive' : result.dimensionalChange.status === 'reducao' ? 'text-success' : 'text-warning')}>
-                      ({result.dimensionalChange.percentage > 0 ? '+' : ''}{result.dimensionalChange.percentage}%)
-                    </span>
-                  </p>
-                  {result.dimensionalChange.significant && <Badge variant="destructive" className="mt-2">Variação significativa (≥20%)</Badge>}
-                </CardContent>
-              </Card>
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">
+                          {noduleResults.length > 1 ? `${result.noduleId} — ` : ''}Correspondência dos Achados
+                        </CardTitle>
+                        <Badge variant={result.confidence === 'alta' ? 'default' : result.confidence === 'moderada' ? 'secondary' : 'outline'}>
+                          Confiança: {result.confidence}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center gap-4">
+                        <span className="text-4xl font-bold" style={{ color: result.matchScore >= 80 ? '#10b981' : result.matchScore >= 60 ? '#f59e0b' : '#ef4444' }}>
+                          {result.matchScore}%
+                        </span>
+                        <div className="flex-1">
+                          <Progress value={result.matchScore} className="h-3" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-              <Card>
-                <CardHeader className="pb-3 bg-foreground/5 rounded-t-lg">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Stethoscope className="h-5 w-5" />
-                    Análise Evolutiva & Recomendação
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4 space-y-4">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <Badge className="text-sm py-1 px-3" style={{ backgroundColor: result.prevCategory.color, color: '#fff' }}>{result.prevCategory.name}</Badge>
-                    <span className="text-muted-foreground font-bold">→</span>
-                    <Badge className="text-sm py-1 px-3" style={{ backgroundColor: result.currCategory.color, color: '#fff' }}>{result.currCategory.name}</Badge>
-                  </div>
-                  {result.alerts.map((alert, i) => (
-                    <Alert key={i} className="border-primary/30 bg-primary/5">
-                      <Info className="h-4 w-4 text-primary" />
-                      <AlertDescription className="text-sm">{alert}</AlertDescription>
-                    </Alert>
-                  ))}
-                  <Separator />
-                  <div className="rounded-lg bg-muted/50 p-4">
-                    <p className="text-sm font-medium mb-1">Recomendação</p>
-                    <p className="text-sm text-muted-foreground">{result.recommendation}</p>
-                  </div>
-                  <Alert variant="default" className="bg-muted">
-                    <AlertDescription className="text-xs text-muted-foreground italic">
-                      Esta análise é baseada nas diretrizes ACR {examType === 'tireoide' ? 'TI-RADS' : 'BI-RADS'} e literatura científica atual. A decisão final deve considerar o contexto clínico completo.
-                    </AlertDescription>
-                  </Alert>
-                </CardContent>
-              </Card>
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        {result.dimensionalChange.status === 'aumento' && <TrendingUp className="h-5 w-5 text-destructive" />}
+                        {result.dimensionalChange.status === 'reducao' && <TrendingDown className="h-5 w-5 text-success" />}
+                        {result.dimensionalChange.status === 'estavel' && <Minus className="h-5 w-5 text-warning" />}
+                        Análise Dimensional
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-lg font-medium">
+                        {result.dimensionalChange.prevMax}mm → {result.dimensionalChange.currMax}mm{' '}
+                        <span className={cn("font-bold", result.dimensionalChange.status === 'aumento' ? 'text-destructive' : result.dimensionalChange.status === 'reducao' ? 'text-success' : 'text-warning')}>
+                          ({result.dimensionalChange.percentage > 0 ? '+' : ''}{result.dimensionalChange.percentage}%)
+                        </span>
+                      </p>
+                      {result.dimensionalChange.prevMax > 0 && result.dimensionalChange.currMax > 0 && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Maior eixo: {result.prevNodule.dimensions} mm → {result.currNodule.dimensions} mm
+                        </p>
+                      )}
+                      {result.dimensionalChange.significant && <Badge variant="destructive" className="mt-2">Variação significativa (≥20%)</Badge>}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-3 bg-foreground/5 rounded-t-lg">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Stethoscope className="h-5 w-5" />
+                        Análise Evolutiva & Recomendação
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4 space-y-4">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <Badge className="text-sm py-1 px-3" style={{ backgroundColor: result.prevCategory.color, color: '#fff' }}>{result.prevCategory.name}</Badge>
+                        <span className="text-muted-foreground font-bold">→</span>
+                        <Badge className="text-sm py-1 px-3" style={{ backgroundColor: result.currCategory.color, color: '#fff' }}>{result.currCategory.name}</Badge>
+                      </div>
+                      {result.alerts.map((alert, i) => (
+                        <Alert key={i} className="border-primary/30 bg-primary/5">
+                          <Info className="h-4 w-4 text-primary" />
+                          <AlertDescription className="text-sm">{alert}</AlertDescription>
+                        </Alert>
+                      ))}
+                      <Separator />
+                      <div className="rounded-lg bg-muted/50 p-4">
+                        <p className="text-sm font-medium mb-1">Recomendação</p>
+                        <p className="text-sm text-muted-foreground">{result.recommendation}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {idx < noduleResults.length - 1 && <Separator className="my-6" />}
+                </div>
+              ))}
+
+              <Alert variant="default" className="bg-muted">
+                <AlertDescription className="text-xs text-muted-foreground italic">
+                  Esta análise é baseada nas diretrizes ACR {examType === 'tireoide' ? 'TI-RADS' : 'BI-RADS'} e literatura científica atual. A decisão final deve considerar o contexto clínico completo.
+                </AlertDescription>
+              </Alert>
             </div>
+          )}
+
+          {/* No results found for text input */}
+          {parsedPreview && noduleResults.length === 0 && !analyzing && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Não foi possível identificar nódulos nos textos fornecidos. Verifique se os laudos contêm marcadores como "N1 |", "N2 |" ou "Nódulo 1:" seguidos de localização e dimensões.
+              </AlertDescription>
+            </Alert>
           )}
         </div>
       )}
     </div>
   );
 }
-
-// ExamForm replaced by TypeformExamWizard
