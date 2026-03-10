@@ -655,6 +655,13 @@ export default function LaudoEvolutivoPanel() {
             )}
           </Button>
 
+          {analysisError && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{analysisError}</AlertDescription>
+            </Alert>
+          )}
+
           {/* Parsed Preview (for text modes) */}
           {parsedPreview && (
             <Card className="border-primary/20">
