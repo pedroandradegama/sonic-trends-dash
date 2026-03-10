@@ -130,6 +130,11 @@ export function MobileSidebar() {
           </div>
         </div>
       </header>
+      <PasswordConfirmDialog
+        open={showPasswordDialog}
+        onOpenChange={setShowPasswordDialog}
+        onConfirmed={handlePasswordConfirmed}
+      />
     </>
   );
 }
