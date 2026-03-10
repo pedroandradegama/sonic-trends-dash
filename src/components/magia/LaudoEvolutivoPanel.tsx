@@ -278,6 +278,7 @@ export default function LaudoEvolutivoPanel() {
   const [currExam, setCurrExam] = useState<ExamData>(emptyExam());
   const [analyzing, setAnalyzing] = useState(false);
   const [noduleResults, setNoduleResults] = useState<NoduleResult[]>([]);
+  const [analysisError, setAnalysisError] = useState('');
 
   // Text input states
   const [prevText, setPrevText] = useState('');
@@ -334,8 +335,15 @@ export default function LaudoEvolutivoPanel() {
     setAnalyzing(true);
     setNoduleResults([]);
     setParsedPreview(null);
+    setAnalysisError('');
 
     setTimeout(() => {
+      if (inputMode === 'arquivo') {
+        setAnalysisError('No modo Arquivo, ainda não há extração automática de texto (OCR). Para comparação precisa, use o modo Texto e cole os laudos.');
+        setAnalyzing(false);
+        return;
+      }
+
       if (inputMode === 'estruturado') {
         // Single nodule comparison (structured mode)
         const result = analyzeNodulePair(prevExam, currExam, examType);
@@ -353,8 +361,9 @@ export default function LaudoEvolutivoPanel() {
         setParsedPreview({ prev: prevNodules, curr: currNodules });
 
         const pairs = matchNodulesBetweenExams(prevNodules, currNodules);
-        
+
         if (pairs.length === 0) {
+          setAnalysisError('Não foi possível correlacionar nódulos entre os dois exames.');
           setNoduleResults([]);
           setAnalyzing(false);
           return;
@@ -645,6 +654,13 @@ export default function LaudoEvolutivoPanel() {
               <><Sparkles className="h-4 w-4 mr-2" /> Analisar Evolução</>
             )}
           </Button>
+
+          {analysisError && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{analysisError}</AlertDescription>
+            </Alert>
+          )}
 
           {/* Parsed Preview (for text modes) */}
           {parsedPreview && (

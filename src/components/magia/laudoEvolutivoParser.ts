@@ -22,7 +22,10 @@ function normalizeText(text: string): string {
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n')
     .replace(/\u00a0/g, ' ')
-    .replace(/\t/g, ' ');
+    .replace(/\t/g, ' ')
+    .replace(/\*\*/g, '')
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'");
 }
 
 /**
@@ -31,18 +34,25 @@ function normalizeText(text: string): string {
  */
 function parseDimensionsToMm(raw: string): string {
   if (!raw) return '';
-  
-  const isCm = /cm/i.test(raw);
-  const nums = raw
+
+  const cleaned = raw.trim();
+  const hasCm = /\bcm\b/i.test(cleaned);
+  const hasMm = /\bmm\b/i.test(cleaned);
+
+  const nums = cleaned
     .replace(/cm|mm/gi, '')
     .split(/[x×X\s]+/)
     .map(s => s.replace(',', '.').trim())
     .map(Number)
     .filter(n => !isNaN(n) && n > 0);
-  
+
   if (nums.length === 0) return '';
-  
-  const mmNums = isCm ? nums.map(n => Math.round(n * 10)) : nums;
+
+  // Heurística: sem unidade explícita + valores decimais pequenos geralmente vêm em cm
+  const inferredCm = !hasCm && !hasMm && nums.some(n => n % 1 !== 0) && Math.max(...nums) <= 3;
+  const isCm = hasCm || inferredCm;
+
+  const mmNums = isCm ? nums.map(n => Math.round(n * 10)) : nums.map(n => Math.round(n * 10) / 10);
   return mmNums.join(' x ');
 }
 
@@ -110,29 +120,28 @@ function extractBiradsClass(text: string): number | null {
  */
 function splitNodules(text: string): { id: string; block: string }[] {
   const normalized = normalizeText(text);
-  
-  // Try splitting by N1, N2, N3... pattern
-  const pattern = /(?:^|\n)\s*(N\d+)\s*[|:.\-–—]/gmi;
+
+  // Aceita: "N1:", "N1 |", "| N1 |", "**N1**"
+  const pattern = /(?:^|\n)\s*\|?\s*\*?(N\d+)\*?\s*\|?\s*[:.\-–—]?/gmi;
   const matches: { id: string; start: number }[] = [];
   let m: RegExpExecArray | null;
-  
+
   while ((m = pattern.exec(normalized)) !== null) {
     matches.push({ id: m[1].toUpperCase(), start: m.index });
   }
-  
+
   if (matches.length === 0) {
-    // Try "Nódulo 1", "Nódulo 2" pattern
-    const pattern2 = /(?:^|\n)\s*N[oó]dulo\s+(\d+)\s*[|:.\-–—]?/gmi;
+    // Aceita: "Nódulo 1", com ou sem markdown/tabela
+    const pattern2 = /(?:^|\n)\s*\|?\s*\*?N[oó]dulo\s+(\d+)\*?\s*\|?\s*[:.\-–—]?/gmi;
     while ((m = pattern2.exec(normalized)) !== null) {
       matches.push({ id: `N${m[1]}`, start: m.index });
     }
   }
-  
+
   if (matches.length === 0) {
-    // Single nodule - treat entire text as one
     return [{ id: 'N1', block: normalized }];
   }
-  
+
   return matches.map((match, i) => {
     const end = i < matches.length - 1 ? matches[i + 1].start : normalized.length;
     return { id: match.id, block: normalized.slice(match.start, end) };
@@ -140,19 +149,29 @@ function splitNodules(text: string): { id: string; block: string }[] {
 }
 
 function extractLocation(block: string): string {
-  const m = block.match(/localiza[çc][aã]o[:\s]+([^\n.;]+)/i);
-  return m ? m[1].trim().replace(/^[-–—\s]+/, '') : '';
+  const m = block.match(/localiza[çc][aã]o[^:\n]*:\s*([^\n.;|]+)/i);
+  if (m) return m[1].trim().replace(/^[-–—\s]+/, '');
+
+  // Formato de tabela markdown: | Localização: | Terço médio ... |
+  const tableMatch = block.match(/\|\s*localiza[çc][aã]o\s*:?\s*\|\s*([^|\n]+)/i);
+  if (tableMatch) return tableMatch[1].trim();
+
+  return '';
 }
 
 function extractDimensions(block: string): string {
-  // Match "Dimensões: 0,8 x 0,5 x 0,3 cm" or similar
-  const m = block.match(/dimens[oõ]es?[:\s]+([^\n;]+)/i);
-  if (m) return parseDimensionsToMm(m[1]);
-  
-  // Match inline "X,X x X,X x X,X cm"
-  const m2 = block.match(/(\d+[,.]?\d*\s*[x×X]\s*\d+[,.]?\d*(?:\s*[x×X]\s*\d+[,.]?\d*)?)\s*(cm|mm)/i);
+  // Match line with dimensions, tolerant to markdown/table artifacts
+  const lineMatch = block.match(/dimens[oõ]es?[^:\n]*:\s*([^\n]+)/i);
+  if (lineMatch) {
+    const cleaned = lineMatch[1].replace(/^\|+/, '').replace(/\|+$/,'').trim();
+    const parsed = parseDimensionsToMm(cleaned);
+    if (parsed) return parsed;
+  }
+
+  // Match inline numeric dimensions with unit anywhere in the block
+  const m2 = block.match(/(\d+[,.]?\d*\s*[x×X]\s*\d+[,.]?\d*(?:\s*[x×X]\s*\d+[,.]?\d*)?)\s*(cm|mm)\b/i);
   if (m2) return parseDimensionsToMm(m2[0]);
-  
+
   return '';
 }
 
@@ -172,7 +191,13 @@ export function parseReport(text: string): ParsedNodule[] {
     
     return {
       id,
-      description: block.split('\n').find(l => l.match(/N\d+\s*[|:]/i))?.replace(/N\d+\s*[|:.\-–—]\s*/i, '').trim() || '',
+      description: block
+        .split('\n')
+        .map(l => l.trim())
+        .find(l => /^(\|\s*)?(N\d+|N[oó]dulo\s+\d+)\b/i.test(l))
+        ?.replace(/^(\|\s*)?(N\d+|N[oó]dulo\s+\d+)\s*[|:.\-–—]?\s*/i, '')
+        .replace(/\|\s*$/,'')
+        .trim() || '',
       location,
       dimensions,
       composition,
