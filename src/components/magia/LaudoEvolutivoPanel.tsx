@@ -335,6 +335,7 @@ export default function LaudoEvolutivoPanel() {
     setAnalyzing(true);
     setNoduleResults([]);
     setParsedPreview(null);
+    setAnalysisError('');
 
     setTimeout(() => {
       if (inputMode === 'estruturado') {
