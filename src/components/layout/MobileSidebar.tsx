@@ -17,6 +17,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import imagLogoNew from '@/assets/imag-logo-new.png';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAppMode } from '@/contexts/ModeContext';
+import { PasswordConfirmDialog } from './PasswordConfirmDialog';
 
 type AppModeKey = 'agenda' | 'avancado';
 
