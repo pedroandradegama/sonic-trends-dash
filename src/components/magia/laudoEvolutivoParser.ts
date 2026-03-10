@@ -34,18 +34,25 @@ function normalizeText(text: string): string {
  */
 function parseDimensionsToMm(raw: string): string {
   if (!raw) return '';
-  
-  const isCm = /cm/i.test(raw);
-  const nums = raw
+
+  const cleaned = raw.trim();
+  const hasCm = /\bcm\b/i.test(cleaned);
+  const hasMm = /\bmm\b/i.test(cleaned);
+
+  const nums = cleaned
     .replace(/cm|mm/gi, '')
     .split(/[x×X\s]+/)
     .map(s => s.replace(',', '.').trim())
     .map(Number)
     .filter(n => !isNaN(n) && n > 0);
-  
+
   if (nums.length === 0) return '';
-  
-  const mmNums = isCm ? nums.map(n => Math.round(n * 10)) : nums;
+
+  // Heurística: sem unidade explícita + valores decimais pequenos geralmente vêm em cm
+  const inferredCm = !hasCm && !hasMm && nums.some(n => n % 1 !== 0) && Math.max(...nums) <= 3;
+  const isCm = hasCm || inferredCm;
+
+  const mmNums = isCm ? nums.map(n => Math.round(n * 10)) : nums.map(n => Math.round(n * 10) / 10);
   return mmNums.join(' x ');
 }
 
