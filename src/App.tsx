@@ -44,12 +44,14 @@ function ProtectedWithLayout({ children }: { children: React.ReactNode }) {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+      <ModeProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/modo" element={<ProtectedRoute><ModeSelection /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/home" element={<ProtectedWithLayout><Home /></ProtectedWithLayout>} />
             <Route path="/" element={<Navigate to="/home" replace />} />
