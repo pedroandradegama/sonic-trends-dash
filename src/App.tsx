@@ -54,7 +54,7 @@ const App = () => (
             <Route path="/modo" element={<ProtectedRoute><ModeSelection /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/home" element={<ProtectedWithLayout><Home /></ProtectedWithLayout>} />
-            <Route path="/" element={<Navigate to="/home" replace />} />
+            <Route path="/" element={<Navigate to="/modo" replace />} />
             <Route path="/perfil" element={<ProtectedWithLayout><Perfil /></ProtectedWithLayout>} />
             <Route path="/minha-agenda" element={<ProtectedWithLayout><MinhaAgenda /></ProtectedWithLayout>} />
             <Route path="/meu-trabalho" element={<ProtectedWithLayout><MeuTrabalho /></ProtectedWithLayout>} />
