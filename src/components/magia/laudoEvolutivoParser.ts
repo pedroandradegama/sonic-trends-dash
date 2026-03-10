@@ -42,8 +42,8 @@ function parseDimensionsToCm(raw: string): string {
 
   const nums = cleaned
     .replace(/cm|mm/gi, '')
-    .split(/[x×X\s]+/)
-    .map(s => s.replace(',', '.').trim())
+    .split(/[x×X]+/)
+    .map(s => s.replace(/,/g, '.').trim())
     .map(Number)
     .filter(n => !isNaN(n) && n > 0);
 
