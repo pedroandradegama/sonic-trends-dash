@@ -6,22 +6,37 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
+  ArrowLeftRight,
 } from 'lucide-react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/contexts/SidebarContext';
+import { useAppMode } from '@/contexts/ModeContext';
 
-const navItems = [
-  { path: '/home', label: 'Home', icon: LayoutDashboard },
-  { path: '/minha-agenda', label: 'Minha Agenda', icon: CalendarDays },
-  { path: '/meu-trabalho', label: 'Meu Trabalho', icon: Briefcase },
-  { path: '/ferramentas-ia', label: 'Ferramentas & IA', icon: Wrench },
-  { path: '/comunidade', label: 'Comunidade', icon: Users },
+type AppModeKey = 'agenda' | 'avancado';
+
+const allNavItems: { path: string; label: string; icon: typeof LayoutDashboard; modes: AppModeKey[] }[] = [
+  { path: '/home', label: 'Home', icon: LayoutDashboard, modes: ['avancado'] },
+  { path: '/minha-agenda', label: 'Minha Agenda', icon: CalendarDays, modes: ['avancado'] },
+  { path: '/meu-trabalho', label: 'Meu Trabalho', icon: Briefcase, modes: ['avancado'] },
+  { path: '/ferramentas-ia', label: 'Ferramentas & IA', icon: Wrench, modes: ['agenda', 'avancado'] },
+  { path: '/comunidade', label: 'Comunidade', icon: Users, modes: ['avancado'] },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { collapsed, toggle } = useSidebar();
+  const { mode, clearMode } = useAppMode();
+
+  const navItems = allNavItems.filter(item => 
+    !mode || item.modes.includes(mode as 'agenda' | 'avancado')
+  );
+
+  const handleSwitchMode = () => {
+    clearMode();
+    navigate('/modo');
+  };
 
   return (
     <aside 
@@ -57,7 +72,19 @@ export function AppSidebar() {
         })}
       </nav>
 
-      <div className="p-2 border-t border-border/50">
+      <div className="p-2 border-t border-border/50 space-y-1">
+        <button
+          onClick={handleSwitchMode}
+          className={cn(
+            "w-full flex items-center gap-3 px-3 py-2 rounded-lg",
+            "text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors",
+            collapsed && "justify-center px-2"
+          )}
+          title={collapsed ? "Trocar modo" : undefined}
+        >
+          <ArrowLeftRight className="h-4 w-4 flex-shrink-0" />
+          {!collapsed && <span>Trocar modo</span>}
+        </button>
         <button
           onClick={toggle}
           className={cn(

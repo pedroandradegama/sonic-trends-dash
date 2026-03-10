@@ -25,7 +25,10 @@ export default function Auth() {
 
   useEffect(() => {
     if (user) {
-      navigate('/');
+      const savedMode = localStorage.getItem('imag-app-mode');
+      if (savedMode === 'agenda') navigate('/ferramentas-ia');
+      else if (savedMode === 'avancado') navigate('/home');
+      else navigate('/modo');
     }
   }, [user, navigate]);
 

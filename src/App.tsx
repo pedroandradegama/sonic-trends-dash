@@ -4,9 +4,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ModeProvider } from "@/contexts/ModeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { MainLayout } from "@/components/layout/MainLayout";
 import Auth from "./pages/Auth";
+import ModeSelection from "./pages/ModeSelection";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import Home from "./pages/Home";
@@ -42,15 +44,17 @@ function ProtectedWithLayout({ children }: { children: React.ReactNode }) {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+      <ModeProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/modo" element={<ProtectedRoute><ModeSelection /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/home" element={<ProtectedWithLayout><Home /></ProtectedWithLayout>} />
-            <Route path="/" element={<Navigate to="/home" replace />} />
+            <Route path="/" element={<Navigate to="/modo" replace />} />
             <Route path="/perfil" element={<ProtectedWithLayout><Perfil /></ProtectedWithLayout>} />
             <Route path="/minha-agenda" element={<ProtectedWithLayout><MinhaAgenda /></ProtectedWithLayout>} />
             <Route path="/meu-trabalho" element={<ProtectedWithLayout><MeuTrabalho /></ProtectedWithLayout>} />
@@ -77,6 +81,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
+      </ModeProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

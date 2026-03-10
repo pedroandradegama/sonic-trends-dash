@@ -7,29 +7,45 @@ import {
   Users,
   LogOut,
   Menu,
+  ArrowLeftRight,
 } from 'lucide-react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import imagLogoNew from '@/assets/imag-logo-new.png';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useAppMode } from '@/contexts/ModeContext';
 
-const navItems = [
-  { path: '/home', label: 'Home', icon: LayoutDashboard },
-  { path: '/minha-agenda', label: 'Minha Agenda', icon: CalendarDays },
-  { path: '/meu-trabalho', label: 'Meu Trabalho', icon: Briefcase },
-  { path: '/ferramentas-ia', label: 'Ferramentas & IA', icon: Wrench },
-  { path: '/comunidade', label: 'Comunidade', icon: Users },
+type AppModeKey = 'agenda' | 'avancado';
+
+const allNavItems: { path: string; label: string; icon: typeof LayoutDashboard; modes: AppModeKey[] }[] = [
+  { path: '/home', label: 'Home', icon: LayoutDashboard, modes: ['avancado'] },
+  { path: '/minha-agenda', label: 'Minha Agenda', icon: CalendarDays, modes: ['avancado'] },
+  { path: '/meu-trabalho', label: 'Meu Trabalho', icon: Briefcase, modes: ['avancado'] },
+  { path: '/ferramentas-ia', label: 'Ferramentas & IA', icon: Wrench, modes: ['agenda', 'avancado'] },
+  { path: '/comunidade', label: 'Comunidade', icon: Users, modes: ['avancado'] },
 ];
 
 export function MobileSidebar() {
   const { signOut } = useAuth();
   const { profile } = useUserProfile();
   const location = useLocation();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const firstName = profile?.medico_nome?.split(' ')[0] || '';
+  const { mode, clearMode } = useAppMode();
+
+  const navItems = allNavItems.filter(item =>
+    !mode || item.modes.includes(mode as AppModeKey)
+  );
+
+  const handleSwitchMode = () => {
+    clearMode();
+    setOpen(false);
+    navigate('/modo');
+  };
 
   return (
     <>
@@ -84,7 +100,15 @@ export function MobileSidebar() {
                     })}
                   </nav>
 
-                  <div className="p-3 border-t border-border">
+                  <div className="p-3 border-t border-border space-y-1">
+                    <Button
+                      variant="ghost"
+                      onClick={handleSwitchMode}
+                      className="w-full justify-start text-muted-foreground hover:text-foreground"
+                    >
+                      <ArrowLeftRight className="h-5 w-5 mr-3" />
+                      Trocar modo
+                    </Button>
                     <Button
                       variant="ghost"
                       onClick={() => { setOpen(false); signOut(); }}

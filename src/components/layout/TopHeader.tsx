@@ -1,5 +1,6 @@
 import { ChevronDown, LogOut, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAppMode } from '@/contexts/ModeContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -13,6 +14,7 @@ import imagLogoNew from '@/assets/imag-logo-new.png';
 
 export function TopHeader() {
   const { signOut } = useAuth();
+  const { clearMode } = useAppMode();
   const { profile } = useUserProfile();
   const navigate = useNavigate();
 
@@ -47,7 +49,7 @@ export function TopHeader() {
               Perfil
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={signOut} className="cursor-pointer text-destructive focus:text-destructive">
+            <DropdownMenuItem onClick={() => { clearMode(); signOut(); }} className="cursor-pointer text-destructive focus:text-destructive">
               <LogOut className="mr-2 h-4 w-4" />
               Sair
             </DropdownMenuItem>
