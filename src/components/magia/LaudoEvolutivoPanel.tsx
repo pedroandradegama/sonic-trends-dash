@@ -153,7 +153,8 @@ function AudioRecorder({ value, onChange, placeholder }: { value: string; onChan
 
 // ── Scoring Logic ──
 function parseDimensions(dim: string): number[] {
-  return dim.split(/[x×,\s]+/).map(Number).filter(n => !isNaN(n) && n > 0);
+  // Replace commas with dots (Brazilian decimal separator) before splitting
+  return dim.replace(/,/g, '.').split(/[x×X]+/).map(s => s.trim()).map(Number).filter(n => !isNaN(n) && n > 0);
 }
 
 function getMaxDimension(dim: string): number {
