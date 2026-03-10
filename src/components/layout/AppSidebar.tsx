@@ -12,6 +12,8 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useAppMode } from '@/contexts/ModeContext';
+import { useState } from 'react';
+import { PasswordConfirmDialog } from './PasswordConfirmDialog';
 
 type AppModeKey = 'agenda' | 'avancado';
 
