@@ -679,7 +679,7 @@ export default function LaudoEvolutivoPanel() {
                       <div key={n.id} className="text-xs p-2 rounded-lg bg-muted/50 mb-1.5 space-y-0.5">
                         <span className="font-bold text-foreground">{n.id}</span>
                         {n.location && <span className="text-muted-foreground"> — {n.location}</span>}
-                        {n.dimensions && <p className="text-muted-foreground">Dim: {n.dimensions} mm</p>}
+                        {n.dimensions && <p className="text-muted-foreground">Dim: {n.dimensions} cm</p>}
                         {n.composition && <p className="text-muted-foreground">Comp: {n.composition}</p>}
                         {n.echogenicity && <p className="text-muted-foreground">Eco: {n.echogenicity}</p>}
                         {n.echogenicFoci && <p className="text-muted-foreground">Focos: {n.echogenicFoci}</p>}
