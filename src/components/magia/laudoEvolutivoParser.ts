@@ -22,7 +22,10 @@ function normalizeText(text: string): string {
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n')
     .replace(/\u00a0/g, ' ')
-    .replace(/\t/g, ' ');
+    .replace(/\t/g, ' ')
+    .replace(/\*\*/g, '')
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'");
 }
 
 /**
