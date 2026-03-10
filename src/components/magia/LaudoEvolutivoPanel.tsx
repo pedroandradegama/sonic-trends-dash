@@ -758,7 +758,7 @@ export default function LaudoEvolutivoPanel() {
                     </CardHeader>
                     <CardContent>
                       <p className="text-lg font-medium">
-                        {result.dimensionalChange.prevMax}mm → {result.dimensionalChange.currMax}mm{' '}
+                        {result.dimensionalChange.prevMax}cm → {result.dimensionalChange.currMax}cm{' '}
                         <span className={cn("font-bold", result.dimensionalChange.status === 'aumento' ? 'text-destructive' : result.dimensionalChange.status === 'reducao' ? 'text-success' : 'text-warning')}>
                           ({result.dimensionalChange.percentage > 0 ? '+' : ''}{result.dimensionalChange.percentage}%)
                         </span>
