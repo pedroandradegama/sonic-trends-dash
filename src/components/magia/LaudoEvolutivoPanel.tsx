@@ -278,6 +278,7 @@ export default function LaudoEvolutivoPanel() {
   const [currExam, setCurrExam] = useState<ExamData>(emptyExam());
   const [analyzing, setAnalyzing] = useState(false);
   const [noduleResults, setNoduleResults] = useState<NoduleResult[]>([]);
+  const [analysisError, setAnalysisError] = useState('');
 
   // Text input states
   const [prevText, setPrevText] = useState('');
