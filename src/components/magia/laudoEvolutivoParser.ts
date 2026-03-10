@@ -120,29 +120,28 @@ function extractBiradsClass(text: string): number | null {
  */
 function splitNodules(text: string): { id: string; block: string }[] {
   const normalized = normalizeText(text);
-  
-  // Try splitting by N1, N2, N3... pattern
-  const pattern = /(?:^|\n)\s*(N\d+)\s*[|:.\-–—]/gmi;
+
+  // Aceita: "N1:", "N1 |", "| N1 |", "**N1**"
+  const pattern = /(?:^|\n)\s*\|?\s*\*?(N\d+)\*?\s*\|?\s*[:.\-–—]?/gmi;
   const matches: { id: string; start: number }[] = [];
   let m: RegExpExecArray | null;
-  
+
   while ((m = pattern.exec(normalized)) !== null) {
     matches.push({ id: m[1].toUpperCase(), start: m.index });
   }
-  
+
   if (matches.length === 0) {
-    // Try "Nódulo 1", "Nódulo 2" pattern
-    const pattern2 = /(?:^|\n)\s*N[oó]dulo\s+(\d+)\s*[|:.\-–—]?/gmi;
+    // Aceita: "Nódulo 1", com ou sem markdown/tabela
+    const pattern2 = /(?:^|\n)\s*\|?\s*\*?N[oó]dulo\s+(\d+)\*?\s*\|?\s*[:.\-–—]?/gmi;
     while ((m = pattern2.exec(normalized)) !== null) {
       matches.push({ id: `N${m[1]}`, start: m.index });
     }
   }
-  
+
   if (matches.length === 0) {
-    // Single nodule - treat entire text as one
     return [{ id: 'N1', block: normalized }];
   }
-  
+
   return matches.map((match, i) => {
     const end = i < matches.length - 1 ? matches[i + 1].start : normalized.length;
     return { id: match.id, block: normalized.slice(match.start, end) };
