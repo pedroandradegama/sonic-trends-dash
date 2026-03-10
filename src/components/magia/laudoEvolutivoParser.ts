@@ -149,19 +149,29 @@ function splitNodules(text: string): { id: string; block: string }[] {
 }
 
 function extractLocation(block: string): string {
-  const m = block.match(/localiza[çc][aã]o[:\s]+([^\n.;]+)/i);
-  return m ? m[1].trim().replace(/^[-–—\s]+/, '') : '';
+  const m = block.match(/localiza[çc][aã]o[^:\n]*:\s*([^\n.;|]+)/i);
+  if (m) return m[1].trim().replace(/^[-–—\s]+/, '');
+
+  // Formato de tabela markdown: | Localização: | Terço médio ... |
+  const tableMatch = block.match(/\|\s*localiza[çc][aã]o\s*:?\s*\|\s*([^|\n]+)/i);
+  if (tableMatch) return tableMatch[1].trim();
+
+  return '';
 }
 
 function extractDimensions(block: string): string {
-  // Match "Dimensões: 0,8 x 0,5 x 0,3 cm" or similar
-  const m = block.match(/dimens[oõ]es?[:\s]+([^\n;]+)/i);
-  if (m) return parseDimensionsToMm(m[1]);
-  
-  // Match inline "X,X x X,X x X,X cm"
-  const m2 = block.match(/(\d+[,.]?\d*\s*[x×X]\s*\d+[,.]?\d*(?:\s*[x×X]\s*\d+[,.]?\d*)?)\s*(cm|mm)/i);
+  // Match line with dimensions, tolerant to markdown/table artifacts
+  const lineMatch = block.match(/dimens[oõ]es?[^:\n]*:\s*([^\n]+)/i);
+  if (lineMatch) {
+    const cleaned = lineMatch[1].replace(/^\|+/, '').replace(/\|+$/,'').trim();
+    const parsed = parseDimensionsToMm(cleaned);
+    if (parsed) return parsed;
+  }
+
+  // Match inline numeric dimensions with unit anywhere in the block
+  const m2 = block.match(/(\d+[,.]?\d*\s*[x×X]\s*\d+[,.]?\d*(?:\s*[x×X]\s*\d+[,.]?\d*)?)\s*(cm|mm)\b/i);
   if (m2) return parseDimensionsToMm(m2[0]);
-  
+
   return '';
 }
 
