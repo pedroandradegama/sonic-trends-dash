@@ -301,7 +301,7 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="medicos">
-          <TabsList className="mb-4">
+          <TabsList className="mb-4 flex-wrap">
             <TabsTrigger value="medicos" className="flex items-center gap-2">
               <Users className="h-4 w-4" /> Médicos
             </TabsTrigger>
@@ -310,6 +310,12 @@ export default function Admin() {
             </TabsTrigger>
             <TabsTrigger value="whatsapp" className="flex items-center gap-2">
               <MessageCircle className="h-4 w-4" /> WhatsApp
+            </TabsTrigger>
+            <TabsTrigger value="sugestoes" className="flex items-center gap-2">
+              <Lightbulb className="h-4 w-4" /> Sugestões
+            </TabsTrigger>
+            <TabsTrigger value="temas" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" /> Temas
             </TabsTrigger>
             <TabsTrigger value="config" className="flex items-center gap-2">
               <Settings className="h-4 w-4" /> Configurações
