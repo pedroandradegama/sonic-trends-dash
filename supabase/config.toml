@@ -41,3 +41,9 @@ verify_jwt = false
 
 [functions.whatsapp-webhook]
 verify_jwt = false
+
+[functions.send-followup-whatsapp]
+verify_jwt = false
+
+[functions.send-monthly-agenda]
+verify_jwt = false
