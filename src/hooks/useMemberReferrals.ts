@@ -8,7 +8,9 @@ export interface MemberReferral {
   referred_name: string;
   referred_email: string;
   referred_phone: string | null;
+  referrer_nome: string | null;
   status: string;
+  started_at: string | null;
   created_at: string;
 }
 
@@ -30,12 +32,23 @@ export function useMemberReferrals() {
   });
 
   const addReferral = useMutation({
-    mutationFn: async (referral: { referred_name: string; referred_email: string; referred_phone?: string }) => {
+    mutationFn: async (referral: { referred_name: string; referred_email: string; referred_phone?: string; referrer_nome?: string }) => {
       if (!user) throw new Error('Not authenticated');
       const { error } = await supabase
         .from('member_referrals' as any)
         .insert({ ...referral, referrer_user_id: user.id } as any);
       if (error) throw error;
+
+      // Notify admin by email
+      try {
+        await supabase.functions.invoke('send-agenda-email', {
+          body: {
+            medicoNome: referral.referrer_nome || 'Médico',
+            diasAgenda: [{ data: `Indicação: ${referral.referred_name}`, horarioInicio: referral.referred_email, horarioFim: referral.referred_phone || '—' }],
+            comentarios: `Nova indicação Member Get Member recebida de ${referral.referrer_nome || 'um médico'}. Indicado: ${referral.referred_name} (${referral.referred_email}).`,
+          },
+        });
+      } catch { /* silent */ }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['member-referrals'] }),
   });

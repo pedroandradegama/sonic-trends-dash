@@ -4,12 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Send, CheckCircle2, Clock, Loader2 } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { UserPlus, Send, CheckCircle2, Clock, Loader2, DollarSign } from 'lucide-react';
 import { useMemberReferrals } from '@/hooks/useMemberReferrals';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { toast } from 'sonner';
+import { differenceInDays, addMonths } from 'date-fns';
 
 export function MemberGetMemberCard() {
   const { referrals, isLoading, addReferral } = useMemberReferrals();
+  const { profile } = useUserProfile();
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -25,6 +29,7 @@ export function MemberGetMemberCard() {
         referred_name: name.trim(),
         referred_email: email.trim().toLowerCase(),
         referred_phone: phone.trim() || undefined,
+        referrer_nome: profile?.medico_nome || undefined,
       });
       toast.success('Indicação enviada com sucesso!');
       setName(''); setEmail(''); setPhone(''); setShowForm(false);
@@ -33,10 +38,18 @@ export function MemberGetMemberCard() {
     }
   };
 
-  const statusBadge = (status: string) => {
-    if (status === 'approved') return <Badge variant="outline" className="text-xs gap-1 text-[hsl(var(--success))] border-[hsl(var(--success))]/30"><CheckCircle2 className="h-3 w-3" />Aprovado</Badge>;
-    return <Badge variant="outline" className="text-xs gap-1"><Clock className="h-3 w-3" />Pendente</Badge>;
+  const getProgress = (startedAt: string) => {
+    const start = new Date(startedAt);
+    const end = addMonths(start, 6);
+    const totalDays = differenceInDays(end, start);
+    const elapsed = differenceInDays(new Date(), start);
+    const pct = Math.min(100, Math.max(0, (elapsed / totalDays) * 100));
+    const remaining = Math.max(0, differenceInDays(end, new Date()));
+    return { pct: Math.round(pct), remaining, completed: pct >= 100 };
   };
+
+  const activeReferrals = referrals.filter(r => r.started_at);
+  const pendingReferrals = referrals.filter(r => !r.started_at);
 
   return (
     <Card>
@@ -53,7 +66,7 @@ export function MemberGetMemberCard() {
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-xs text-muted-foreground">
-          Indique colegas para a plataforma e fortaleça nossa comunidade.
+          Indique colegas e receba após 6 meses de agendas ativas.
         </p>
 
         {showForm && (
@@ -82,21 +95,57 @@ export function MemberGetMemberCard() {
 
         {isLoading ? (
           <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
-        ) : referrals.length > 0 ? (
-          <div className="space-y-2 max-h-[200px] overflow-y-auto scrollbar-thin">
-            {referrals.map(r => (
-              <div key={r.id} className="flex items-center justify-between p-2 rounded-lg border bg-card/50">
-                <div>
-                  <p className="text-sm font-medium">{r.referred_name}</p>
-                  <p className="text-xs text-muted-foreground">{r.referred_email}</p>
-                </div>
-                {statusBadge(r.status)}
+        ) : (
+          <>
+            {/* Active referrals with progress */}
+            {activeReferrals.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Minhas Indicações</p>
+                {activeReferrals.map(r => {
+                  const prog = getProgress(r.started_at!);
+                  return (
+                    <div key={r.id} className="p-2 rounded-lg border bg-card/50 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">{r.referred_name}</p>
+                        {prog.completed ? (
+                          <Badge className="bg-[hsl(var(--success))] text-white text-xs gap-1">
+                            <DollarSign className="h-3 w-3" /> Concluído!
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">{prog.remaining}d restantes</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Progress value={prog.pct} className="h-1.5 flex-1" />
+                        <span className="text-xs font-medium text-muted-foreground w-8 text-right">{prog.pct}%</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
-        ) : !showForm ? (
-          <p className="text-xs text-muted-foreground text-center py-3">Nenhuma indicação ainda. Seja o primeiro!</p>
-        ) : null}
+            )}
+
+            {/* Pending referrals */}
+            {pendingReferrals.length > 0 && (
+              <div className="space-y-2 max-h-[140px] overflow-y-auto scrollbar-thin">
+                {activeReferrals.length > 0 && <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Aguardando Início</p>}
+                {pendingReferrals.map(r => (
+                  <div key={r.id} className="flex items-center justify-between p-2 rounded-lg border bg-card/50">
+                    <div>
+                      <p className="text-sm font-medium">{r.referred_name}</p>
+                      <p className="text-xs text-muted-foreground">{r.referred_email}</p>
+                    </div>
+                    <Badge variant="outline" className="text-xs gap-1"><Clock className="h-3 w-3" />Pendente</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {referrals.length === 0 && !showForm && (
+              <p className="text-xs text-muted-foreground text-center py-3">Nenhuma indicação ainda. Seja o primeiro!</p>
+            )}
+          </>
+        )}
       </CardContent>
     </Card>
   );
