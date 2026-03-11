@@ -620,9 +620,37 @@ export default function Admin() {
             )}
           </TabsContent>
 
+          {/* ── ABA SUGESTÕES ── */}
+          <TabsContent value="sugestoes">
+            <AdminSuggestionsTab />
+          </TabsContent>
+
+          {/* ── ABA TEMAS DA COMUNIDADE ── */}
+          <TabsContent value="temas">
+            <AdminCommunityTopicsTab />
+          </TabsContent>
+
           {/* ── ABA CONFIGURAÇÕES ── */}
           <TabsContent value="config">
-            <AdminConfigTab />
+            <div className="space-y-6">
+              <AdminConfigTab />
+              {/* Link to agenda management */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CalendarCheck className="h-5 w-5 text-primary" />
+                    Gestão de Agendas
+                  </CardTitle>
+                  <CardDescription>Confirme e gerencie as agendas solicitadas pelos médicos</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button onClick={() => navigate('/gestao-agendas')} className="gap-2">
+                    <CalendarCheck className="h-4 w-4" />
+                    Abrir Gestão de Agendas
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
