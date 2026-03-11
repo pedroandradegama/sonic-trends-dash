@@ -315,6 +315,9 @@ export default function Admin() {
             <TabsTrigger value="sugestoes" className="flex items-center gap-2">
               <Lightbulb className="h-4 w-4" /> Sugestões
             </TabsTrigger>
+            <TabsTrigger value="indicacoes" className="flex items-center gap-2">
+              <UserPlus className="h-4 w-4" /> Indicações
+            </TabsTrigger>
             <TabsTrigger value="temas" className="flex items-center gap-2">
               <Sparkles className="h-4 w-4" /> Temas
             </TabsTrigger>
