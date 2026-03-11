@@ -629,6 +629,11 @@ export default function Admin() {
             <AdminSuggestionsTab />
           </TabsContent>
 
+          {/* ── ABA INDICAÇÕES ── */}
+          <TabsContent value="indicacoes">
+            <AdminReferralsTab />
+          </TabsContent>
+
           {/* ── ABA TEMAS DA COMUNIDADE ── */}
           <TabsContent value="temas">
             <AdminCommunityTopicsTab />
