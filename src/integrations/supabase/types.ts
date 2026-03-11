@@ -650,7 +650,9 @@ export type Database = {
           referred_email: string
           referred_name: string
           referred_phone: string | null
+          referrer_nome: string | null
           referrer_user_id: string
+          started_at: string | null
           status: string
         }
         Insert: {
@@ -659,7 +661,9 @@ export type Database = {
           referred_email: string
           referred_name: string
           referred_phone?: string | null
+          referrer_nome?: string | null
           referrer_user_id: string
+          started_at?: string | null
           status?: string
         }
         Update: {
@@ -668,7 +672,9 @@ export type Database = {
           referred_email?: string
           referred_name?: string
           referred_phone?: string | null
+          referrer_nome?: string | null
           referrer_user_id?: string
+          started_at?: string | null
           status?: string
         }
         Relationships: []
