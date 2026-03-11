@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Plus, UserCheck, UserX, Trash2, Users, Shield, Clock, MessageCircle, Send, CheckCircle2, XCircle, Loader2, Newspaper, Globe, Settings, Lightbulb, Sparkles, CalendarCheck } from 'lucide-react';
+import { ArrowLeft, Plus, UserCheck, UserX, Trash2, Users, Shield, Clock, MessageCircle, Send, CheckCircle2, XCircle, Loader2, Newspaper, Globe, Settings, Lightbulb, Sparkles, CalendarCheck, UserPlus } from 'lucide-react';
 import { AdminConfigTab } from '@/components/admin/AdminConfigTab';
 import { AdminSuggestionsTab } from '@/components/admin/AdminSuggestionsTab';
 import { AdminCommunityTopicsTab } from '@/components/admin/AdminCommunityTopicsTab';
