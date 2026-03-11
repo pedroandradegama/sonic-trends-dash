@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import ModeSelection from "./pages/ModeSelection";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import GestaoAgendas from "./pages/GestaoAgendas";
 import Home from "./pages/Home";
 import Perfil from "./pages/Perfil";
 import MinhaAgenda from "./pages/MinhaAgenda";
