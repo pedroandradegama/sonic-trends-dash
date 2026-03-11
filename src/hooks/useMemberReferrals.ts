@@ -8,7 +8,9 @@ export interface MemberReferral {
   referred_name: string;
   referred_email: string;
   referred_phone: string | null;
+  referrer_nome: string | null;
   status: string;
+  started_at: string | null;
   created_at: string;
 }
 
