@@ -3,6 +3,7 @@ import RadarArtigosCard from '@/components/institucional/RadarArtigosCard';
 import FeriadosCard from '@/components/institucional/FeriadosCard';
 import RadioburgerCard from '@/components/institucional/RadioburgerCard';
 import { SharedCasesCard } from '@/components/comunidade/SharedCasesCard';
+import { CommunityTopicsPanel } from '@/components/comunidade/CommunityTopicsPanel';
 import { useAdminRadioburger } from '@/hooks/useAdminSettings';
 import { useMemo } from 'react';
 import { isFuture, parseISO, isToday } from 'date-fns';
@@ -31,8 +32,9 @@ export default function Comunidade() {
           {nextRadioburgerDate && <RadioburgerCard nextDate={nextRadioburgerDate} />}
           <FeriadosCard />
         </div>
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-3 space-y-6">
           <RadarArtigosCard />
+          <CommunityTopicsPanel />
         </div>
       </div>
     </div>

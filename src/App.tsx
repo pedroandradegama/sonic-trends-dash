@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import ModeSelection from "./pages/ModeSelection";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import GestaoAgendas from "./pages/GestaoAgendas";
 import Home from "./pages/Home";
 import Perfil from "./pages/Perfil";
 import MinhaAgenda from "./pages/MinhaAgenda";
@@ -73,6 +74,7 @@ const App = () => (
             <Route path="/ferramentas/cimt-percentile" element={<ProtectedWithLayout><CIMTPercentile /></ProtectedWithLayout>} />
             <Route path="/ferramentas/orads-us" element={<ProtectedWithLayout><ORADSCalculator /></ProtectedWithLayout>} />
             <Route path="/ferramentas/crescimento-fetal" element={<ProtectedWithLayout><FetalGrowth /></ProtectedWithLayout>} />
+            <Route path="/gestao-agendas" element={<ProtectedWithLayout><GestaoAgendas /></ProtectedWithLayout>} />
             {/* Legacy redirects */}
             <Route path="/institucional" element={<Navigate to="/comunidade" replace />} />
             <Route path="/magia" element={<Navigate to="/ferramentas-ia" replace />} />

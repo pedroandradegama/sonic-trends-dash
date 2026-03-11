@@ -11,8 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Plus, UserCheck, UserX, Trash2, Users, Shield, Clock, MessageCircle, Send, CheckCircle2, XCircle, Loader2, Newspaper, Globe, Settings } from 'lucide-react';
+import { ArrowLeft, Plus, UserCheck, UserX, Trash2, Users, Shield, Clock, MessageCircle, Send, CheckCircle2, XCircle, Loader2, Newspaper, Globe, Settings, Lightbulb, Sparkles, CalendarCheck } from 'lucide-react';
 import { AdminConfigTab } from '@/components/admin/AdminConfigTab';
+import { AdminSuggestionsTab } from '@/components/admin/AdminSuggestionsTab';
+import { AdminCommunityTopicsTab } from '@/components/admin/AdminCommunityTopicsTab';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -299,7 +301,7 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="medicos">
-          <TabsList className="mb-4">
+          <TabsList className="mb-4 flex-wrap">
             <TabsTrigger value="medicos" className="flex items-center gap-2">
               <Users className="h-4 w-4" /> Médicos
             </TabsTrigger>
@@ -308,6 +310,12 @@ export default function Admin() {
             </TabsTrigger>
             <TabsTrigger value="whatsapp" className="flex items-center gap-2">
               <MessageCircle className="h-4 w-4" /> WhatsApp
+            </TabsTrigger>
+            <TabsTrigger value="sugestoes" className="flex items-center gap-2">
+              <Lightbulb className="h-4 w-4" /> Sugestões
+            </TabsTrigger>
+            <TabsTrigger value="temas" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" /> Temas
             </TabsTrigger>
             <TabsTrigger value="config" className="flex items-center gap-2">
               <Settings className="h-4 w-4" /> Configurações
@@ -612,9 +620,37 @@ export default function Admin() {
             )}
           </TabsContent>
 
+          {/* ── ABA SUGESTÕES ── */}
+          <TabsContent value="sugestoes">
+            <AdminSuggestionsTab />
+          </TabsContent>
+
+          {/* ── ABA TEMAS DA COMUNIDADE ── */}
+          <TabsContent value="temas">
+            <AdminCommunityTopicsTab />
+          </TabsContent>
+
           {/* ── ABA CONFIGURAÇÕES ── */}
           <TabsContent value="config">
-            <AdminConfigTab />
+            <div className="space-y-6">
+              <AdminConfigTab />
+              {/* Link to agenda management */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CalendarCheck className="h-5 w-5 text-primary" />
+                    Gestão de Agendas
+                  </CardTitle>
+                  <CardDescription>Confirme e gerencie as agendas solicitadas pelos médicos</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button onClick={() => navigate('/gestao-agendas')} className="gap-2">
+                    <CalendarCheck className="h-4 w-4" />
+                    Abrir Gestão de Agendas
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

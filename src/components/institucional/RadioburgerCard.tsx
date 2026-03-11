@@ -2,9 +2,10 @@ import { Calendar, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { differenceInDays, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { RadioburgerSuggestionButton } from '@/components/comunidade/RadioburgerSuggestionButton';
 
 interface RadioburgerCardProps {
-  nextDate: string; // ISO date string (e.g., "2026-02-15")
+  nextDate: string;
 }
 
 const RadioburgerCard = ({ nextDate }: RadioburgerCardProps) => {
@@ -15,17 +16,20 @@ const RadioburgerCard = ({ nextDate }: RadioburgerCardProps) => {
   const formattedDate = format(eventDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
   
   const getCountdownColor = () => {
-    if (daysUntil <= 7) return "text-red-500";
-    if (daysUntil <= 14) return "text-amber-500";
+    if (daysUntil <= 7) return "text-destructive";
+    if (daysUntil <= 14) return "text-[hsl(var(--warning))]";
     return "text-primary";
   };
 
   return (
     <Card className="bg-card border-border">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-primary" />
-          Próximo Radioburger
+        <CardTitle className="text-lg font-semibold flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-primary" />
+            Próximo Radioburger
+          </span>
+          <RadioburgerSuggestionButton />
         </CardTitle>
       </CardHeader>
       <CardContent>

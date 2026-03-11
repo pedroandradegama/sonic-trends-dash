@@ -154,34 +154,43 @@ export type Database = {
       agenda_comunicacoes: {
         Row: {
           comentarios: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
           created_at: string
           data_agenda: string
           horario_fim: string | null
           horario_inicio: string
           id: string
           medico_nome: string
+          status: string
           updated_at: string
           user_id: string
         }
         Insert: {
           comentarios?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
           created_at?: string
           data_agenda: string
           horario_fim?: string | null
           horario_inicio: string
           id?: string
           medico_nome: string
+          status?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           comentarios?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
           created_at?: string
           data_agenda?: string
           horario_fim?: string | null
           horario_inicio?: string
           id?: string
           medico_nome?: string
+          status?: string
           updated_at?: string
           user_id?: string
         }
@@ -404,6 +413,36 @@ export type Database = {
         }
         Relationships: []
       }
+      community_topics: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean
+          title: string
+          url: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          title: string
+          url?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          title?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
       digest_dispatch_queue: {
         Row: {
           article_id: string
@@ -601,6 +640,36 @@ export type Database = {
           updated_at?: string
           user_id?: string
           wants_followup?: boolean
+        }
+        Relationships: []
+      }
+      member_referrals: {
+        Row: {
+          created_at: string
+          id: string
+          referred_email: string
+          referred_name: string
+          referred_phone: string | null
+          referrer_user_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referred_email: string
+          referred_name: string
+          referred_phone?: string | null
+          referrer_user_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referred_email?: string
+          referred_name?: string
+          referred_phone?: string | null
+          referrer_user_id?: string
+          status?: string
         }
         Relationships: []
       }
@@ -856,6 +925,30 @@ export type Database = {
           updated_at?: string
           user_id?: string
           whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
+      radioburger_suggestions: {
+        Row: {
+          created_at: string
+          id: string
+          status: string
+          suggestion_text: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string
+          suggestion_text: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string
+          suggestion_text?: string
+          user_id?: string
         }
         Relationships: []
       }

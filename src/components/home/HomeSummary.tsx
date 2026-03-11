@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useDoctorPreferences } from '@/hooks/useDoctorPreferences';
@@ -16,13 +17,15 @@ import { useUltrasoundArticles } from '@/hooks/useUltrasoundArticles';
 import { useAdminHolidays, useAdminRadioburger } from '@/hooks/useAdminSettings';
 import { useRepasseData } from '@/hooks/useRepasseData';
 import { DestaquesCard } from '@/components/home/DestaquesCard';
+import { MemberGetMemberCard } from '@/components/home/MemberGetMemberCard';
+import { RadioburgerSuggestionButton } from '@/components/comunidade/RadioburgerSuggestionButton';
 import {
   DollarSign, BarChart3, ThumbsUp, ArrowRight,
   Baby, Stethoscope, BookOpen, ChevronRight, Bookmark,
   FlaskConical, Droplets, Activity, CalendarPlus, CalendarOff, AlertTriangle,
-  Brain, FileText, Wrench, ExternalLink, Calendar,
+  Brain, FileText, Wrench, ExternalLink, Calendar, Bell,
 } from 'lucide-react';
-import { format, parseISO, isFuture, isToday, addMonths, startOfMonth, endOfMonth, isWithinInterval, differenceInDays } from 'date-fns';
+import { format, parseISO, isFuture, isToday, addMonths, startOfMonth, endOfMonth, isWithinInterval, differenceInDays, addDays, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export function HomeSummary() {
@@ -108,6 +111,15 @@ export function HomeSummary() {
     return 'Tudo em dia. Bom trabalho!';
   }, [nextMonthMissing, nextMonthName]);
 
+  // Follow-up reminders
+  const overdueFollowups = useMemo(() => {
+    return interestingCases.filter(c => {
+      if (!c.wants_followup || !c.followup_days) return false;
+      const target = addDays(parseISO(c.exam_date), c.followup_days);
+      return isBefore(target, new Date()) || isToday(target);
+    });
+  }, [interestingCases]);
+
   const tools = [
     { label: 'Percentis Pediátrico', icon: Baby, path: '/ferramentas/percentis-us' },
     { label: 'ACR TI-RADS', icon: Stethoscope, path: '/ferramentas/ti-rads' },
@@ -116,16 +128,51 @@ export function HomeSummary() {
   ];
 
   const isLoading = dashLoading || casLoading || npsLoading || casesLoading || agendaLoading;
+  const avatarUrl = (profile as any)?.avatar_url;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">
-          {profile ? `Olá, Dr. ${firstName}` : 'Home'}
-        </h1>
-        <p className="text-muted-foreground mt-1">{dynamicSubtitle}</p>
+      {/* Header with Avatar */}
+      <div className="flex items-center gap-4">
+        <Avatar className="h-12 w-12 ring-2 ring-primary/10">
+          {avatarUrl ? (
+            <AvatarImage src={avatarUrl} alt={firstName} />
+          ) : null}
+          <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
+            {firstName.charAt(0).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">
+            {profile ? `Olá, Dr. ${firstName}` : 'Home'}
+          </h1>
+          <p className="text-muted-foreground mt-0.5">{dynamicSubtitle}</p>
+        </div>
       </div>
+
+      {/* Follow-up reminders */}
+      {!isLoading && overdueFollowups.length > 0 && (
+        <Alert className="border-destructive/50 bg-destructive/5">
+          <Bell className="h-4 w-4 text-destructive" />
+          <AlertDescription className="text-foreground">
+            <strong>Follow-up pendente!</strong> Você tem {overdueFollowups.length} caso{overdueFollowups.length !== 1 ? 's' : ''} com follow-up vencido:
+            <ul className="mt-1 space-y-0.5">
+              {overdueFollowups.slice(0, 3).map(c => (
+                <li key={c.id} className="text-sm">
+                  • <strong>{c.patient_name}</strong> {c.diagnostic_hypothesis && `(${c.diagnostic_hypothesis})`}
+                  {' — '}
+                  <span className="text-destructive font-medium">
+                    vencido em {format(addDays(parseISO(c.exam_date), c.followup_days!), 'dd/MM/yyyy')}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <Button variant="link" className="p-0 h-auto text-foreground underline font-semibold mt-1" onClick={() => navigate('/meu-trabalho')}>
+              Ver todos os casos →
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Alert: missing next month agenda */}
       {!isLoading && nextMonthMissing && (
@@ -174,6 +221,14 @@ export function HomeSummary() {
                     </p>
                     {nextAgenda.comentarios && (
                       <p className="text-xs text-muted-foreground italic">"{nextAgenda.comentarios}"</p>
+                    )}
+                    {/* Show agenda status */}
+                    {(nextAgenda as any).status && (nextAgenda as any).status !== 'pendente' && (
+                      <Badge variant="outline" className={`text-xs mt-1 ${
+                        (nextAgenda as any).status === 'confirmada' ? 'text-[hsl(var(--success))] border-[hsl(var(--success))]/30' : 'text-destructive border-destructive/30'
+                      }`}>
+                        {(nextAgenda as any).status === 'confirmada' ? '✓ Confirmada' : '✗ Rejeitada'}
+                      </Badge>
                     )}
                   </div>
                 ) : (
@@ -278,15 +333,22 @@ export function HomeSummary() {
             </Card>
           </div>
 
-          {/* Row 1.5 — Destaques */}
-          <DestaquesCard
-            repasseData={repasseRaw}
-            npsData={npsData}
-            casuisticaData={casuisticaData}
-            totalExames={kpis.totalExames}
-          />
+          {/* Row 2 — Destaques + Member Get Member (same width as row below) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-1">
+              <MemberGetMemberCard />
+            </div>
+            <div className="lg:col-span-2">
+              <DestaquesCard
+                repasseData={repasseRaw}
+                npsData={npsData}
+                casuisticaData={casuisticaData}
+                totalExames={kpis.totalExames}
+              />
+            </div>
+          </div>
 
-          {/* Row 2 — Context & Tools (1:2 proportion) */}
+          {/* Row 3 — Context & Tools (1:2 proportion) */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Card: Minha Imag (1/3) */}
             <Card className="lg:col-span-1">
@@ -312,7 +374,10 @@ export function HomeSummary() {
 
                 {/* Radioburger */}
                 <div className="space-y-0.5">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Radioburger</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Radioburger</p>
+                    <RadioburgerSuggestionButton />
+                  </div>
                   {radioburgerDaysUntil !== null ? (
                     <div className="flex items-baseline gap-2">
                       <span className="text-lg font-bold text-primary">em {radioburgerDaysUntil} dias</span>
