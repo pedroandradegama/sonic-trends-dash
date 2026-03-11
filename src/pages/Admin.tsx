@@ -15,6 +15,7 @@ import { ArrowLeft, Plus, UserCheck, UserX, Trash2, Users, Shield, Clock, Messag
 import { AdminConfigTab } from '@/components/admin/AdminConfigTab';
 import { AdminSuggestionsTab } from '@/components/admin/AdminSuggestionsTab';
 import { AdminCommunityTopicsTab } from '@/components/admin/AdminCommunityTopicsTab';
+import { AdminReferralsTab } from '@/components/admin/AdminReferralsTab';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
