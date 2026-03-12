@@ -173,11 +173,33 @@ Responda APENAS com o JSON, sem texto adicional nem markdown.`,
 
       for (const doctor of doctors) {
         const limit = doctor.digest_article_limit || 5;
-        const scheduledFor = doctor.digest_next_dispatch
-          ? new Date(doctor.digest_next_dispatch).toISOString().split("T")[0]
-          : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+        
+        // Check next dispatch date - if past or today, schedule for today
+        const nextDispatch = doctor.digest_next_dispatch
+          ? new Date(doctor.digest_next_dispatch)
+          : new Date();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const scheduledFor = nextDispatch <= today
+          ? new Date().toISOString().split("T")[0]
+          : nextDispatch.toISOString().split("T")[0];
 
-        const entries = articleIds.slice(0, limit).map((articleId: string) => ({
+        // Get already dispatched article IDs for this doctor to avoid duplicates
+        const { data: alreadyDispatched } = await supabase
+          .from("digest_dispatch_queue")
+          .select("article_id")
+          .eq("doctor_id", doctor.user_id)
+          .in("status", ["sent", "pending"]);
+
+        const alreadyDispatchedIds = new Set(
+          (alreadyDispatched || []).map((d: any) => d.article_id)
+        );
+
+        const newArticleIds = articleIds
+          .filter((id: string) => !alreadyDispatchedIds.has(id))
+          .slice(0, limit);
+
+        const entries = newArticleIds.map((articleId: string) => ({
           doctor_id: doctor.user_id,
           article_id: articleId,
           scheduled_for: scheduledFor,
@@ -185,10 +207,14 @@ Responda APENAS com o JSON, sem texto adicional nem markdown.`,
         }));
 
         if (entries.length > 0) {
-          await supabase.from("digest_dispatch_queue").upsert(entries, {
-            onConflict: "doctor_id,article_id",
-            ignoreDuplicates: true,
-          });
+          const { error: insertError } = await supabase
+            .from("digest_dispatch_queue")
+            .insert(entries);
+          if (insertError) {
+            console.error(`Queue insert error for ${doctor.user_id}:`, insertError.message);
+          } else {
+            console.log(`Queued ${entries.length} articles for ${doctor.user_id} on ${scheduledFor}`);
+          }
         }
       }
     }
