@@ -20,36 +20,52 @@ interface DaySchedule {
   horario_fim: string;
 }
 
+const getAgendaStatusMeta = (status?: 'pendente' | 'confirmada' | 'rejeitada') => {
+  switch (status) {
+    case 'confirmada':
+      return {
+        label: 'Agenda confirmada',
+        pillClass: 'border-primary/20 bg-primary text-primary-foreground',
+        containerClass: 'border-primary/20 bg-primary/5',
+        dotClass: 'bg-primary',
+      };
+    case 'rejeitada':
+      return {
+        label: 'Agenda rejeitada',
+        pillClass: 'border-destructive/20 bg-destructive/10 text-destructive',
+        containerClass: 'border-destructive/20 bg-destructive/5',
+        dotClass: 'bg-destructive',
+      };
+    default:
+      return {
+        label: 'Enviada · aguarda confirmação',
+        pillClass: 'border-[hsl(var(--warning)/0.3)] bg-[hsl(var(--warning)/0.16)] text-foreground',
+        containerClass: 'border-[hsl(var(--warning)/0.28)] bg-[hsl(var(--warning)/0.12)]',
+        dotClass: 'bg-[hsl(var(--warning))]',
+      };
+  }
+};
+
 const AgendaCard = () => {
   const { toast } = useToast();
   const { profile } = useUserProfile();
-  const { 
-    comunicacoes, 
-    isLoading, 
-    createComunicacao, 
+  const {
+    comunicacoes,
+    isLoading,
+    createComunicacao,
     deleteComunicacao,
     isCreating,
-    isDeleting 
+    isDeleting,
   } = useAgendaComunicacoes();
 
-  // Month selection
   const [selectedMonth, setSelectedMonth] = useState<string>(() => format(new Date(), 'yyyy-MM'));
-  
-  // Selected days with their schedules
   const [selectedDays, setSelectedDays] = useState<DaySchedule[]>([]);
-  
-  // Currently selected day for time input
   const [activeDay, setActiveDay] = useState<Date | null>(null);
   const [tempHorarioInicio, setTempHorarioInicio] = useState('08:00');
   const [tempHorarioFim, setTempHorarioFim] = useState('18:00');
-  
-  // Comments
   const [comentarios, setComentarios] = useState('');
-  
-  // Sending email state
   const [isSendingEmail, setIsSendingEmail] = useState(false);
 
-  // Generate month options (current month + next 6 months)
   const monthOptions = useMemo(() => {
     const options = [];
     const now = new Date();
@@ -63,73 +79,71 @@ const AgendaCard = () => {
     return options;
   }, []);
 
-  // Get the month date from selected month string
   const currentMonthDate = useMemo(() => {
     const [year, month] = selectedMonth.split('-').map(Number);
     return new Date(year, month - 1, 1);
   }, [selectedMonth]);
 
-  // Get dates from existing communications
-  const savedDates = useMemo(() => {
-    return comunicacoes.map(c => parseISO(c.data_agenda));
+  const pendingDates = useMemo(() => {
+    return comunicacoes.filter((c) => c.status === 'pendente').map((c) => parseISO(c.data_agenda));
   }, [comunicacoes]);
 
-  // Handle day click on calendar
+  const confirmedDates = useMemo(() => {
+    return comunicacoes.filter((c) => c.status === 'confirmada').map((c) => parseISO(c.data_agenda));
+  }, [comunicacoes]);
+
+  const rejectedDates = useMemo(() => {
+    return comunicacoes.filter((c) => c.status === 'rejeitada').map((c) => parseISO(c.data_agenda));
+  }, [comunicacoes]);
+
   const handleDayClick = (date: Date | undefined) => {
     if (!date) return;
 
-    // Check if already selected
-    const existingIndex = selectedDays.findIndex(d => isSameDay(d.date, date));
-    
+    const existingIndex = selectedDays.findIndex((day) => isSameDay(day.date, date));
+
     if (existingIndex >= 0) {
-      // Already selected - set as active for editing
       const existing = selectedDays[existingIndex];
       setActiveDay(date);
       setTempHorarioInicio(existing.horario_inicio);
       setTempHorarioFim(existing.horario_fim);
-    } else {
-      // New day - add with default times
-      setActiveDay(date);
-      setTempHorarioInicio('08:00');
-      setTempHorarioFim('18:00');
+      return;
     }
+
+    setActiveDay(date);
+    setTempHorarioInicio('08:00');
+    setTempHorarioFim('18:00');
   };
 
-  // Confirm time for active day
   const confirmDaySchedule = () => {
     if (!activeDay) return;
 
-    setSelectedDays(prev => {
-      const existingIndex = prev.findIndex(d => isSameDay(d.date, activeDay));
-      const newSchedule: DaySchedule = {
+    setSelectedDays((prev) => {
+      const existingIndex = prev.findIndex((day) => isSameDay(day.date, activeDay));
+      const nextSchedule: DaySchedule = {
         date: activeDay,
         horario_inicio: tempHorarioInicio,
         horario_fim: tempHorarioFim,
       };
 
       if (existingIndex >= 0) {
-        // Update existing
         const updated = [...prev];
-        updated[existingIndex] = newSchedule;
+        updated[existingIndex] = nextSchedule;
         return updated;
-      } else {
-        // Add new
-        return [...prev, newSchedule].sort((a, b) => a.date.getTime() - b.date.getTime());
       }
+
+      return [...prev, nextSchedule].sort((a, b) => a.date.getTime() - b.date.getTime());
     });
 
     setActiveDay(null);
   };
 
-  // Remove day from selection
   const removeDay = (date: Date) => {
-    setSelectedDays(prev => prev.filter(d => !isSameDay(d.date, date)));
+    setSelectedDays((prev) => prev.filter((day) => !isSameDay(day.date, date)));
     if (activeDay && isSameDay(activeDay, date)) {
       setActiveDay(null);
     }
   };
 
-  // Submit all selected days and send email
   const handleSubmit = async () => {
     if (selectedDays.length === 0) {
       toast({
@@ -141,24 +155,22 @@ const AgendaCard = () => {
     }
 
     try {
-      // Create one entry for each selected day
       for (const day of selectedDays) {
         await createComunicacao({
           data_agenda: format(day.date, 'yyyy-MM-dd'),
           horario_inicio: day.horario_inicio,
           horario_fim: day.horario_fim || '',
-          comentarios: comentarios,
+          comentarios,
         });
       }
 
-      // Send email notification
       setIsSendingEmail(true);
       try {
-        const { data, error } = await supabase.functions.invoke('send-agenda-email', {
+        const { error } = await supabase.functions.invoke('send-agenda-email', {
           body: {
             medicoNome: profile?.medico_nome || 'Médico',
-            diasAgenda: selectedDays.map(day => ({
-              data: format(day.date, "dd/MM/yyyy (EEEE)", { locale: ptBR }),
+            diasAgenda: selectedDays.map((day) => ({
+              data: format(day.date, 'dd/MM/yyyy (EEEE)', { locale: ptBR }),
               horarioInicio: day.horario_inicio,
               horarioFim: day.horario_fim,
             })),
@@ -189,11 +201,10 @@ const AgendaCard = () => {
         setIsSendingEmail(false);
       }
 
-      // Reset form
       setSelectedDays([]);
       setComentarios('');
       setActiveDay(null);
-    } catch (error) {
+    } catch {
       toast({
         title: 'Erro ao enviar',
         description: 'Não foi possível registrar a comunicação. Tente novamente.',
@@ -209,7 +220,7 @@ const AgendaCard = () => {
         title: 'Comunicação removida',
         description: 'A entrada foi removida com sucesso.',
       });
-    } catch (error) {
+    } catch {
       toast({
         title: 'Erro ao remover',
         description: 'Não foi possível remover a comunicação.',
@@ -226,12 +237,8 @@ const AgendaCard = () => {
     }
   };
 
-  const formatTime = (timeStr: string) => {
-    return timeStr?.slice(0, 5) || ''; // HH:MM format
-  };
-
-  // Get selected dates for calendar highlighting
-  const selectedDates = useMemo(() => selectedDays.map(d => d.date), [selectedDays]);
+  const formatTime = (timeStr: string) => timeStr?.slice(0, 5) || '';
+  const selectedDates = useMemo(() => selectedDays.map((day) => day.date), [selectedDays]);
 
   return (
     <Card className="bg-card border-border">
@@ -242,7 +249,6 @@ const AgendaCard = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Month Selector */}
         <div className="space-y-2">
           <Label>Selecione o Mês</Label>
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
@@ -250,7 +256,7 @@ const AgendaCard = () => {
               <SelectValue placeholder="Selecione o mês" />
             </SelectTrigger>
             <SelectContent>
-              {monthOptions.map(option => (
+              {monthOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
@@ -259,7 +265,6 @@ const AgendaCard = () => {
           </Select>
         </div>
 
-        {/* Calendar with multi-select days */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-4">
             <Label>Selecione os dias de disponibilidade</Label>
@@ -267,42 +272,52 @@ const AgendaCard = () => {
               mode="multiple"
               selected={selectedDates}
               onSelect={(dates) => {
-                // Handle the multi-select change
                 if (dates && dates.length > selectedDates.length) {
-                  // New date added - find which one
-                  const newDate = dates.find(d => !selectedDates.some(sd => isSameDay(sd, d)));
+                  const newDate = dates.find((date) => !selectedDates.some((selectedDate) => isSameDay(selectedDate, date)));
                   if (newDate) handleDayClick(newDate);
                 } else if (dates && dates.length < selectedDates.length) {
-                  // Date removed - find which one
-                  const removedDate = selectedDates.find(sd => !dates.some(d => isSameDay(d, sd)));
+                  const removedDate = selectedDates.find((selectedDate) => !dates.some((date) => isSameDay(date, selectedDate)));
                   if (removedDate) removeDay(removedDate);
                 }
               }}
               locale={ptBR}
               month={currentMonthDate}
-              onMonthChange={() => {}}
               className="rounded-md border"
+              classNames={{
+                caption: 'hidden',
+                nav: 'hidden',
+              }}
               modifiers={{
                 selected: selectedDates,
                 active: activeDay ? [activeDay] : [],
-                saved: savedDates,
+                pending: pendingDates,
+                confirmed: confirmedDates,
+                rejected: rejectedDates,
               }}
               modifiersClassNames={{
-                selected: "bg-primary/30 text-primary-foreground font-semibold",
-                active: "!bg-primary !text-primary-foreground ring-2 ring-primary ring-offset-2",
-                saved: "bg-primary text-primary-foreground hover:bg-primary/90",
+                selected: 'bg-primary/20 text-foreground font-semibold',
+                active: '!bg-primary !text-primary-foreground ring-2 ring-primary ring-offset-2',
+                pending: 'bg-[hsl(var(--warning)/0.22)] text-foreground hover:bg-[hsl(var(--warning)/0.3)]',
+                confirmed: 'bg-primary text-primary-foreground hover:bg-primary/90',
+                rejected: 'bg-destructive/10 text-destructive hover:bg-destructive/20',
               }}
             />
-            <p className="text-xs text-muted-foreground">
-              Clique nos dias para selecioná-los. Dias em <span className="font-semibold text-primary">azul sólido</span> já estão confirmados.
-            </p>
+
+            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-[hsl(var(--warning))]" />
+                Laranja - Enviada | Aguarda confirmação da Imag
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-primary" />
+                Azul sólido - Agenda confirmada
+              </span>
+            </div>
           </div>
 
-          {/* Selected days list with times */}
           <div className="space-y-4">
             <Label>Dias selecionados e horários</Label>
-            
-            {/* Time input for active day */}
+
             {activeDay && (
               <div className="p-4 border-2 border-primary rounded-lg bg-primary/5 space-y-3">
                 <div className="flex items-center justify-between">
@@ -321,19 +336,11 @@ const AgendaCard = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs">Horário Início</Label>
-                    <Input
-                      type="time"
-                      value={tempHorarioInicio}
-                      onChange={(e) => setTempHorarioInicio(e.target.value)}
-                    />
+                    <Input type="time" value={tempHorarioInicio} onChange={(e) => setTempHorarioInicio(e.target.value)} />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Horário Fim</Label>
-                    <Input
-                      type="time"
-                      value={tempHorarioFim}
-                      onChange={(e) => setTempHorarioFim(e.target.value)}
-                    />
+                    <Input type="time" value={tempHorarioFim} onChange={(e) => setTempHorarioFim(e.target.value)} />
                   </div>
                 </div>
                 <Button size="sm" onClick={confirmDaySchedule} className="w-full">
@@ -343,21 +350,18 @@ const AgendaCard = () => {
               </div>
             )}
 
-            {/* List of selected days */}
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {selectedDays.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Nenhum dia selecionado ainda
-                </p>
+                <p className="text-sm text-muted-foreground text-center py-4">Nenhum dia selecionado ainda</p>
               ) : (
                 selectedDays.map((day) => (
-                  <div 
-                    key={day.date.toISOString()} 
+                  <div
+                    key={day.date.toISOString()}
                     className="flex items-center justify-between p-2 bg-primary/10 rounded-lg border border-primary/20"
                   >
                     <div className="flex-1">
                       <p className="text-sm font-medium capitalize">
-                        {format(day.date, "dd/MM (EEE)", { locale: ptBR })}
+                        {format(day.date, 'dd/MM (EEE)', { locale: ptBR })}
                       </p>
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <Clock className="h-3 w-3" />
@@ -365,12 +369,7 @@ const AgendaCard = () => {
                       </p>
                     </div>
                     <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => handleDayClick(day.date)}
-                      >
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDayClick(day.date)}>
                         <Edit2 className="h-3 w-3" />
                       </Button>
                       <Button
@@ -389,7 +388,6 @@ const AgendaCard = () => {
           </div>
         </div>
 
-        {/* Comments */}
         <div className="space-y-2">
           <Label htmlFor="comentarios">Comentários / Observações</Label>
           <Textarea
@@ -401,11 +399,10 @@ const AgendaCard = () => {
           />
         </div>
 
-        {/* Action buttons */}
         <div className="flex gap-3">
-          <Button 
-            onClick={handleSubmit} 
-            disabled={isCreating || isSendingEmail || selectedDays.length === 0} 
+          <Button
+            onClick={handleSubmit}
+            disabled={isCreating || isSendingEmail || selectedDays.length === 0}
             className="flex-1 md:flex-none"
           >
             {isCreating || isSendingEmail ? (
@@ -422,7 +419,6 @@ const AgendaCard = () => {
           </Button>
         </div>
 
-        {/* Lista de comunicações existentes */}
         {isLoading ? (
           <div className="flex justify-center py-4">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -431,39 +427,43 @@ const AgendaCard = () => {
           <div className="space-y-3 pt-4 border-t">
             <h4 className="text-sm font-medium text-muted-foreground">Suas comunicações recentes:</h4>
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {comunicacoes.map((com) => (
-                <div 
-                  key={com.id} 
-                  className="flex items-start justify-between gap-3 p-3 bg-primary/5 rounded-lg border border-primary/20"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm capitalize">
-                      {formatDate(com.data_agenda)}
-                    </p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                      <Clock className="h-3 w-3" />
-                      <span>
-                        {formatTime(com.horario_inicio)}
-                        {com.horario_fim && ` - ${formatTime(com.horario_fim)}`}
-                      </span>
-                    </div>
-                    {com.comentarios && (
-                      <p className="text-xs text-muted-foreground mt-2 italic">
-                        "{com.comentarios}"
-                      </p>
-                    )}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={() => handleDelete(com.id)}
-                    disabled={isDeleting}
+              {comunicacoes.map((com) => {
+                const statusMeta = getAgendaStatusMeta(com.status);
+
+                return (
+                  <div
+                    key={com.id}
+                    className={`flex items-start justify-between gap-3 rounded-lg border p-3 ${statusMeta.containerClass}`}
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm capitalize">{formatDate(com.data_agenda)}</p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                        <Clock className="h-3 w-3" />
+                        <span>
+                          {formatTime(com.horario_inicio)}
+                          {com.horario_fim && ` - ${formatTime(com.horario_fim)}`}
+                        </span>
+                      </div>
+                      <span className={`mt-2 inline-flex items-center gap-2 rounded-full border px-2 py-1 text-[11px] font-medium ${statusMeta.pillClass}`}>
+                        <span className={`h-2 w-2 rounded-full ${statusMeta.dotClass}`} />
+                        {statusMeta.label}
+                      </span>
+                      {com.comentarios && (
+                        <p className="text-xs text-muted-foreground mt-2 italic">"{com.comentarios}"</p>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={() => handleDelete(com.id)}
+                      disabled={isDeleting}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         ) : (

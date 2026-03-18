@@ -2,9 +2,110 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const SUMMARY_READY_FILTER = "summary_3min.not.is.null,summary_5min.not.is.null,summary_10min.not.is.null";
+
+function toDateOnly(date: Date): string {
+  return date.toISOString().split("T")[0];
+}
+
+function getScheduledFor(nextDispatch: string | null): string {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (!nextDispatch) {
+    return toDateOnly(new Date());
+  }
+
+  const dispatchDate = new Date(nextDispatch);
+  return dispatchDate <= today ? toDateOnly(new Date()) : toDateOnly(dispatchDate);
+}
+
+async function getLatestSummarizedArticleIds(supabase: ReturnType<typeof createClient>, limit = 100): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("article_summaries")
+    .select("article_id")
+    .or(SUMMARY_READY_FILTER)
+    .order("summarized_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw error;
+  }
+
+  return Array.from(new Set((data || []).map((item: any) => item.article_id).filter(Boolean)));
+}
+
+async function queueDigestArticles(
+  supabase: ReturnType<typeof createClient>,
+  candidateArticleIds: string[]
+): Promise<number> {
+  const articleIds = Array.from(new Set(candidateArticleIds.filter(Boolean)));
+
+  if (articleIds.length === 0) {
+    return 0;
+  }
+
+  const { data: doctors, error: doctorsError } = await supabase
+    .from("doctor_preferences")
+    .select("user_id, digest_article_limit, digest_next_dispatch")
+    .eq("digest_active", true);
+
+  if (doctorsError) {
+    throw doctorsError;
+  }
+
+  let queued = 0;
+
+  for (const doctor of doctors || []) {
+    const { data: alreadyDispatched, error: existingError } = await supabase
+      .from("digest_dispatch_queue")
+      .select("article_id")
+      .eq("doctor_id", doctor.user_id)
+      .in("status", ["sent", "pending"]);
+
+    if (existingError) {
+      console.error(`Queue lookup error for ${doctor.user_id}:`, existingError.message);
+      continue;
+    }
+
+    const alreadyDispatchedIds = new Set(
+      (alreadyDispatched || []).map((item: any) => item.article_id)
+    );
+
+    const limit = doctor.digest_article_limit || 5;
+    const scheduledFor = getScheduledFor(doctor.digest_next_dispatch);
+    const entries = articleIds
+      .filter((articleId) => !alreadyDispatchedIds.has(articleId))
+      .slice(0, limit)
+      .map((articleId) => ({
+        doctor_id: doctor.user_id,
+        article_id: articleId,
+        scheduled_for: scheduledFor,
+        status: "pending",
+      }));
+
+    if (entries.length === 0) {
+      continue;
+    }
+
+    const { error: insertError } = await supabase
+      .from("digest_dispatch_queue")
+      .insert(entries);
+
+    if (insertError) {
+      console.error(`Queue insert error for ${doctor.user_id}:`, insertError.message);
+      continue;
+    }
+
+    queued += entries.length;
+    console.log(`Queued ${entries.length} articles for ${doctor.user_id} on ${scheduledFor}`);
+  }
+
+  return queued;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -17,14 +118,22 @@ Deno.serve(async (req) => {
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    const queuedBefore = await queueDigestArticles(
+      supabase,
+      await getLatestSummarizedArticleIds(supabase, 100)
+    );
+
     if (!lovableApiKey) {
       return new Response(
-        JSON.stringify({ success: false, error: "LOVABLE_API_KEY not configured" }),
+        JSON.stringify({
+          success: false,
+          error: "LOVABLE_API_KEY not configured",
+          queued: queuedBefore,
+        }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // 1. Find articles that need summaries (missing row OR all summary fields null)
     const { data: allArticles, error: allArticlesError } = await supabase
       .from("ultrasound_articles")
       .select("id, title, url, tags, subgroup, source, publication_date")
@@ -35,8 +144,7 @@ Deno.serve(async (req) => {
       throw allArticlesError;
     }
 
-    const articleIds = (allArticles || []).map((a: any) => a.id);
-
+    const articleIds = (allArticles || []).map((article: any) => article.id);
     const { data: existingSummaries, error: existingSummariesError } = articleIds.length
       ? await supabase
           .from("article_summaries")
@@ -48,20 +156,19 @@ Deno.serve(async (req) => {
       throw existingSummariesError;
     }
 
-    const summaryMap = new Map((existingSummaries || []).map((s: any) => [s.article_id, s]));
-
+    const summaryMap = new Map((existingSummaries || []).map((item: any) => [item.article_id, item]));
     const articlesToProcess = (allArticles || [])
       .filter((article: any) => {
-        const s = summaryMap.get(article.id);
-        if (!s) return true;
-        return !s.summary_3min && !s.summary_5min && !s.summary_10min;
+        const summary = summaryMap.get(article.id);
+        if (!summary) return true;
+        return !summary.summary_3min && !summary.summary_5min && !summary.summary_10min;
       })
-      .slice(0, 20);
+      .slice(0, 8);
 
-    if (!articlesToProcess || articlesToProcess.length === 0) {
+    if (articlesToProcess.length === 0) {
       console.log("No articles to summarize");
       return new Response(
-        JSON.stringify({ success: true, summarized: 0 }),
+        JSON.stringify({ success: true, summarized: 0, failed: 0, queued: queuedBefore }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -70,6 +177,7 @@ Deno.serve(async (req) => {
 
     let summarized = 0;
     let failed = 0;
+    const summarizedArticleIds: string[] = [];
 
     for (const article of articlesToProcess) {
       try {
@@ -117,7 +225,6 @@ Responda APENAS com o JSON, sem texto adicional nem markdown.`,
         const aiData = await response.json();
         const content = aiData.choices?.[0]?.message?.content?.trim() || "";
 
-        // Try to parse JSON from response (handle markdown code blocks)
         let parsed;
         try {
           const jsonStr = content.replace(/^```json?\s*/i, "").replace(/```\s*$/, "").trim();
@@ -146,83 +253,23 @@ Responda APENAS com o JSON, sem texto adicional nem markdown.`,
         if (insertError) {
           console.error(`DB error for article ${article.id}:`, insertError.message);
           failed++;
-        } else {
-          summarized++;
+          continue;
         }
+
+        summarized++;
+        summarizedArticleIds.push(article.id);
       } catch (err) {
         console.error(`Error summarizing article ${article.id}:`, err);
         failed++;
       }
     }
 
-    // 2. Populate dispatch queue for active doctors
-    const { data: doctors } = await supabase
-      .from("doctor_preferences")
-      .select("user_id, digest_article_limit, digest_next_dispatch")
-      .eq("digest_active", true);
+    const queuedAfter = await queueDigestArticles(supabase, summarizedArticleIds);
 
-    if (doctors && doctors.length > 0) {
-      const { data: newSummaries } = await supabase
-        .from("article_summaries")
-        .select("article_id")
-        .or("summary_3min.not.is.null,summary_5min.not.is.null,summary_10min.not.is.null")
-        .order("summarized_at", { ascending: false })
-        .limit(30);
-
-      const articleIds = (newSummaries || []).map((s: any) => s.article_id);
-
-      for (const doctor of doctors) {
-        const limit = doctor.digest_article_limit || 5;
-        
-        // Check next dispatch date - if past or today, schedule for today
-        const nextDispatch = doctor.digest_next_dispatch
-          ? new Date(doctor.digest_next_dispatch)
-          : new Date();
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const scheduledFor = nextDispatch <= today
-          ? new Date().toISOString().split("T")[0]
-          : nextDispatch.toISOString().split("T")[0];
-
-        // Get already dispatched article IDs for this doctor to avoid duplicates
-        const { data: alreadyDispatched } = await supabase
-          .from("digest_dispatch_queue")
-          .select("article_id")
-          .eq("doctor_id", doctor.user_id)
-          .in("status", ["sent", "pending"]);
-
-        const alreadyDispatchedIds = new Set(
-          (alreadyDispatched || []).map((d: any) => d.article_id)
-        );
-
-        const newArticleIds = articleIds
-          .filter((id: string) => !alreadyDispatchedIds.has(id))
-          .slice(0, limit);
-
-        const entries = newArticleIds.map((articleId: string) => ({
-          doctor_id: doctor.user_id,
-          article_id: articleId,
-          scheduled_for: scheduledFor,
-          status: "pending",
-        }));
-
-        if (entries.length > 0) {
-          const { error: insertError } = await supabase
-            .from("digest_dispatch_queue")
-            .insert(entries);
-          if (insertError) {
-            console.error(`Queue insert error for ${doctor.user_id}:`, insertError.message);
-          } else {
-            console.log(`Queued ${entries.length} articles for ${doctor.user_id} on ${scheduledFor}`);
-          }
-        }
-      }
-    }
-
-    console.log(`Done: ${summarized} summarized, ${failed} failed`);
+    console.log(`Done: ${summarized} summarized, ${failed} failed, ${queuedBefore + queuedAfter} queued`);
 
     return new Response(
-      JSON.stringify({ success: true, summarized, failed }),
+      JSON.stringify({ success: true, summarized, failed, queued: queuedBefore + queuedAfter }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

@@ -130,6 +130,42 @@ export function HomeSummary() {
   const isLoading = dashLoading || casLoading || npsLoading || casesLoading || agendaLoading;
   const avatarUrl = (profile as any)?.avatar_url;
 
+  const getAgendaStatusMeta = (status?: string) => {
+    switch (status) {
+      case 'confirmada':
+        return {
+          label: 'Agenda confirmada',
+          pillClass: 'border-primary/20 bg-primary text-primary-foreground',
+          dotClass: 'bg-primary',
+        };
+      case 'rejeitada':
+        return {
+          label: 'Agenda rejeitada',
+          pillClass: 'border-destructive/20 bg-destructive/10 text-destructive',
+          dotClass: 'bg-destructive',
+        };
+      default:
+        return {
+          label: 'Enviada · aguarda confirmação',
+          pillClass: 'border-[hsl(var(--warning)/0.3)] bg-[hsl(var(--warning)/0.16)] text-foreground',
+          dotClass: 'bg-[hsl(var(--warning))]',
+        };
+    }
+  };
+
+  const agendaLegend = (
+    <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground pt-2">
+      <span className="inline-flex items-center gap-1.5">
+        <span className="h-2 w-2 rounded-full bg-[hsl(var(--warning))]" />
+        Enviada
+      </span>
+      <span className="inline-flex items-center gap-1.5">
+        <span className="h-2 w-2 rounded-full bg-primary" />
+        Confirmada
+      </span>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       {/* Header with Avatar */}
@@ -211,25 +247,24 @@ export function HomeSummary() {
               </CardHeader>
               <CardContent>
                 {nextAgenda ? (
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium capitalize">
-                      {format(parseISO(nextAgenda.data_agenda), "EEEE, dd 'de' MMMM", { locale: ptBR })}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {nextAgenda.horario_inicio?.slice(0, 5)}
-                      {nextAgenda.horario_fim && ` – ${nextAgenda.horario_fim.slice(0, 5)}`}
-                    </p>
-                    {nextAgenda.comentarios && (
-                      <p className="text-xs text-muted-foreground italic">"{nextAgenda.comentarios}"</p>
-                    )}
-                    {/* Show agenda status */}
-                    {(nextAgenda as any).status && (nextAgenda as any).status !== 'pendente' && (
-                      <Badge variant="outline" className={`text-xs mt-1 ${
-                        (nextAgenda as any).status === 'confirmada' ? 'text-[hsl(var(--success))] border-[hsl(var(--success))]/30' : 'text-destructive border-destructive/30'
-                      }`}>
-                        {(nextAgenda as any).status === 'confirmada' ? '✓ Confirmada' : '✗ Rejeitada'}
-                      </Badge>
-                    )}
+                  <div className="space-y-2">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium capitalize">
+                        {format(parseISO(nextAgenda.data_agenda), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {nextAgenda.horario_inicio?.slice(0, 5)}
+                        {nextAgenda.horario_fim && ` – ${nextAgenda.horario_fim.slice(0, 5)}`}
+                      </p>
+                      {nextAgenda.comentarios && (
+                        <p className="text-xs text-muted-foreground italic">"{nextAgenda.comentarios}"</p>
+                      )}
+                    </div>
+                    <span className={`inline-flex items-center gap-2 rounded-full border px-2 py-1 text-[11px] font-medium ${getAgendaStatusMeta((nextAgenda as any).status).pillClass}`}>
+                      <span className={`h-2 w-2 rounded-full ${getAgendaStatusMeta((nextAgenda as any).status).dotClass}`} />
+                      {getAgendaStatusMeta((nextAgenda as any).status).label}
+                    </span>
+                    {agendaLegend}
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -242,6 +277,7 @@ export function HomeSummary() {
                     >
                       Enviar sua disponibilidade →
                     </Button>
+                    {agendaLegend}
                   </div>
                 )}
               </CardContent>
