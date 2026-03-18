@@ -26,7 +26,7 @@ function useDoctorProfiles(userIds: string[]) {
 export function SharedCasesCard() {
   const { data: cases, isLoading } = useSharedCases();
   const userIds = (cases || []).map(c => c.user_id).filter(Boolean);
-  const { data: profiles } = useDoctorProfiles([...new Set(userIds)]);
+  const { data: profiles } = useDoctorProfiles([...new Set(userIds)] as string[]);
 
   const getProfile = (userId: string) => profiles?.find(p => p.user_id === userId);
 
