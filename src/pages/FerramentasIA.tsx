@@ -18,6 +18,15 @@ type TabKey = typeof tabs[number]['key'];
 
 export default function FerramentasIA() {
   const [activeTab, setActiveTab] = useState<TabKey>('calculadoras');
+  const location = useLocation();
+
+  useEffect(() => {
+    const state = location.state as { openTab?: TabKey } | null;
+    if (state?.openTab) {
+      setActiveTab(state.openTab);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [location.state]);
 
   return (
     <div className="space-y-6">
