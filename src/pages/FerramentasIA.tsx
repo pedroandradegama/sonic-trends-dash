@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Wrench, Calculator, Brain, FileText, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FerramentasGrid } from '@/components/ferramentas/FerramentasGrid';
