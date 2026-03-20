@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Wrench, Calculator, Brain, FileText, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FerramentasGrid } from '@/components/ferramentas/FerramentasGrid';
@@ -17,6 +18,15 @@ type TabKey = typeof tabs[number]['key'];
 
 export default function FerramentasIA() {
   const [activeTab, setActiveTab] = useState<TabKey>('calculadoras');
+  const location = useLocation();
+
+  useEffect(() => {
+    const state = location.state as { openTab?: TabKey } | null;
+    if (state?.openTab) {
+      setActiveTab(state.openTab);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [location.state]);
 
   return (
     <div className="space-y-6">

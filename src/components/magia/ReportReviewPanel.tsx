@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FileText, Copy, Loader2, Sparkles, AlertTriangle, CheckCircle, ShieldCheck } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -42,6 +42,19 @@ export default function ReportReviewPanel() {
   const [requestStatus, setRequestStatus] = useState<RequestStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [result, setResult] = useState<ReviewResult | null>(null);
+
+  // Recover pending clipboard text on mount
+  useEffect(() => {
+    const pending = sessionStorage.getItem('clipboard_laudo_pending');
+    if (pending) {
+      setReportText(pending);
+      sessionStorage.removeItem('clipboard_laudo_pending');
+      toast({
+        title: 'Laudo carregado',
+        description: 'O texto copiado foi preenchido automaticamente.',
+      });
+    }
+  }, []);
 
   const handleReview = async () => {
     if (!confirmedAnonymized) { setErrorMessage('Marque a confirmação de anonimização antes de enviar.'); setRequestStatus('error'); return; }
