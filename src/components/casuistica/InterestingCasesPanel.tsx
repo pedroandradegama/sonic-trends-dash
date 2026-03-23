@@ -13,7 +13,7 @@ import { format, parseISO, addDays, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export function InterestingCasesPanel() {
-  const { cases, loading, addCase, deleteCase } = useInterestingCases();
+  const { cases, loading, addCase, deleteCase, toggleResolved } = useInterestingCases();
   const [showForm, setShowForm] = useState(false);
   const [patientName, setPatientName] = useState('');
   const [examDate, setExamDate] = useState('');
