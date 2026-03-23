@@ -282,6 +282,11 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
           
           const diasDiferenca = Math.floor((rmTcTime - usgTime) / (1000 * 60 * 60 * 24));
           
+          // Filter out exams with more than 6 months gap (180 days)
+          if (diasDiferenca > 180) {
+            continue;
+          }
+          
           results.push({
             paciente: exame.Paciente || '',
             prontuario,
