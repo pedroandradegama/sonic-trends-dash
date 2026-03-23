@@ -37,6 +37,11 @@ function LayoutInner({ children }: MainLayoutProps) {
   const handleConfirm = (text: string) => {
     sessionStorage.setItem('clipboard_laudo_pending', text);
     setPendingLaudo(null);
+    // Reset clipboard enabled briefly to clear lastDetectedRef
+    setClipboardEnabled(false);
+    setTimeout(() => {
+      setClipboardEnabled(localStorage.getItem('clipboard_detection_enabled') === 'true');
+    }, 500);
     navigate('/ferramentas-ia', { state: { openTab: 'magia-laudo' } });
   };
 
