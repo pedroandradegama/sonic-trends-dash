@@ -185,7 +185,7 @@ export function InterestingCasesPanel() {
         {cases.map((c) => {
           const followup = getFollowupStatus(c);
           return (
-            <Card key={c.id} className="hover:shadow-sm transition-shadow">
+            <Card key={c.id} className={cn("hover:shadow-sm transition-shadow", c.resolved && "opacity-60")}>
               <CardContent className="py-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1 flex-1">
