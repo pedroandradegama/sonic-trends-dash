@@ -155,7 +155,7 @@ export default function PerfilPage() {
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             <BookOpen className="h-5 w-5 text-primary" />
-            Digest de Artigos
+            Resumo de Artigos
           </CardTitle>
           <CardDescription>Receba resumos de artigos científicos via WhatsApp</CardDescription>
         </CardHeader>
