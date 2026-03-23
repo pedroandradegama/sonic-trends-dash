@@ -224,14 +224,35 @@ export function InterestingCasesPanel() {
                       )}
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={() => handleDelete(c.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={async () => {
+                        try {
+                          await toggleResolved(c.id, !c.resolved);
+                          toast.success(c.resolved ? 'Caso reaberto.' : 'Caso marcado como resolvido.');
+                        } catch {
+                          toast.error('Erro ao atualizar caso.');
+                        }
+                      }}
+                      className={cn(
+                        "h-8 w-8 flex items-center justify-center rounded-md transition-colors",
+                        c.resolved
+                          ? "text-[hsl(var(--success))] hover:text-[hsl(var(--success))]/80"
+                          : "text-muted-foreground hover:text-[hsl(var(--success))]"
+                      )}
+                      title={c.resolved ? 'Reabrir caso' : 'Marcar como resolvido'}
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                    </button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={() => handleDelete(c.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
