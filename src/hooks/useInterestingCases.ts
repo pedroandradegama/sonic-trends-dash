@@ -11,6 +11,7 @@ export interface InterestingCase {
   followup_days: number | null;
   shared_with_team: boolean;
   request_opinion: boolean;
+  resolved: boolean;
   created_at: string;
   updated_at: string;
 }
