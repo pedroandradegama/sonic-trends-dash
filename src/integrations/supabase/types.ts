@@ -610,6 +610,7 @@ export type Database = {
           id: string
           patient_name: string
           request_opinion: boolean
+          resolved: boolean
           shared_with_team: boolean
           updated_at: string
           user_id: string
@@ -623,6 +624,7 @@ export type Database = {
           id?: string
           patient_name: string
           request_opinion?: boolean
+          resolved?: boolean
           shared_with_team?: boolean
           updated_at?: string
           user_id: string
@@ -636,6 +638,7 @@ export type Database = {
           id?: string
           patient_name?: string
           request_opinion?: boolean
+          resolved?: boolean
           shared_with_team?: boolean
           updated_at?: string
           user_id?: string

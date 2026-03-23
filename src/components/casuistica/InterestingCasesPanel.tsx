@@ -7,13 +7,15 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useInterestingCases } from '@/hooks/useInterestingCases';
-import { Plus, Trash2, Calendar, Stethoscope, Bell } from 'lucide-react';
+import { Plus, Trash2, Calendar, Stethoscope, Bell, CheckCircle2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { format, parseISO, addDays, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export function InterestingCasesPanel() {
-  const { cases, loading, addCase, deleteCase } = useInterestingCases();
+  const { cases, loading, addCase, deleteCase, toggleResolved } = useInterestingCases();
   const [showForm, setShowForm] = useState(false);
   const [patientName, setPatientName] = useState('');
   const [examDate, setExamDate] = useState('');
@@ -184,12 +186,18 @@ export function InterestingCasesPanel() {
         {cases.map((c) => {
           const followup = getFollowupStatus(c);
           return (
-            <Card key={c.id} className="hover:shadow-sm transition-shadow">
+            <Card key={c.id} className={cn("hover:shadow-sm transition-shadow", c.resolved && "opacity-60")}>
               <CardContent className="py-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-foreground">{c.patient_name}</span>
+                      <span className={cn("font-medium text-foreground", c.resolved && "line-through")}>{c.patient_name}</span>
+                      {c.resolved && (
+                        <Badge variant="outline" className="text-xs gap-1 border-[hsl(var(--success))]/30 text-[hsl(var(--success))]">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Resolvido
+                        </Badge>
+                      )}
                       {c.diagnostic_hypothesis && (
                         <Badge variant="secondary" className="text-xs gap-1">
                           <Stethoscope className="h-3 w-3" />
@@ -223,14 +231,35 @@ export function InterestingCasesPanel() {
                       )}
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={() => handleDelete(c.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={async () => {
+                        try {
+                          await toggleResolved(c.id, !c.resolved);
+                          toast.success(c.resolved ? 'Caso reaberto.' : 'Caso marcado como resolvido.');
+                        } catch {
+                          toast.error('Erro ao atualizar caso.');
+                        }
+                      }}
+                      className={cn(
+                        "h-8 w-8 flex items-center justify-center rounded-md transition-colors",
+                        c.resolved
+                          ? "text-[hsl(var(--success))] hover:text-[hsl(var(--success))]/80"
+                          : "text-muted-foreground hover:text-[hsl(var(--success))]"
+                      )}
+                      title={c.resolved ? 'Reabrir caso' : 'Marcar como resolvido'}
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                    </button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={() => handleDelete(c.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

@@ -367,10 +367,6 @@ export default function RadarArtigosCard() {
           )}
         </div>
 
-        {/* Hot Topics */}
-        {articles && articles.length > 0 && (
-          <HotTopicsPanel articles={articles} />
-        )}
 
         {/* Footer */}
         {articles && articles.length > 0 && (

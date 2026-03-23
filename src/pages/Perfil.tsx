@@ -155,15 +155,15 @@ export default function PerfilPage() {
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             <BookOpen className="h-5 w-5 text-primary" />
-            Digest de Artigos
+            Resumo de Artigos
           </CardTitle>
           <CardDescription>Receba resumos de artigos científicos via WhatsApp</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div className="space-y-0.5">
-              <Label htmlFor="digest-active" className="text-base">Receber digest de artigos</Label>
-              <p className="text-sm text-muted-foreground">{digestActive ? "Você receberá resumos periódicos" : "Digest desativado"}</p>
+              <Label htmlFor="digest-active" className="text-base">Receber resumo de artigos</Label>
+              <p className="text-sm text-muted-foreground">{digestActive ? "Você receberá resumos periódicos" : "Resumo desativado"}</p>
             </div>
             <Switch id="digest-active" checked={digestActive} onCheckedChange={setDigestActive} />
           </div>
@@ -206,7 +206,7 @@ export default function PerfilPage() {
               </div>
               {preferences?.digest_next_dispatch && (
                 <div className="rounded-lg bg-primary/5 p-3 text-sm">
-                  <span className="font-medium text-primary">Próximo digest:</span>{" "}
+                  <span className="font-medium text-primary">Próximo resumo:</span>{" "}
                   <span className="text-muted-foreground">
                     {new Date(preferences.digest_next_dispatch).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
                   </span>

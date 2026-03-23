@@ -11,6 +11,7 @@ export interface InterestingCase {
   followup_days: number | null;
   shared_with_team: boolean;
   request_opinion: boolean;
+  resolved: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -78,5 +79,14 @@ export function useInterestingCases() {
     await fetchCases();
   };
 
-  return { cases, loading, error, addCase, deleteCase, refetch: fetchCases };
+  const toggleResolved = async (id: string, resolved: boolean) => {
+    const { error } = await supabase
+      .from('interesting_cases')
+      .update({ resolved })
+      .eq('id', id);
+    if (error) throw error;
+    await fetchCases();
+  };
+
+  return { cases, loading, error, addCase, deleteCase, toggleResolved, refetch: fetchCases };
 }
