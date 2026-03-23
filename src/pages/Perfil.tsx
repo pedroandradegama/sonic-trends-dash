@@ -162,8 +162,8 @@ export default function PerfilPage() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div className="space-y-0.5">
-              <Label htmlFor="digest-active" className="text-base">Receber digest de artigos</Label>
-              <p className="text-sm text-muted-foreground">{digestActive ? "Você receberá resumos periódicos" : "Digest desativado"}</p>
+              <Label htmlFor="digest-active" className="text-base">Receber resumo de artigos</Label>
+              <p className="text-sm text-muted-foreground">{digestActive ? "Você receberá resumos periódicos" : "Resumo desativado"}</p>
             </div>
             <Switch id="digest-active" checked={digestActive} onCheckedChange={setDigestActive} />
           </div>
