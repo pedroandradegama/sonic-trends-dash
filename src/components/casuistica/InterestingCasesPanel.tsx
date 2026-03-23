@@ -10,6 +10,7 @@ import { useInterestingCases } from '@/hooks/useInterestingCases';
 import { Plus, Trash2, Calendar, Stethoscope, Bell, CheckCircle2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { format, parseISO, addDays, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
