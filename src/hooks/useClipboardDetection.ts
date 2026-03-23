@@ -27,10 +27,18 @@ export function useClipboardDetection({ enabled, onLaudoDetected }: UseClipboard
   const readClipboard = useCallback(async () => {
     try {
       const text = await navigator.clipboard.readText();
-      if (!text || text === lastDetectedRef.current) return;
+      if (!text) return;
+      
+      // Only skip if it's the exact same text AND was already detected
+      // Reset lastDetectedRef when clipboard content changes to non-laudo text
+      if (text === lastDetectedRef.current) return;
+      
       if (looksLikeLaudo(text)) {
         lastDetectedRef.current = text;
         callbackRef.current(text);
+      } else {
+        // Content changed to something that's not a laudo — reset so next laudo triggers
+        lastDetectedRef.current = null;
       }
     } catch {
       // Permission denied or not supported — fail silently
@@ -38,22 +46,21 @@ export function useClipboardDetection({ enabled, onLaudoDetected }: UseClipboard
   }, []);
 
   useEffect(() => {
-    if (!enabled) return;
-
-    // Check permission silently
-    let permissionOk = true;
-    navigator.permissions?.query({ name: 'clipboard-read' as PermissionName }).then((result) => {
-      if (result.state === 'denied') permissionOk = false;
-    }).catch(() => { /* not supported */ });
+    if (!enabled) {
+      // Reset when disabled so re-enabling picks up current clipboard
+      lastDetectedRef.current = null;
+      return;
+    }
 
     const handleVisibility = () => {
-      if (permissionOk && document.visibilityState === 'visible') {
-        readClipboard();
+      if (document.visibilityState === 'visible') {
+        // Small delay to let clipboard update settle
+        setTimeout(() => readClipboard(), 300);
       }
     };
 
     const handleFocus = () => {
-      if (permissionOk) readClipboard();
+      setTimeout(() => readClipboard(), 300);
     };
 
     document.addEventListener('visibilitychange', handleVisibility);

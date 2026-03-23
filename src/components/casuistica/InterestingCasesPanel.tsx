@@ -191,7 +191,13 @@ export function InterestingCasesPanel() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-foreground">{c.patient_name}</span>
+                      <span className={cn("font-medium text-foreground", c.resolved && "line-through")}>{c.patient_name}</span>
+                      {c.resolved && (
+                        <Badge variant="outline" className="text-xs gap-1 border-[hsl(var(--success))]/30 text-[hsl(var(--success))]">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Resolvido
+                        </Badge>
+                      )}
                       {c.diagnostic_hypothesis && (
                         <Badge variant="secondary" className="text-xs gap-1">
                           <Stethoscope className="h-3 w-3" />

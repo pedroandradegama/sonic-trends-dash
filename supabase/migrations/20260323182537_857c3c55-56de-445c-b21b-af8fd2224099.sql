@@ -1,0 +1,1 @@
+ALTER TABLE public.interesting_cases ADD COLUMN resolved boolean NOT NULL DEFAULT false;

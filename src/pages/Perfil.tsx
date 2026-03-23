@@ -206,7 +206,7 @@ export default function PerfilPage() {
               </div>
               {preferences?.digest_next_dispatch && (
                 <div className="rounded-lg bg-primary/5 p-3 text-sm">
-                  <span className="font-medium text-primary">Próximo digest:</span>{" "}
+                  <span className="font-medium text-primary">Próximo resumo:</span>{" "}
                   <span className="text-muted-foreground">
                     {new Date(preferences.digest_next_dispatch).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
                   </span>

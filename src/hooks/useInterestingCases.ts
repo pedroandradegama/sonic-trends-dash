@@ -79,5 +79,14 @@ export function useInterestingCases() {
     await fetchCases();
   };
 
-  return { cases, loading, error, addCase, deleteCase, refetch: fetchCases };
+  const toggleResolved = async (id: string, resolved: boolean) => {
+    const { error } = await supabase
+      .from('interesting_cases')
+      .update({ resolved })
+      .eq('id', id);
+    if (error) throw error;
+    await fetchCases();
+  };
+
+  return { cases, loading, error, addCase, deleteCase, toggleResolved, refetch: fetchCases };
 }

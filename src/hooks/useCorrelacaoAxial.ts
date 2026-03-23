@@ -118,6 +118,7 @@ function extractBodyRegion(exameName: string): string | null {
 
 // Verifica se duas regiões são compatíveis para correlação
 function areRegionsCompatible(usgRegion: string | null, axialRegion: string | null): boolean {
+  // If either region is unknown, do NOT correlate (must have explicit match)
   if (!usgRegion || !axialRegion) return false;
   
   // Mesma região exata
