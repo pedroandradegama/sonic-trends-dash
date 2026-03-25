@@ -31,6 +31,7 @@ import VolumeVesicalPed from "./pages/VolumeVesicalPed";
 import CIMTPercentile from "./pages/CIMTPercentile";
 import ORADSCalculator from "./pages/ORADSCalculator";
 import FetalGrowth from "./pages/FetalGrowth";
+import PedVolume from "./pages/PedVolume";
 
 const queryClient = new QueryClient();
 
