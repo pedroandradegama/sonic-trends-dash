@@ -75,6 +75,7 @@ const App = () => (
             <Route path="/ferramentas/cimt-percentile" element={<ProtectedWithLayout><CIMTPercentile /></ProtectedWithLayout>} />
             <Route path="/ferramentas/orads-us" element={<ProtectedWithLayout><ORADSCalculator /></ProtectedWithLayout>} />
             <Route path="/ferramentas/crescimento-fetal" element={<ProtectedWithLayout><FetalGrowth /></ProtectedWithLayout>} />
+            <Route path="/ferramentas/ped-volume" element={<ProtectedWithLayout><PedVolume /></ProtectedWithLayout>} />
             <Route path="/gestao-agendas" element={<ProtectedWithLayout><GestaoAgendas /></ProtectedWithLayout>} />
             {/* Legacy redirects */}
             <Route path="/institucional" element={<Navigate to="/comunidade" replace />} />

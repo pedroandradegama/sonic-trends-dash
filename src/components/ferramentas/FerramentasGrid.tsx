@@ -69,6 +69,14 @@ const tools = [
     path: '/ferramentas/crescimento-fetal',
     badge: 'Novo',
   },
+  {
+    id: 'ped-volume',
+    title: 'Pediatria — Volume Testicular e Tireoide',
+    description: 'Percentis de volume testicular (0,5–10 anos) e tireoidiano (0–12 anos) com texto automático para laudo.',
+    icon: Scan,
+    path: '/ferramentas/ped-volume',
+    badge: 'Novo',
+  },
 ];
 
 export function FerramentasGrid() {
