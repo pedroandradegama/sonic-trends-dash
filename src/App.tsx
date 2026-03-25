@@ -31,6 +31,7 @@ import VolumeVesicalPed from "./pages/VolumeVesicalPed";
 import CIMTPercentile from "./pages/CIMTPercentile";
 import ORADSCalculator from "./pages/ORADSCalculator";
 import FetalGrowth from "./pages/FetalGrowth";
+import PedVolume from "./pages/PedVolume";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +75,7 @@ const App = () => (
             <Route path="/ferramentas/cimt-percentile" element={<ProtectedWithLayout><CIMTPercentile /></ProtectedWithLayout>} />
             <Route path="/ferramentas/orads-us" element={<ProtectedWithLayout><ORADSCalculator /></ProtectedWithLayout>} />
             <Route path="/ferramentas/crescimento-fetal" element={<ProtectedWithLayout><FetalGrowth /></ProtectedWithLayout>} />
+            <Route path="/ferramentas/ped-volume" element={<ProtectedWithLayout><PedVolume /></ProtectedWithLayout>} />
             <Route path="/gestao-agendas" element={<ProtectedWithLayout><GestaoAgendas /></ProtectedWithLayout>} />
             {/* Legacy redirects */}
             <Route path="/institucional" element={<Navigate to="/comunidade" replace />} />

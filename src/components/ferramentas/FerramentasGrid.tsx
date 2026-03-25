@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { Baby, Stethoscope, BookOpen, ArrowRight, FlaskConical, Droplets, Activity, CircleDot, HeartPulse } from 'lucide-react';
+import { Baby, Stethoscope, BookOpen, ArrowRight, FlaskConical, Droplets, Activity, CircleDot, HeartPulse, Scan } from 'lucide-react';
 
 const tools = [
   {
@@ -67,6 +67,14 @@ const tools = [
     description: 'Percentis de HC, AC e FL (Snijders 1994) e peso fetal estimado (Hadlock 1985) com centis Nicolaides 2018.',
     icon: HeartPulse,
     path: '/ferramentas/crescimento-fetal',
+    badge: 'Novo',
+  },
+  {
+    id: 'ped-volume',
+    title: 'Pediatria — Volume Testicular e Tireoide',
+    description: 'Percentis de volume testicular (0,5–10 anos) e tireoidiano (0–12 anos) com texto automático para laudo.',
+    icon: Scan,
+    path: '/ferramentas/ped-volume',
     badge: 'Novo',
   },
 ];
