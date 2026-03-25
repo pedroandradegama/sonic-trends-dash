@@ -1027,6 +1027,145 @@ export type Database = {
         }
         Relationships: []
       }
+      revenue_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          show_net: boolean
+          tax_rate: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          show_net?: boolean
+          tax_rate?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          show_net?: boolean
+          tax_rate?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      revenue_services: {
+        Row: {
+          color: string
+          created_at: string
+          delta_months: number
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          delta_months?: number
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          delta_months?: number
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      revenue_shift_values: {
+        Row: {
+          created_at: string
+          id: string
+          service_id: string
+          shift_type: string
+          updated_at: string
+          user_id: string
+          value_brl: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          service_id: string
+          shift_type: string
+          updated_at?: string
+          user_id: string
+          value_brl?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          service_id?: string
+          shift_type?: string
+          updated_at?: string
+          user_id?: string
+          value_brl?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_shift_values_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "revenue_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      revenue_shifts: {
+        Row: {
+          created_at: string
+          id: string
+          service_id: string
+          shift_date: string
+          shift_type: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          service_id: string
+          shift_date: string
+          shift_type: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          service_id?: string
+          shift_date?: string
+          shift_type?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_shifts_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "revenue_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tirads_rules: {
         Row: {
           category_group: string
