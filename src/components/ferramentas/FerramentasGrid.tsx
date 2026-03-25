@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { Baby, Stethoscope, BookOpen, ArrowRight, FlaskConical, Droplets, Activity, CircleDot, HeartPulse } from 'lucide-react';
+import { Baby, Stethoscope, BookOpen, ArrowRight, FlaskConical, Droplets, Activity, CircleDot, HeartPulse, Scan } from 'lucide-react';
 
 const tools = [
   {
