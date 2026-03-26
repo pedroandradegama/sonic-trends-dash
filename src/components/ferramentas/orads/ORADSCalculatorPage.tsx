@@ -453,6 +453,6 @@ export default function ORADSCalculatorPage() {
           </Card>
         )}
       </div>
-    </MainLayout>
+    
   );
 }
