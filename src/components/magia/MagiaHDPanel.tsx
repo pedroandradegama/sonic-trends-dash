@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,16 +22,6 @@ import { AudioInputPanel } from './AudioInputPanel';
 import { TextInputPanel } from './TextInputPanel';
 import { StructuredInputPanel } from './StructuredInputPanel';
 
-const AREAS = [
-  { value: 'abdome', label: 'Abdome' },
-  { value: 'gineco_obst', label: 'Ginecologia e Obstetrícia' },
-  { value: 'mamas', label: 'Mamas' },
-  { value: 'msk', label: 'MSK' },
-  { value: 'tireoide', label: 'Tireoide' },
-  { value: 'doppler', label: 'Doppler Vascular' },
-  { value: 'outro', label: 'Outro' },
-];
-
 const TEST_CASE = 'Mulher 34 anos, dor pélvica crônica há 6 meses. US TV: cisto simples de 3,2 cm em ovário direito, parede fina, sem septos/vegetações, Doppler sem hipervascularização.';
 
 type RequestStatus = 'idle' | 'loading' | 'success' | 'error';
@@ -45,7 +34,6 @@ export default function MagiaHDPanel() {
   const usage = useMagiaUsage();
 
   const [confirmedAnonymized, setConfirmedAnonymized] = useState(false);
-  const [area, setArea] = useState('outro');
   const [inputMode, setInputMode] = useState<InputMode>('text');
   const [caseText, setCaseText] = useState('');
   const [requestStatus, setRequestStatus] = useState<RequestStatus>('idle');
@@ -74,7 +62,7 @@ export default function MagiaHDPanel() {
       const { data, error } = await supabase.functions.invoke('generate-dx', {
         body: {
           case_text: textToSend,
-          area: testMode ? 'gineco_obst' : area,
+          area: 'outro',
           doctor_id: user?.id,
           mode: 'dx',
           consult_mode: testMode ? 'individual' : consultMode,
@@ -89,8 +77,8 @@ export default function MagiaHDPanel() {
       if (data?.error) { setErrorMessage(data.error); setRequestStatus('error'); return; }
       setResult(data as DiagnosisResult); setRequestStatus('success');
       if (!testMode) {
-        addToHistory(textToSend, area, data as DiagnosisResult);
-        await logToolUsage('magia_hd', { consult_mode: consultMode, area });
+        addToHistory(textToSend, 'outro', data as DiagnosisResult);
+        await logToolUsage('magia_hd', { consult_mode: consultMode });
         usage.refetch();
       }
       toast({ title: 'Análise gerada com sucesso', description: consultMode === 'board' ? 'Consenso entre os 3 modelos gerado.' : 'Hipóteses diagnósticas geradas.' });
@@ -105,7 +93,7 @@ export default function MagiaHDPanel() {
   };
 
   const loadFromHistory = (item: MagiaHistoryItem) => {
-    setCaseText(item.case_text); setArea(item.area); setResult(item.result);
+    setCaseText(item.case_text); setResult(item.result);
     setRequestStatus(item.result ? 'success' : 'idle'); setShowHistory(false); setInputMode('text');
   };
 
@@ -150,7 +138,6 @@ export default function MagiaHDPanel() {
                 <div key={item.id} className="p-3 border rounded-xl hover:bg-accent/50 cursor-pointer transition-all duration-200" onClick={() => loadFromHistory(item)}>
                   <div className="flex justify-between items-start">
                     <p className="text-sm line-clamp-2">{item.case_text}</p>
-                    <Badge variant="outline" className="ml-2 shrink-0 text-xs">{AREAS.find(a => a.value === item.area)?.label || item.area}</Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">{format(new Date(item.timestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
                 </div>
@@ -159,14 +146,6 @@ export default function MagiaHDPanel() {
           </CardContent>
         </Card>
       )}
-
-      {/* Disclaimer */}
-      <Alert variant="default" className="border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20 rounded-xl">
-        <AlertTriangle className="h-4 w-4 text-amber-600" />
-        <AlertDescription className="text-amber-800 dark:text-amber-200 text-sm">
-          <strong>Ferramenta de apoio à discussão diagnóstica em ultrassonografia.</strong> Não substitui julgamento médico. Não inclua identificadores do paciente.
-        </AlertDescription>
-      </Alert>
 
       {/* Input Card */}
       <Card className="rounded-2xl">
@@ -178,15 +157,6 @@ export default function MagiaHDPanel() {
               <ShieldCheck className="h-4 w-4 text-primary" />
               Confirmo que removi identificadores do paciente.
             </Label>
-          </div>
-
-          {/* Area */}
-          <div className="space-y-2">
-            <Label htmlFor="area" className="text-sm font-medium">Área / Subgrupo</Label>
-            <Select value={area} onValueChange={setArea}>
-              <SelectTrigger id="area" className="rounded-xl"><SelectValue placeholder="Selecione a área" /></SelectTrigger>
-              <SelectContent>{AREAS.map(a => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}</SelectContent>
-            </Select>
           </div>
 
           {/* Consult Mode: Individual vs Board */}
@@ -218,28 +188,37 @@ export default function MagiaHDPanel() {
                 </div>
               </button>
 
-              {/* Board */}
+              {/* Board — petrol blue style */}
               <button
                 onClick={() => setConsultMode('board')}
                 className={cn(
-                  "relative p-4 rounded-xl border-2 transition-all duration-200 text-left",
+                  "relative p-4 rounded-xl border-2 transition-all duration-200 text-left overflow-hidden",
                   consultMode === 'board'
-                    ? "border-primary bg-primary/5 shadow-sm"
+                    ? "border-[hsl(195,50%,25%)] bg-[hsl(195,50%,16%)] text-white shadow-md"
                     : "border-border hover:border-primary/40"
                 )}
               >
-                <div className="flex items-center gap-2 mb-1">
-                  <Users className="h-4 w-4 text-primary" />
-                  <p className="text-sm font-semibold">Opinião Board</p>
-                </div>
-                <p className="text-xs text-muted-foreground">Consenso entre 3 modelos de IA</p>
-                <div className="mt-2 flex items-center gap-1.5">
-                  <Badge
-                    variant={usage.remaining('board') > 3 ? 'secondary' : 'destructive'}
-                    className="text-[10px] px-1.5 py-0"
-                  >
-                    {usage.remaining('board')}/{usage.limits.board} restantes
-                  </Badge>
+                {/* Decorative gradient orbs when selected */}
+                {consultMode === 'board' && (
+                  <>
+                    <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-[radial-gradient(circle,hsl(193,44%,42%,0.3)_0%,transparent_70%)] pointer-events-none" />
+                    <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full bg-[radial-gradient(circle,hsl(195,47%,34%,0.25)_0%,transparent_70%)] pointer-events-none" />
+                  </>
+                )}
+                <div className="relative z-10">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Users className={cn("h-4 w-4", consultMode === 'board' ? "text-[hsl(190,60%,70%)]" : "text-primary")} />
+                    <p className="text-sm font-semibold">Opinião Board</p>
+                  </div>
+                  <p className={cn("text-xs", consultMode === 'board' ? "text-white/60" : "text-muted-foreground")}>Consenso entre 3 modelos de IA</p>
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <Badge
+                      variant={usage.remaining('board') > 3 ? 'secondary' : 'destructive'}
+                      className={cn("text-[10px] px-1.5 py-0", consultMode === 'board' && "bg-white/15 text-white border-white/20")}
+                    >
+                      {usage.remaining('board')}/{usage.limits.board} restantes
+                    </Badge>
+                  </div>
                 </div>
               </button>
             </div>
@@ -255,13 +234,13 @@ export default function MagiaHDPanel() {
           <div className="border rounded-xl p-4 bg-muted/20">
             {inputMode === 'audio' && <AudioInputPanel value={caseText} onChange={setCaseText} />}
             {inputMode === 'text' && <TextInputPanel value={caseText} onChange={setCaseText} />}
-            {inputMode === 'structured' && <StructuredInputPanel area={area} onChange={handleStructuredChange} />}
+            {inputMode === 'structured' && <StructuredInputPanel area="outro" onChange={handleStructuredChange} />}
           </div>
 
           {inputMode === 'structured' && caseText && (
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">Texto gerado (prévia):</Label>
-              <div className="p-3 bg-muted/30 rounded-xl text-sm">{caseText}</div>
+              <div className="p-3 bg-muted/30 rounded-xl text-sm font-body">{caseText}</div>
               <p className="text-xs text-muted-foreground">Caracteres: {caseText.length} {caseText.length < 20 && '(mínimo 20)'}</p>
             </div>
           )}
@@ -322,7 +301,7 @@ export default function MagiaHDPanel() {
             {/* Summary */}
             <div className="rounded-xl bg-primary/5 p-4 border border-primary/10">
               <h3 className="font-semibold text-sm text-primary mb-1">Resumo do Caso</h3>
-              <p className="text-sm text-muted-foreground">{result.summary}</p>
+              <p className="text-sm text-muted-foreground font-body">{result.summary}</p>
             </div>
 
             {/* Hypotheses */}
@@ -335,7 +314,7 @@ export default function MagiaHDPanel() {
                       <Badge variant="default" className="shrink-0 rounded-lg">#{h.rank}</Badge>
                       <div className="space-y-2 flex-1">
                         <h4 className="font-semibold">{h.diagnosis}</h4>
-                        <div className="space-y-1.5 text-sm">
+                        <div className="space-y-1.5 text-sm font-body">
                           <div><span className="font-medium text-muted-foreground">Justificativa:</span> {h.justification}</div>
                           <div><span className="font-medium text-muted-foreground">Contra-argumentos:</span> {h.arguments_against}</div>
                           {h.confirmation_questions.length > 0 && (
@@ -357,7 +336,7 @@ export default function MagiaHDPanel() {
               <div className="space-y-2">
                 <h3 className="font-semibold flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-destructive" />Red Flags</h3>
                 <div className="rounded-xl bg-destructive/5 p-4 border border-destructive/10 space-y-1.5">
-                  {result.red_flags.map((flag, i) => <p key={i} className="flex items-center gap-2 text-sm text-destructive"><span className="w-1.5 h-1.5 rounded-full bg-destructive" />{flag}</p>)}
+                  {result.red_flags.map((flag, i) => <p key={i} className="flex items-center gap-2 text-sm font-body text-destructive"><span className="w-1.5 h-1.5 rounded-full bg-destructive" />{flag}</p>)}
                 </div>
               </div>
             )}
@@ -367,17 +346,18 @@ export default function MagiaHDPanel() {
               <div className="space-y-2">
                 <h3 className="font-semibold">Próximos Passos Sugeridos</h3>
                 <div className="rounded-xl bg-muted/30 p-4 space-y-1.5">
-                  {result.next_steps.map((step, i) => <p key={i} className="flex items-center gap-2 text-sm"><span className="w-1.5 h-1.5 rounded-full bg-primary" />{step}</p>)}
+                  {result.next_steps.map((step, i) => <p key={i} className="flex items-center gap-2 text-sm font-body"><span className="w-1.5 h-1.5 rounded-full bg-primary" />{step}</p>)}
                 </div>
               </div>
             )}
-
-            <Alert variant="default" className="bg-muted rounded-xl">
-              <AlertDescription className="text-xs text-muted-foreground italic">{result.disclaimer}</AlertDescription>
-            </Alert>
           </CardContent>
         </Card>
       )}
+
+      {/* Footer disclaimer — discrete */}
+      <p className="text-xs text-muted-foreground/60 text-center pt-2 border-t border-border/30">
+        Ferramenta de apoio à discussão diagnóstica em ultrassonografia. Não substitui julgamento médico. Não inclua identificadores do paciente.
+      </p>
     </div>
   );
 }
