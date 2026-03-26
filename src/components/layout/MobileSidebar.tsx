@@ -8,6 +8,7 @@ import {
   LogOut,
   Menu,
   ArrowLeftRight,
+  TrendingUp,
 } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
