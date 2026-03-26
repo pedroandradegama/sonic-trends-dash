@@ -7,10 +7,11 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { UserPlus, LogIn, ArrowLeft, Mail } from 'lucide-react';
+import { UserPlus, LogIn, ArrowLeft, Mail, ShieldCheck } from 'lucide-react';
 import imagLogo from '@/assets/imag-logo.png';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 
-type AuthStep = 'choose' | 'first-access-email' | 'first-access-password' | 'login';
+type AuthStep = 'choose' | 'first-access-email' | 'first-access-password' | 'login' | 'otp';
 
 export default function Auth() {
   const [step, setStep] = useState<AuthStep>('choose');
@@ -18,19 +19,23 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [doctorName, setDoctorName] = useState('');
+  const [otpCode, setOtpCode] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) {
-      const savedMode = localStorage.getItem('imag-app-mode');
-      if (savedMode === 'agenda') navigate('/ferramentas-ia');
-      else if (savedMode === 'avancado') navigate('/home');
-      else navigate('/modo');
+    if (user && step !== 'otp') {
+      const otpVerified = sessionStorage.getItem('otp_verified');
+      if (otpVerified) {
+        const savedMode = localStorage.getItem('imag-app-mode');
+        if (savedMode === 'agenda') navigate('/ferramentas-ia');
+        else if (savedMode === 'avancado') navigate('/home');
+        else navigate('/modo');
+      }
     }
-  }, [user, navigate]);
+  }, [user, navigate, step]);
 
   const handleCheckEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,20 +78,12 @@ export default function Auth() {
     e.preventDefault();
     
     if (password !== confirmPassword) {
-      toast({
-        title: "Erro",
-        description: "As senhas não coincidem",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: "As senhas não coincidem", variant: "destructive" });
       return;
     }
 
     if (password.length < 6) {
-      toast({
-        title: "Erro",
-        description: "A senha deve ter pelo menos 6 caracteres",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: "A senha deve ter pelo menos 6 caracteres", variant: "destructive" });
       return;
     }
 
@@ -99,10 +96,7 @@ export default function Auth() {
       if (error) throw error;
 
       if (data.success) {
-        toast({
-          title: "Conta criada!",
-          description: data.message,
-        });
+        toast({ title: "Conta criada!", description: data.message });
         setStep('login');
         setPassword('');
         setConfirmPassword('');
@@ -110,13 +104,21 @@ export default function Auth() {
         throw new Error(data.error || 'Erro ao criar conta');
       }
     } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao criar conta",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: error.message || "Erro ao criar conta", variant: "destructive" });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const sendOtp = async (targetEmail: string) => {
+    try {
+      const { error } = await supabase.functions.invoke('send-otp', {
+        body: { email: targetEmail.toLowerCase().trim() }
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      console.error('Failed to send OTP:', err);
+      // Don't block login if OTP send fails - will show error on verify
     }
   };
 
@@ -125,7 +127,6 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      // First check if email is authorized
       const { data: authCheck, error: checkError } = await supabase
         .from('authorized_doctors')
         .select('id, is_active')
@@ -135,21 +136,13 @@ export default function Auth() {
       if (checkError) throw checkError;
 
       if (!authCheck) {
-        toast({
-          title: "Acesso negado",
-          description: "Este email não está cadastrado na plataforma. Contate o administrador.",
-          variant: "destructive",
-        });
+        toast({ title: "Acesso negado", description: "Este email não está cadastrado na plataforma.", variant: "destructive" });
         setLoading(false);
         return;
       }
 
       if (!authCheck.is_active) {
-        toast({
-          title: "Acesso desativado",
-          description: "Seu acesso foi desativado. Contate o administrador.",
-          variant: "destructive",
-        });
+        toast({ title: "Acesso desativado", description: "Seu acesso foi desativado.", variant: "destructive" });
         setLoading(false);
         return;
       }
@@ -157,27 +150,67 @@ export default function Auth() {
       const { error } = await signIn(email, password);
 
       if (error) {
-        toast({
-          title: "Erro ao entrar",
-          description: error.message,
-          variant: "destructive",
-        });
+        toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
       } else {
         // Update last login timestamp
         await supabase
           .from('authorized_doctors')
           .update({ last_login_at: new Date().toISOString() })
           .eq('id', authCheck.id);
+
+        // Send OTP code
+        await sendOtp(email);
+        setStep('otp');
+        toast({
+          title: "Código enviado",
+          description: "Verifique seu email para o código de verificação.",
+        });
       }
     } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro inesperado",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: "Ocorreu um erro inesperado", variant: "destructive" });
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otpCode.length !== 6) return;
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-otp', {
+        body: { email: email.toLowerCase().trim(), code: otpCode }
+      });
+
+      if (error) throw error;
+
+      if (data.valid) {
+        sessionStorage.setItem('otp_verified', 'true');
+        toast({ title: "Verificado!", description: "Acesso autorizado." });
+        const savedMode = localStorage.getItem('imag-app-mode');
+        if (savedMode === 'agenda') navigate('/ferramentas-ia');
+        else if (savedMode === 'avancado') navigate('/home');
+        else navigate('/modo');
+      } else {
+        toast({
+          title: "Código inválido",
+          description: data.error || "Verifique o código e tente novamente.",
+          variant: "destructive",
+        });
+        setOtpCode('');
+      }
+    } catch (error: any) {
+      toast({ title: "Erro", description: "Erro ao verificar código", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setLoading(true);
+    await sendOtp(email);
+    setLoading(false);
+    toast({ title: "Código reenviado", description: "Verifique seu email." });
   };
 
   const resetToChoose = () => {
@@ -186,9 +219,66 @@ export default function Auth() {
     setPassword('');
     setConfirmPassword('');
     setDoctorName('');
+    setOtpCode('');
   };
 
-  // Choose step - main entry point
+  // OTP verification step
+  if (step === 'otp') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-medical-success/5 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-6">
+              <div className="rounded-full bg-primary/10 p-4">
+                <ShieldCheck className="h-10 w-10 text-primary" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl font-bold">Verificação de Segurança</CardTitle>
+            <CardDescription>
+              Enviamos um código de 6 dígitos para <strong>{email}</strong>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex justify-center">
+              <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+
+            <Button
+              className="w-full"
+              onClick={handleVerifyOtp}
+              disabled={loading || otpCode.length !== 6}
+            >
+              {loading ? 'Verificando...' : 'Verificar'}
+            </Button>
+
+            <div className="text-center space-y-2">
+              <button
+                onClick={handleResendOtp}
+                className="text-sm text-primary hover:underline disabled:opacity-50"
+                disabled={loading}
+              >
+                Reenviar código
+              </button>
+              <p className="text-xs text-muted-foreground">
+                O código expira em 10 minutos
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Choose step
   if (step === 'choose') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-medical-success/5 p-4">
@@ -198,9 +288,7 @@ export default function Auth() {
               <img src={imagLogo} alt="IMAG - Medicina Diagnóstica" className="h-16" />
             </div>
             <CardTitle className="text-2xl font-bold">Portal do Médico</CardTitle>
-            <CardDescription>
-              Escolha uma opção para continuar
-            </CardDescription>
+            <CardDescription>Escolha uma opção para continuar</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <button
@@ -244,9 +332,7 @@ export default function Auth() {
               <img src={imagLogo} alt="IMAG - Medicina Diagnóstica" className="h-16" />
             </div>
             <CardTitle className="text-2xl font-bold">Portal do Médico</CardTitle>
-            <CardDescription>
-              Digite o e-mail cadastrado pelo administrador
-            </CardDescription>
+            <CardDescription>Digite o e-mail cadastrado pelo administrador</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCheckEmail} className="space-y-4">
@@ -254,28 +340,16 @@ export default function Auth() {
                 <Label htmlFor="email">E-mail</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
+                  <Input id="email" type="email" value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="seu@email.com"
-                    className="pl-10"
-                    required
-                  />
+                    placeholder="seu@email.com" className="pl-10" required />
                 </div>
               </div>
-              
               <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={resetToChoose}
-                  className="px-4"
-                >
+                <Button type="button" variant="outline" onClick={resetToChoose} className="px-4">
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
-                <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90" disabled={loading}>
+                <Button type="submit" className="flex-1" disabled={loading}>
                   {loading ? 'Verificando...' : 'Continuar'}
                 </Button>
               </div>
@@ -296,45 +370,28 @@ export default function Auth() {
               <img src={imagLogo} alt="IMAG - Medicina Diagnóstica" className="h-16" />
             </div>
             <CardTitle className="text-2xl font-bold">Criar Senha</CardTitle>
-            <CardDescription>
-              Olá, {doctorName}! Crie sua senha de acesso.
-            </CardDescription>
+            <CardDescription>Olá, {doctorName}! Crie sua senha de acesso.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
+                <Input id="password" type="password" value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
-                  required
-                />
+                  placeholder="Mínimo 6 caracteres" required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
+                <Input id="confirmPassword" type="password" value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Digite a senha novamente"
-                  required
-                />
+                  placeholder="Digite a senha novamente" required />
               </div>
-              
               <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setStep('first-access-email')}
-                  className="px-4"
-                >
+                <Button type="button" variant="outline"
+                  onClick={() => setStep('first-access-email')} className="px-4">
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
-                <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90" disabled={loading}>
+                <Button type="submit" className="flex-1" disabled={loading}>
                   {loading ? 'Criando...' : 'Criar Conta'}
                 </Button>
               </div>
@@ -354,45 +411,27 @@ export default function Auth() {
             <img src={imagLogo} alt="IMAG - Medicina Diagnóstica" className="h-16" />
           </div>
           <CardTitle className="text-2xl font-bold">Entrar</CardTitle>
-          <CardDescription>
-            Acesse sua conta para visualizar seus dados
-          </CardDescription>
+          <CardDescription>Acesse sua conta para visualizar seus dados</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
+              <Input id="email" type="email" value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                required
-              />
+                placeholder="seu@email.com" required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
+              <Input id="password" type="password" value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
+                placeholder="••••••••" required />
             </div>
-            
             <div className="flex gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={resetToChoose}
-                className="px-4"
-              >
+              <Button type="button" variant="outline" onClick={resetToChoose} className="px-4">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90" disabled={loading}>
+              <Button type="submit" className="flex-1" disabled={loading}>
                 {loading ? 'Entrando...' : 'Entrar'}
               </Button>
             </div>

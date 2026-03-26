@@ -13,7 +13,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-medical-blue"></div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
           <p className="mt-4 text-muted-foreground">Carregando...</p>
         </div>
       </div>
@@ -21,6 +21,12 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Check OTP verification
+  const otpVerified = sessionStorage.getItem('otp_verified');
+  if (!otpVerified) {
     return <Navigate to="/auth" replace />;
   }
 
