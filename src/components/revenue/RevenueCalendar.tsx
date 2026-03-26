@@ -9,8 +9,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import {
-  ShiftType, SHIFT_LABELS, SHIFT_SLOT_MAP, SLOT_BG_COLORS,
-  SHIFT_COLORS, AGENDA_SHIFTS, PLANTAO_SHIFTS,
+  ShiftType, SHIFT_LABELS, SHIFT_COLORS, AGENDA_SHIFTS, PLANTAO_SHIFTS,
   MonthSummary,
 } from '@/types/revenue';
 import { useRevenueData } from '@/hooks/useRevenueData';
@@ -153,6 +152,18 @@ export function RevenueCalendar(props: Props) {
         })}
       </div>
 
+      {/* Service legend */}
+      {services.length > 0 && (
+        <div className="flex flex-wrap gap-3 mb-3">
+          {services.map(svc => (
+            <span key={svc.id} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="w-2.5 h-2.5 rounded-sm" style={{ background: svc.color }} />
+              {svc.name}
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* Weekday headers */}
       <div className="grid grid-cols-7 gap-1.5 mb-1">
         {WEEKDAYS.map(d => (
@@ -162,24 +173,29 @@ export function RevenueCalendar(props: Props) {
         ))}
       </div>
 
-      {/* Calendar grid - white bg glassmorphism */}
+      {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-1.5">
         {calDays.map((cell, idx) => {
           const isToday = cell.key === dkey(
             new Date().getFullYear(), new Date().getMonth(), new Date().getDate()
           );
           const dayShifts = cell.key ? getShiftsForDate(cell.key) : [];
-          const svc = dayShifts[0] ? services.find(s => s.id === dayShifts[0].service_id) : null;
 
-          const slotColors: (string | null)[] = [null, null, null, null];
+          // Group shifts by service
+          const svcShifts: Record<string, { svc: typeof services[0]; shifts: typeof dayShifts }> = {};
           dayShifts.forEach(ds => {
-            const slots = SHIFT_SLOT_MAP[ds.shift_type];
-            slots.forEach(si => { slotColors[si] = SLOT_BG_COLORS[ds.shift_type]; });
+            const svc = services.find(s => s.id === ds.service_id);
+            if (!svc) return;
+            if (!svcShifts[svc.id]) svcShifts[svc.id] = { svc, shifts: [] };
+            svcShifts[svc.id].shifts.push(ds);
           });
 
-          const dayVal = svc
-            ? dayShifts.reduce((a, ds) => a + (svc.shiftValues?.[ds.shift_type] ?? 0), 0)
-            : 0;
+          const dayVal = dayShifts.reduce((a, ds) => {
+            const svc = services.find(s => s.id === ds.service_id);
+            return a + (svc?.shiftValues?.[ds.shift_type] ?? 0);
+          }, 0);
+
+          const svcEntries = Object.values(svcShifts);
 
           return (
             <div
@@ -192,22 +208,31 @@ export function RevenueCalendar(props: Props) {
                 isToday
                   ? 'border-2 border-primary/40 shadow-md'
                   : 'border border-border/60 hover:border-primary/20 hover:shadow-sm',
-                dayShifts.length === 0
-                  ? 'bg-white/80'
-                  : 'bg-white/60'
+                dayShifts.length === 0 ? 'bg-white/80' : 'bg-white/60'
               )}
               style={{ aspectRatio: '0.85', minHeight: '52px' }}
             >
-              {/* Shift color slots */}
-              <div className="absolute inset-0 flex flex-col">
-                {slotColors.map((color, si) => (
-                  <div
-                    key={si}
-                    className="flex-1 w-full"
-                    style={{ background: color ? `${color}cc` : 'transparent' }}
-                  />
-                ))}
-              </div>
+              {/* Service color background - split evenly between services */}
+              {svcEntries.length > 0 && (
+                <div className="absolute inset-0 flex flex-col">
+                  {svcEntries.map(({ svc }) => (
+                    <div
+                      key={svc.id}
+                      className="flex-1 w-full"
+                      style={{ background: `${svc.color}22` }}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Left color strip per service */}
+              {svcEntries.length > 0 && (
+                <div className="absolute left-0 top-0 bottom-0 w-[3px] flex flex-col">
+                  {svcEntries.map(({ svc }) => (
+                    <div key={svc.id} className="flex-1" style={{ background: svc.color }} />
+                  ))}
+                </div>
+              )}
 
               <span
                 className={cn(
@@ -217,6 +242,24 @@ export function RevenueCalendar(props: Props) {
               >
                 {cell.day}
               </span>
+
+              {/* Service name labels */}
+              {svcEntries.length > 0 && (
+                <div className="absolute left-1.5 top-4 z-10 flex flex-col gap-0.5 max-w-[calc(100%-8px)]">
+                  {svcEntries.slice(0, 2).map(({ svc }) => (
+                    <span
+                      key={svc.id}
+                      className="text-[7px] leading-tight font-medium truncate block"
+                      style={{ color: svc.color }}
+                    >
+                      {svc.name}
+                    </span>
+                  ))}
+                  {svcEntries.length > 2 && (
+                    <span className="text-[7px] text-muted-foreground">+{svcEntries.length - 2}</span>
+                  )}
+                </div>
+              )}
 
               {dayVal > 0 && (
                 <span className="absolute bottom-1 right-1 text-[9px] font-medium text-foreground/60 z-10 leading-none">
