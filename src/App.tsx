@@ -16,6 +16,7 @@ import Home from "./pages/Home";
 import Perfil from "./pages/Perfil";
 import MinhaAgenda from "./pages/MinhaAgenda";
 import MeuTrabalho from "./pages/MeuTrabalho";
+import Projecao from "./pages/Projecao";
 import FerramentasIA from "./pages/FerramentasIA";
 import Comunidade from "./pages/Comunidade";
 // Legacy pages still needed for standalone routes
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/perfil" element={<ProtectedWithLayout><Perfil /></ProtectedWithLayout>} />
             <Route path="/minha-agenda" element={<ProtectedWithLayout><MinhaAgenda /></ProtectedWithLayout>} />
             <Route path="/meu-trabalho" element={<ProtectedWithLayout><MeuTrabalho /></ProtectedWithLayout>} />
+            <Route path="/projecao" element={<ProtectedWithLayout><Projecao /></ProtectedWithLayout>} />
             <Route path="/ferramentas-ia" element={<ProtectedWithLayout><FerramentasIA /></ProtectedWithLayout>} />
             <Route path="/comunidade" element={<ProtectedWithLayout><Comunidade /></ProtectedWithLayout>} />
             {/* Legacy standalone pages (for deep links / sub-content) */}
