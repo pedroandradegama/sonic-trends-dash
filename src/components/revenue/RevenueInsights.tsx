@@ -13,70 +13,69 @@ const HOURS_MAP: Record<ShiftType, number> = {
 export function RevenueInsights(props: Props) {
   const { services, shifts, prefs } = props;
 
-  const now = new Date();
-  const curMonth = now.getMonth();
-  const curYear = now.getFullYear();
-
   const insights = useMemo(() => {
-    const monthShifts = shifts.filter(s => {
+    // Group shifts by month
+    const monthBuckets: Record<string, typeof shifts> = {};
+    shifts.forEach(s => {
       const d = new Date(s.shift_date);
-      return d.getMonth() === curMonth && d.getFullYear() === curYear;
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      if (!monthBuckets[key]) monthBuckets[key] = [];
+      monthBuckets[key].push(s);
     });
 
-    let totalValue = 0;
-    let totalHours = 0;
-    let shiftCount = monthShifts.length;
+    const monthKeys = Object.keys(monthBuckets);
+    if (monthKeys.length === 0) {
+      return { avgValue: 0, avgHours: 0, avgValuePerHour: 0, monthCount: 0 };
+    }
 
-    monthShifts.forEach(s => {
-      const svc = services.find(sv => sv.id === s.service_id);
-      const val = svc?.shiftValues?.[s.shift_type] ?? 0;
-      totalValue += val;
-      
-      // Use shift hours from service or default
-      const hours = HOURS_MAP[s.shift_type] ?? 5;
-      totalHours += hours;
+    let grandTotalValue = 0;
+    let grandTotalHours = 0;
+
+    monthKeys.forEach(mk => {
+      const bucket = monthBuckets[mk];
+      bucket.forEach(s => {
+        const svc = services.find(sv => sv.id === s.service_id);
+        const val = svc?.shiftValues?.[s.shift_type] ?? 0;
+        grandTotalValue += val;
+        grandTotalHours += HOURS_MAP[s.shift_type] ?? 5;
+      });
     });
 
-    const valuePerHour = totalHours > 0 ? Math.round(totalValue / totalHours) : 0;
-    const netValue = Math.round(totalValue * (1 - prefs.tax_rate / 100));
+    const monthCount = monthKeys.length;
+    const avgValue = Math.round(grandTotalValue / monthCount);
+    const avgHours = Math.round(grandTotalHours / monthCount);
+    const avgValuePerHour = avgHours > 0 ? Math.round(avgValue / avgHours) : 0;
 
-    return { totalValue, netValue, totalHours, shiftCount, valuePerHour };
-  }, [shifts, services, prefs, curMonth, curYear]);
+    return { avgValue, avgHours, avgValuePerHour, monthCount };
+  }, [shifts, services]);
 
   const cards = [
     {
-      label: 'Projeção Bruta',
-      value: `R$ ${insights.totalValue.toLocaleString('pt-BR')}`,
+      label: 'Receita Média / mês',
+      value: `R$ ${insights.avgValue.toLocaleString('pt-BR')}`,
       icon: DollarSign,
       accent: 'text-emerald-600',
       bg: 'bg-emerald-50',
     },
     {
-      label: 'Projeção Líquida',
-      value: `R$ ${insights.netValue.toLocaleString('pt-BR')}`,
-      icon: TrendingUp,
-      accent: 'text-primary',
-      bg: 'bg-primary/10',
-    },
-    {
-      label: 'Valor / Hora',
-      value: `R$ ${insights.valuePerHour.toLocaleString('pt-BR')}`,
-      icon: Clock,
-      accent: 'text-amber-600',
-      bg: 'bg-amber-50',
-    },
-    {
-      label: 'Carga Horária',
-      value: `${insights.totalHours}h`,
-      sub: `${insights.shiftCount} turnos`,
+      label: 'Carga Horária / mês',
+      value: `${insights.avgHours}h`,
+      sub: `média de ${insights.monthCount} ${insights.monthCount === 1 ? 'mês' : 'meses'}`,
       icon: Calendar,
       accent: 'text-violet-600',
       bg: 'bg-violet-50',
     },
+    {
+      label: 'Valor / Hora (média)',
+      value: `R$ ${insights.avgValuePerHour.toLocaleString('pt-BR')}`,
+      icon: Clock,
+      accent: 'text-amber-600',
+      bg: 'bg-amber-50',
+    },
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-3 gap-3">
       {cards.map(card => {
         const Icon = card.icon;
         return (
