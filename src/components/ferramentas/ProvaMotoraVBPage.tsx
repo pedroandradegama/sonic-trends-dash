@@ -47,6 +47,7 @@ function createTimePoint(label: string): TimePoint {
 }
 
 export function ProvaMotoraVBPage() {
+  const navigate = useNavigate();
   const [stimulus, setStimulus] = useState('nao_informado');
   const [timePoints, setTimePoints] = useState<TimePoint[]>([
     createTimePoint('Jejum (basal)'),
