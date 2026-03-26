@@ -111,11 +111,16 @@ export function ProvaMotoraVBPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Prova Motora da Vesícula Biliar</h1>
-        <p className="text-muted-foreground mt-1">
-          Fração de ejeção vesicular com múltiplos pontos de medida
-        </p>
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/ferramentas-ia')}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Prova Motora da Vesícula Biliar</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">
+            Fração de ejeção vesicular com múltiplos pontos de medida
+          </p>
+        </div>
       </div>
 
       <Card>
