@@ -117,13 +117,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Adicionar role de médico
+    // Adicionar role de médico (ignorar se já existe)
     const { error: roleError } = await supabase
       .from('user_roles')
-      .insert({
-        user_id: userData.user.id,
+      .upsert({
+        user_id: userId,
         role: 'medico',
-      });
+      }, { onConflict: 'user_id,role' });
 
     if (roleError) {
       console.error('Erro ao adicionar role:', roleError);
