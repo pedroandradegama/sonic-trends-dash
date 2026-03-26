@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { logToolUsage } from '@/hooks/useToolUsageLog';
-import { Copy, ExternalLink } from 'lucide-react';
+import { Copy, ExternalLink, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 export function VolumeVesicalPedPage() {
+  const navigate = useNavigate();
   const [ageUnit, setAgeUnit] = useState<'months' | 'years'>('years');
   const [ageValue, setAgeValue] = useState('');
   const [measuredL, setMeasuredL] = useState('');
