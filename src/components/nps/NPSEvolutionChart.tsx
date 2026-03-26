@@ -28,7 +28,8 @@ export function NPSEvolutionChart({ data }: NPSEvolutionChartProps) {
           tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
         />
         <YAxis 
-          domain={[-100, 100]}
+          domain={[70, 100]}
+          ticks={[70, 75, 80, 85, 90, 95, 100]}
           tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
           label={{ 
             value: 'NPS Score', 
