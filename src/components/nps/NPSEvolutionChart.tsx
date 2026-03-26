@@ -38,8 +38,7 @@ export function NPSEvolutionChart({ data }: NPSEvolutionChartProps) {
             style: { fill: 'hsl(var(--muted-foreground))' }
           }}
         />
-        <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
-        <ReferenceLine y={50} stroke="hsl(var(--chart-1))" strokeDasharray="3 3" strokeOpacity={0.5} />
+        <ReferenceLine y={85} stroke="hsl(var(--primary))" strokeDasharray="3 3" strokeOpacity={0.5} label={{ value: 'Média', position: 'right', fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
         <Tooltip 
           content={({ active, payload }) => {
             if (active && payload && payload.length) {
