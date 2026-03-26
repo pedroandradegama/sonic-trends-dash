@@ -66,7 +66,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Criar usuário no Auth
+    // Tentar criar usuário no Auth
+    let userId: string;
     const { data: userData, error: authError } = await supabase.auth.admin.createUser({
       email: email.toLowerCase(),
       password: password,
@@ -74,39 +75,55 @@ Deno.serve(async (req) => {
     });
 
     if (authError) {
-      console.error('Erro ao criar usuário:', authError);
-      return new Response(
-        JSON.stringify({ error: authError.message }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      // Se o usuário já existe no Auth, buscar o ID e atualizar a senha
+      if (authError.message?.includes('already been registered')) {
+        console.log('Usuário já existe no Auth, atualizando senha...');
+        const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
+        const existingUser = users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+        if (!existingUser || listError) {
+          return new Response(
+            JSON.stringify({ error: 'Erro ao localizar usuário existente.' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        userId = existingUser.id;
+        // Atualizar senha
+        await supabase.auth.admin.updateUserById(userId, { password });
+      } else {
+        console.error('Erro ao criar usuário:', authError);
+        return new Response(
+          JSON.stringify({ error: authError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } else {
+      userId = userData.user.id;
     }
 
-    // Criar perfil
+    // Criar ou atualizar perfil
     const { error: profileError } = await supabase
       .from('profiles')
-      .insert({
-        user_id: userData.user.id,
+      .upsert({
+        user_id: userId,
         email: email.toLowerCase(),
         medico_nome: doctorData.nome,
-      });
+      }, { onConflict: 'user_id' });
 
     if (profileError) {
       console.error('Erro ao criar perfil:', profileError);
-      // Tentar deletar o usuário criado se o perfil falhar
-      await supabase.auth.admin.deleteUser(userData.user.id);
       return new Response(
         JSON.stringify({ error: 'Erro ao criar perfil. Tente novamente.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Adicionar role de médico
+    // Adicionar role de médico (ignorar se já existe)
     const { error: roleError } = await supabase
       .from('user_roles')
-      .insert({
-        user_id: userData.user.id,
+      .upsert({
+        user_id: userId,
         role: 'medico',
-      });
+      }, { onConflict: 'user_id,role' });
 
     if (roleError) {
       console.error('Erro ao adicionar role:', roleError);
