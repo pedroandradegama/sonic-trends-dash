@@ -1,15 +1,25 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CompendioTab } from './medidas-adulto/CompendioTab';
 import { PVRTab } from './medidas-adulto/PVRTab';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export function MedidasAdultoPage() {
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Compêndio — Medidas de Referência (Adulto)</h1>
-        <p className="text-muted-foreground mt-1">
-          Valores usuais, pontos de corte e calculadoras para exames de adultos
-        </p>
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/ferramentas-ia')}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Compêndio — Medidas de Referência (Adulto)</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">
+            Valores usuais, pontos de corte e calculadoras para exames de adultos
+          </p>
+        </div>
       </div>
 
       <Tabs defaultValue="compendio" className="w-full">

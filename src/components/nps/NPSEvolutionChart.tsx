@@ -28,7 +28,8 @@ export function NPSEvolutionChart({ data }: NPSEvolutionChartProps) {
           tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
         />
         <YAxis 
-          domain={[-100, 100]}
+          domain={[70, 100]}
+          ticks={[70, 75, 80, 85, 90, 95, 100]}
           tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
           label={{ 
             value: 'NPS Score', 
@@ -37,8 +38,7 @@ export function NPSEvolutionChart({ data }: NPSEvolutionChartProps) {
             style: { fill: 'hsl(var(--muted-foreground))' }
           }}
         />
-        <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
-        <ReferenceLine y={50} stroke="hsl(var(--chart-1))" strokeDasharray="3 3" strokeOpacity={0.5} />
+        <ReferenceLine y={85} stroke="hsl(var(--primary))" strokeDasharray="3 3" strokeOpacity={0.5} label={{ value: 'Média', position: 'right', fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
         <Tooltip 
           content={({ active, payload }) => {
             if (active && payload && payload.length) {

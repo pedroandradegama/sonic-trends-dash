@@ -38,7 +38,7 @@ export function KPICard({ title, value, subtitle, trend, icon, tooltip, classNam
     <Card className={`hover:shadow-md transition-shadow ${className}`}>
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="p-2 bg-imag-primary-light rounded-lg">
+          <div className="p-2 bg-primary/10 rounded-lg">
             {icon}
           </div>
           <div className="flex items-center gap-2">

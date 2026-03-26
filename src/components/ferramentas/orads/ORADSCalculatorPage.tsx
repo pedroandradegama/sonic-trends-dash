@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -146,7 +145,6 @@ export default function ORADSCalculatorPage() {
   };
 
   return (
-    <MainLayout>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -454,6 +452,6 @@ export default function ORADSCalculatorPage() {
           </Card>
         )}
       </div>
-    </MainLayout>
+    
   );
 }

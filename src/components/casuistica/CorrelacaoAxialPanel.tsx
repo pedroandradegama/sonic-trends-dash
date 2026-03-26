@@ -1,13 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Activity, Magnet, Scan, Users, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { Activity, Magnet, Scan, Users, Clock, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CorrelacaoItem } from '@/hooks/useCorrelacaoAxial';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface CorrelacaoAxialPanelProps {
   correlacoes: CorrelacaoItem[];
@@ -22,9 +23,36 @@ interface CorrelacaoAxialPanelProps {
   error: string | null;
 }
 
+const VIEWED_KEY = 'correlacao_axial_viewed';
+
+function getViewedSet(): Set<string> {
+  try {
+    const stored = localStorage.getItem(VIEWED_KEY);
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  } catch { return new Set(); }
+}
+
+function saveViewedSet(set: Set<string>) {
+  localStorage.setItem(VIEWED_KEY, JSON.stringify([...set]));
+}
+
+function makeCorrelacaoKey(item: CorrelacaoItem): string {
+  return `${item.prontuario}-${item.usgExame}-${item.axialExame}-${item.axialData.getTime()}`;
+}
+
 export function CorrelacaoAxialPanel({ correlacoes, stats, loading, error }: CorrelacaoAxialPanelProps) {
   const [filterTipo, setFilterTipo] = useState<'todos' | 'RM' | 'TC'>('todos');
   const [showAll, setShowAll] = useState(false);
+  const [viewedSet, setViewedSet] = useState<Set<string>>(getViewedSet);
+
+  const toggleViewed = useCallback((key: string) => {
+    setViewedSet(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      saveViewedSet(next);
+      return next;
+    });
+  }, []);
 
   const filteredCorrelacoes = useMemo(() => {
     if (filterTipo === 'todos') return correlacoes;
@@ -36,29 +64,28 @@ export function CorrelacaoAxialPanel({ correlacoes, stats, loading, error }: Cor
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-medical-teal"></div>
-        <span className="ml-3 text-muted-foreground">Carregando correlações...</span>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-8">
-        <p className="text-destructive">{error}</p>
-      </div>
+      <Card className="border-destructive">
+        <CardContent className="pt-6 text-center">
+          <p className="text-destructive">{error}</p>
+        </CardContent>
+      </Card>
     );
   }
 
   if (correlacoes.length === 0) {
     return (
-      <div className="text-center py-12">
-        <Activity className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
-        <p className="text-lg font-medium text-muted-foreground">Nenhuma correlação encontrada</p>
-        <p className="text-sm text-muted-foreground mt-2">
-          Não foram identificados pacientes que realizaram RM ou TC após exames de USG realizados por você.
-        </p>
-      </div>
+      <Card>
+        <CardContent className="pt-6 text-center text-muted-foreground">
+          Nenhuma correlação axial encontrada para o médico logado.
+        </CardContent>
+      </Card>
     );
   }
 
@@ -164,6 +191,7 @@ export function CorrelacaoAxialPanel({ correlacoes, stats, loading, error }: Cor
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[40px] min-w-[40px]"></TableHead>
                   <TableHead className="w-[140px] min-w-[140px]">Paciente</TableHead>
                   <TableHead className="w-[200px] min-w-[200px]">Exame USG</TableHead>
                   <TableHead className="w-[85px] min-w-[85px]">Data USG</TableHead>
@@ -174,36 +202,54 @@ export function CorrelacaoAxialPanel({ correlacoes, stats, loading, error }: Cor
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {displayedCorrelacoes.map((item, idx) => (
-                  <TableRow key={`${item.paciente}-${idx}`}>
-                    <TableCell className="font-medium text-xs" title={item.paciente}>
-                      <div className="truncate max-w-[140px]">{item.paciente}</div>
-                    </TableCell>
-                    <TableCell className="text-xs" title={item.usgExame}>
-                      <div className="truncate max-w-[200px]">{item.usgExame}</div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
-                      {format(item.usgData, 'dd/MM/yy', { locale: ptBR })}
-                    </TableCell>
-                    <TableCell className="text-xs" title={item.axialExame}>
-                      <div className="truncate max-w-[200px]">{item.axialExame}</div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
-                      {format(item.axialData, 'dd/MM/yy', { locale: ptBR })}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge 
-                        variant={item.axialTipo === 'RM' ? 'default' : 'secondary'}
-                        className={`text-xs ${item.axialTipo === 'RM' ? 'bg-emerald-500' : 'bg-amber-500'}`}
-                      >
-                        {item.axialTipo}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right text-xs whitespace-nowrap">
-                      {item.diasDiferenca}d
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {displayedCorrelacoes.map((item, idx) => {
+                  const key = makeCorrelacaoKey(item);
+                  const isViewed = viewedSet.has(key);
+                  return (
+                    <TableRow key={`${item.paciente}-${idx}`} className={cn(isViewed && "opacity-40")}>
+                      <TableCell className="px-2">
+                        <button
+                          onClick={() => toggleViewed(key)}
+                          className={cn(
+                            "h-7 w-7 flex items-center justify-center rounded-md transition-colors",
+                            isViewed
+                              ? "text-[hsl(var(--success))] hover:text-[hsl(var(--success))]/80"
+                              : "text-muted-foreground/40 hover:text-[hsl(var(--success))]"
+                          )}
+                          title={isViewed ? 'Marcar como não visualizado' : 'Marcar como visualizado'}
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                        </button>
+                      </TableCell>
+                      <TableCell className="font-medium text-xs" title={item.paciente}>
+                        <div className="truncate max-w-[140px]">{item.paciente}</div>
+                      </TableCell>
+                      <TableCell className="text-xs" title={item.usgExame}>
+                        <div className="truncate max-w-[200px]">{item.usgExame}</div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
+                        {format(item.usgData, 'dd/MM/yy', { locale: ptBR })}
+                      </TableCell>
+                      <TableCell className="text-xs" title={item.axialExame}>
+                        <div className="truncate max-w-[200px]">{item.axialExame}</div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
+                        {format(item.axialData, 'dd/MM/yy', { locale: ptBR })}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge 
+                          variant={item.axialTipo === 'RM' ? 'default' : 'secondary'}
+                          className={`text-xs ${item.axialTipo === 'RM' ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                        >
+                          {item.axialTipo}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right text-xs whitespace-nowrap">
+                        {item.diasDiferenca}d
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

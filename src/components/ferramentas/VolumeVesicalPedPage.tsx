@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { logToolUsage } from '@/hooks/useToolUsageLog';
-import { Copy, ExternalLink } from 'lucide-react';
+import { Copy, ExternalLink, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 export function VolumeVesicalPedPage() {
+  const navigate = useNavigate();
   const [ageUnit, setAgeUnit] = useState<'months' | 'years'>('years');
   const [ageValue, setAgeValue] = useState('');
   const [measuredL, setMeasuredL] = useState('');
@@ -78,11 +80,16 @@ export function VolumeVesicalPedPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Volume Vesical Esperado — Pediatria</h1>
-        <p className="text-muted-foreground mt-1">
-          Capacidade vesical esperada por idade (Koff 1983 / Holmdahl 1996)
-        </p>
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/ferramentas-ia')}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Volume Vesical Esperado — Pediatria</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">
+            Capacidade vesical esperada por idade (Koff 1983 / Holmdahl 1996)
+          </p>
+        </div>
       </div>
 
       <Card>

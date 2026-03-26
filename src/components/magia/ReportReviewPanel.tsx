@@ -6,21 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-
-const AREAS = [
-  { value: 'abdome', label: 'Abdome' },
-  { value: 'gineco_obst', label: 'Ginecologia e Obstetrícia' },
-  { value: 'mamas', label: 'Mamas' },
-  { value: 'msk', label: 'MSK' },
-  { value: 'tireoide', label: 'Tireoide' },
-  { value: 'doppler', label: 'Doppler Vascular' },
-  { value: 'outro', label: 'Outro' },
-];
 
 type RequestStatus = 'idle' | 'loading' | 'success' | 'error';
 
@@ -37,13 +26,11 @@ export default function ReportReviewPanel() {
   const { toast } = useToast();
 
   const [confirmedAnonymized, setConfirmedAnonymized] = useState(false);
-  const [area, setArea] = useState('outro');
   const [reportText, setReportText] = useState('');
   const [requestStatus, setRequestStatus] = useState<RequestStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [result, setResult] = useState<ReviewResult | null>(null);
 
-  // Recover pending clipboard text on mount
   useEffect(() => {
     const pending = sessionStorage.getItem('clipboard_laudo_pending');
     if (pending) {
@@ -62,7 +49,7 @@ export default function ReportReviewPanel() {
 
     setRequestStatus('loading'); setErrorMessage(''); setResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-dx', { body: { case_text: reportText, area, doctor_id: user?.id, mode: 'review' } });
+      const { data, error } = await supabase.functions.invoke('generate-dx', { body: { case_text: reportText, area: 'outro', doctor_id: user?.id, mode: 'review' } });
       if (error) { setErrorMessage(error.message || 'Falha ao processar.'); setRequestStatus('error'); return; }
       if (data?.error) { setErrorMessage(data.error); setRequestStatus('error'); return; }
       setResult(data as ReviewResult); setRequestStatus('success');
@@ -91,14 +78,6 @@ export default function ReportReviewPanel() {
         </div>
       </div>
 
-      {/* Disclaimer */}
-      <Alert variant="default" className="border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20 rounded-xl">
-        <AlertTriangle className="h-4 w-4 text-amber-600" />
-        <AlertDescription className="text-amber-800 dark:text-amber-200 text-sm">
-          <strong>Revisão de laudo assistida por IA.</strong> Cole o texto do laudo para receber sugestões de aprimoramento. Fontes: ACR, RSNA Radiographics, Radiology Assistant.
-        </AlertDescription>
-      </Alert>
-
       {/* Input Card */}
       <Card className="rounded-2xl">
         <CardContent className="pt-6 space-y-5">
@@ -111,15 +90,6 @@ export default function ReportReviewPanel() {
             </Label>
           </div>
 
-          {/* Area */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Área / Subgrupo</Label>
-            <Select value={area} onValueChange={setArea}>
-              <SelectTrigger className="rounded-xl"><SelectValue placeholder="Selecione a área" /></SelectTrigger>
-              <SelectContent>{AREAS.map(a => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-
           {/* Report Text */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">Texto do Laudo</Label>
@@ -128,7 +98,7 @@ export default function ReportReviewPanel() {
               value={reportText}
               onChange={(e) => setReportText(e.target.value)}
               rows={10}
-              className="font-mono text-sm rounded-xl"
+              className="text-sm rounded-xl font-body"
             />
             <p className="text-xs text-muted-foreground">Caracteres: {reportText.length} {reportText.length < 30 && '(mínimo 30)'}</p>
           </div>
@@ -172,7 +142,7 @@ export default function ReportReviewPanel() {
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="p-4 bg-muted/20 rounded-xl border">
-              <pre className="whitespace-pre-wrap text-sm font-mono">{result.revised_report}</pre>
+              <pre className="whitespace-pre-wrap text-sm font-body">{result.revised_report}</pre>
             </div>
 
             {result.changes_summary?.length > 0 && (
@@ -180,7 +150,7 @@ export default function ReportReviewPanel() {
                 <h3 className="font-semibold text-sm">Alterações realizadas</h3>
                 <div className="rounded-xl bg-primary/5 p-4 border border-primary/10 space-y-1.5">
                   {result.changes_summary.map((c, i) => (
-                    <p key={i} className="flex items-start gap-2 text-sm"><span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" />{c}</p>
+                    <p key={i} className="flex items-start gap-2 text-sm font-body"><span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" />{c}</p>
                   ))}
                 </div>
               </div>
@@ -201,13 +171,14 @@ export default function ReportReviewPanel() {
                 <ul className="text-xs text-muted-foreground space-y-1">{result.references.map((r, i) => <li key={i}>• {r}</li>)}</ul>
               </div>
             )}
-
-            <Alert variant="default" className="bg-muted rounded-xl">
-              <AlertDescription className="text-xs text-muted-foreground italic">{result.disclaimer}</AlertDescription>
-            </Alert>
           </CardContent>
         </Card>
       )}
+
+      {/* Footer disclaimer — discrete */}
+      <p className="text-xs text-muted-foreground/60 text-center pt-2 border-t border-border/30">
+        Revisão de laudo assistida por IA. Fontes: ACR, RSNA Radiographics, Radiology Assistant. Não substitui julgamento médico.
+      </p>
     </div>
   );
 }
