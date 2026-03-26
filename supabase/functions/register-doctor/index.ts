@@ -100,19 +100,17 @@ Deno.serve(async (req) => {
       userId = userData.user.id;
     }
 
-    // Criar perfil
+    // Criar ou atualizar perfil
     const { error: profileError } = await supabase
       .from('profiles')
-      .insert({
-        user_id: userData.user.id,
+      .upsert({
+        user_id: userId,
         email: email.toLowerCase(),
         medico_nome: doctorData.nome,
-      });
+      }, { onConflict: 'user_id' });
 
     if (profileError) {
       console.error('Erro ao criar perfil:', profileError);
-      // Tentar deletar o usuário criado se o perfil falhar
-      await supabase.auth.admin.deleteUser(userData.user.id);
       return new Response(
         JSON.stringify({ error: 'Erro ao criar perfil. Tente novamente.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
