@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { RevenueCalendar } from './RevenueCalendar';
 import { RevenueChart } from './RevenueChart';
 import { RevenueConfig } from './RevenueConfig';
+import { RevenueInsights } from './RevenueInsights';
 import { useRevenueData } from '@/hooks/useRevenueData';
 import { cn } from '@/lib/utils';
 import { Calendar, BarChart3, Settings } from 'lucide-react';
@@ -15,7 +16,7 @@ export function RevenueProjectionPage() {
   const tabs: { id: Tab; label: string; icon: typeof Calendar }[] = [
     { id: 'calendar', label: 'Calendário', icon: Calendar },
     { id: 'chart',    label: 'Projeção',   icon: BarChart3 },
-    { id: 'config',   label: 'Config',     icon: Settings },
+    { id: 'config',   label: 'Clínicas',   icon: Settings },
   ];
 
   if (data.isLoading) {
@@ -27,7 +28,11 @@ export function RevenueProjectionPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* Insights cards */}
+      <RevenueInsights {...data} />
+
+      {/* Tab bar */}
       <div className="flex gap-1 p-1 bg-muted/50 rounded-xl w-fit">
         {tabs.map(t => {
           const Icon = t.icon;

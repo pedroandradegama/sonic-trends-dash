@@ -8,6 +8,7 @@ import {
   LogOut,
   Menu,
   ArrowLeftRight,
+  TrendingUp,
 } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -25,6 +26,7 @@ const allNavItems: { path: string; label: string; icon: typeof LayoutDashboard; 
   { path: '/home', label: 'Home', icon: LayoutDashboard, modes: ['avancado'] },
   { path: '/minha-agenda', label: 'Minha Agenda', icon: CalendarDays, modes: ['avancado'] },
   { path: '/meu-trabalho', label: 'Meu Trabalho', icon: Briefcase, modes: ['avancado'] },
+  { path: '/projecao', label: 'Projeção', icon: TrendingUp, modes: ['avancado'] },
   { path: '/ferramentas-ia', label: 'Ferramentas & IA', icon: Wrench, modes: ['agenda', 'avancado'] },
   { path: '/comunidade', label: 'Comunidade', icon: Users, modes: ['avancado'] },
 ];

@@ -850,6 +850,33 @@ export type Database = {
         }
         Relationships: []
       }
+      otp_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          expires_at: string
+          id: string
+          used: boolean | null
+          user_email: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          used?: boolean | null
+          user_email: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          used?: boolean | null
+          user_email?: string
+        }
+        Relationships: []
+      }
       peds_us_organ_norms: {
         Row: {
           age_max_mo: number
@@ -1059,8 +1086,12 @@ export type Database = {
           color: string
           created_at: string
           delta_months: number
+          enabled_shifts: string[] | null
           id: string
+          monthly_gross: number | null
+          monthly_net: number | null
           name: string
+          regime: string
           sort_order: number
           updated_at: string
           user_id: string
@@ -1069,8 +1100,12 @@ export type Database = {
           color?: string
           created_at?: string
           delta_months?: number
+          enabled_shifts?: string[] | null
           id?: string
+          monthly_gross?: number | null
+          monthly_net?: number | null
           name: string
+          regime?: string
           sort_order?: number
           updated_at?: string
           user_id: string
@@ -1079,8 +1114,12 @@ export type Database = {
           color?: string
           created_at?: string
           delta_months?: number
+          enabled_shifts?: string[] | null
           id?: string
+          monthly_gross?: number | null
+          monthly_net?: number | null
           name?: string
+          regime?: string
           sort_order?: number
           updated_at?: string
           user_id?: string
@@ -1090,27 +1129,33 @@ export type Database = {
       revenue_shift_values: {
         Row: {
           created_at: string
+          end_hour: string | null
           id: string
           service_id: string
           shift_type: string
+          start_hour: string | null
           updated_at: string
           user_id: string
           value_brl: number
         }
         Insert: {
           created_at?: string
+          end_hour?: string | null
           id?: string
           service_id: string
           shift_type: string
+          start_hour?: string | null
           updated_at?: string
           user_id: string
           value_brl?: number
         }
         Update: {
           created_at?: string
+          end_hour?: string | null
           id?: string
           service_id?: string
           shift_type?: string
+          start_hour?: string | null
           updated_at?: string
           user_id?: string
           value_brl?: number

@@ -125,7 +125,7 @@ export function RevenueCalendar(props: Props) {
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigate(-1)}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-base font-medium">
+          <span className="text-base font-medium font-display">
             {MONTHS[curMonth]} {curYear}
           </span>
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigate(1)}>
@@ -154,7 +154,7 @@ export function RevenueCalendar(props: Props) {
       </div>
 
       {/* Weekday headers */}
-      <div className="grid grid-cols-7 gap-1 mb-1">
+      <div className="grid grid-cols-7 gap-1.5 mb-1">
         {WEEKDAYS.map(d => (
           <div key={d} className="text-center text-[10px] font-medium text-muted-foreground uppercase tracking-wider py-1">
             {d}
@@ -162,8 +162,8 @@ export function RevenueCalendar(props: Props) {
         ))}
       </div>
 
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1">
+      {/* Calendar grid - white bg glassmorphism */}
+      <div className="grid grid-cols-7 gap-1.5">
         {calDays.map((cell, idx) => {
           const isToday = cell.key === dkey(
             new Date().getFullYear(), new Date().getMonth(), new Date().getDate()
@@ -186,34 +186,40 @@ export function RevenueCalendar(props: Props) {
               key={idx}
               onClick={() => cell.key && !cell.otherMonth && openSheet(cell.key)}
               className={cn(
-                'relative rounded-lg border overflow-hidden cursor-pointer transition-colors',
-                'flex flex-col',
-                cell.otherMonth ? 'opacity-25 pointer-events-none' : '',
-                isToday ? 'border-primary/40' : 'border-border',
+                'relative rounded-xl overflow-hidden cursor-pointer transition-all',
+                'flex flex-col backdrop-blur-sm',
+                cell.otherMonth ? 'opacity-20 pointer-events-none' : '',
+                isToday
+                  ? 'border-2 border-primary/40 shadow-md'
+                  : 'border border-border/60 hover:border-primary/20 hover:shadow-sm',
+                dayShifts.length === 0
+                  ? 'bg-white/80'
+                  : 'bg-white/60'
               )}
               style={{ aspectRatio: '0.85', minHeight: '52px' }}
             >
+              {/* Shift color slots */}
               <div className="absolute inset-0 flex flex-col">
                 {slotColors.map((color, si) => (
                   <div
                     key={si}
                     className="flex-1 w-full"
-                    style={{ background: color ?? 'transparent' }}
+                    style={{ background: color ? `${color}cc` : 'transparent' }}
                   />
                 ))}
               </div>
 
               <span
                 className={cn(
-                  'absolute top-1 left-1.5 text-[11px] z-10 leading-none',
-                  isToday ? 'text-primary font-medium' : 'text-muted-foreground'
+                  'absolute top-1 left-1.5 text-[11px] z-10 leading-none font-medium',
+                  isToday ? 'text-primary' : 'text-foreground/70'
                 )}
               >
                 {cell.day}
               </span>
 
               {dayVal > 0 && (
-                <span className="absolute bottom-1 right-1 text-[9px] font-medium text-muted-foreground z-10 leading-none">
+                <span className="absolute bottom-1 right-1 text-[9px] font-medium text-foreground/60 z-10 leading-none">
                   R${(Math.round(dayVal / 100) / 10).toFixed(1)}k
                 </span>
               )}

@@ -1,14 +1,12 @@
 import { useState } from 'react';
-import { Briefcase, DollarSign, BarChart3, ThumbsUp, TrendingUp } from 'lucide-react';
+import { Briefcase, DollarSign, BarChart3, ThumbsUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RepasseContent } from '@/components/trabalho/RepasseContent';
 import { CasuisticaContent } from '@/components/trabalho/CasuisticaContent';
 import { NPSContent } from '@/components/trabalho/NPSContent';
-import { RevenueProjectionPage } from '@/components/revenue/RevenueProjectionPage';
 
 const tabs = [
   { key: 'repasse', label: 'Repasse', icon: DollarSign },
-  { key: 'projecao', label: 'Projeção', icon: TrendingUp },
   { key: 'casuistica', label: 'Casuística', icon: BarChart3 },
   { key: 'nps', label: 'NPS', icon: ThumbsUp },
 ] as const;
@@ -25,7 +23,7 @@ export default function MeuTrabalho() {
           <Briefcase className="h-6 w-6 text-primary" />
           Meu Trabalho
         </h1>
-        <p className="text-muted-foreground mt-1">Acompanhe repasse, projeção, casuística e NPS</p>
+        <p className="text-muted-foreground mt-1">Acompanhe repasse, casuística e NPS</p>
       </div>
 
       <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-xl w-fit">
@@ -52,7 +50,6 @@ export default function MeuTrabalho() {
 
       <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
         {activeTab === 'repasse' && <RepasseContent />}
-        {activeTab === 'projecao' && <RevenueProjectionPage />}
         {activeTab === 'casuistica' && <CasuisticaContent />}
         {activeTab === 'nps' && <NPSContent />}
       </div>
