@@ -129,24 +129,23 @@ export default function Auth() {
     try {
       const normalizedEmail = email.toLowerCase().trim();
 
-      const { data: authCheck, error: authCheckError } = await supabase.functions.invoke('check-authorized-email', {
-        body: { email: normalizedEmail }
+      const { data: isAuthorized, error: authCheckError } = await supabase.rpc('is_email_authorized', {
+        _email: normalizedEmail,
       });
 
       if (authCheckError) throw authCheckError;
 
-      if (authCheck?.authorized === false) {
-        const alreadyRegistered = authCheck?.message?.includes('já possui uma conta');
+      if (!isAuthorized) {
         toast({
-          title: alreadyRegistered ? "Conta já cadastrada" : "Acesso negado",
-          description: authCheck?.message || "Este email não está cadastrado na plataforma.",
+          title: "Acesso negado",
+          description: "Este email não está cadastrado na plataforma ou está inativo.",
           variant: "destructive"
         });
         setLoading(false);
         return;
       }
 
-      const { error } = await signIn(email, password);
+      const { error } = await signIn(normalizedEmail, password);
 
       if (error) {
         toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
