@@ -127,39 +127,31 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      const { data: authCheck, error: checkError } = await supabase
-        .from('authorized_doctors')
-        .select('id, is_active')
-        .eq('email', email.toLowerCase().trim())
-        .maybeSingle();
+      const normalizedEmail = email.toLowerCase().trim();
 
-      if (checkError) throw checkError;
+      const { data: isAuthorized, error: authCheckError } = await supabase.rpc('is_email_authorized', {
+        _email: normalizedEmail,
+      });
 
-      if (!authCheck) {
-        toast({ title: "Acesso negado", description: "Este email não está cadastrado na plataforma.", variant: "destructive" });
+      if (authCheckError) throw authCheckError;
+
+      if (!isAuthorized) {
+        toast({
+          title: "Acesso negado",
+          description: "Este email não está cadastrado na plataforma ou está inativo.",
+          variant: "destructive"
+        });
         setLoading(false);
         return;
       }
 
-      if (!authCheck.is_active) {
-        toast({ title: "Acesso desativado", description: "Seu acesso foi desativado.", variant: "destructive" });
-        setLoading(false);
-        return;
-      }
-
-      const { error } = await signIn(email, password);
+      const { error } = await signIn(normalizedEmail, password);
 
       if (error) {
         toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
       } else {
-        // Update last login timestamp
-        await supabase
-          .from('authorized_doctors')
-          .update({ last_login_at: new Date().toISOString() })
-          .eq('id', authCheck.id);
-
         // Send OTP code
-        await sendOtp(email);
+        await sendOtp(normalizedEmail);
         setStep('otp');
         toast({
           title: "Código enviado",
