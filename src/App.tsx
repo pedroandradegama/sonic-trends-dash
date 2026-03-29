@@ -35,6 +35,7 @@ import FetalGrowth from "./pages/FetalGrowth";
 import PedVolume from "./pages/PedVolume";
 import { FinancialNavigatorLayout } from "@/components/financialNavigator/FinancialNavigatorLayout";
 import { Block1Page } from "@/components/financialNavigator/block1/Block1Page";
+import { Block2Page } from "@/components/financialNavigator/block2/Block2Page";
 
 const queryClient = new QueryClient();
 
@@ -84,7 +85,7 @@ const App = () => (
             {/* Financial Navigator */}
             <Route path="/financeiro" element={<ProtectedWithLayout><FinancialNavigatorLayout /></ProtectedWithLayout>}>
               <Route path="config" element={<Block1Page />} />
-              <Route path="agendas" element={<div className="p-4 text-muted-foreground text-sm font-body">Bloco 2 — em breve</div>} />
+              <Route path="agendas" element={<Block2Page />} />
               <Route path="projecao" element={<div className="p-4 text-muted-foreground text-sm font-body">Bloco 3 — em breve</div>} />
               <Route path="insights" element={<div className="p-4 text-muted-foreground text-sm font-body">Bloco 4 — em breve</div>} />
               <Route index element={<Navigate to="config" replace />} />

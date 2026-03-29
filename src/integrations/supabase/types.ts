@@ -601,6 +601,88 @@ export type Database = {
         }
         Relationships: []
       }
+      fn_calendar_shifts: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          service_id: string
+          shift_date: string
+          shift_type: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          service_id: string
+          shift_date: string
+          shift_type: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          service_id?: string
+          shift_date?: string
+          shift_type?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fn_calendar_shifts_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "fn_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fn_commute_cache: {
+        Row: {
+          distance_km: number | null
+          duration_min: number | null
+          fetched_at: string
+          id: string
+          service_id: string
+          slot_type: string
+          user_id: string
+        }
+        Insert: {
+          distance_km?: number | null
+          duration_min?: number | null
+          fetched_at?: string
+          id?: string
+          service_id: string
+          slot_type: string
+          user_id: string
+        }
+        Update: {
+          distance_km?: number | null
+          duration_min?: number | null
+          fetched_at?: string
+          id?: string
+          service_id?: string
+          slot_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fn_commute_cache_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "fn_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fn_doctor_profile: {
         Row: {
           created_at: string
@@ -823,6 +905,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      fn_voice_commands: {
+        Row: {
+          applied: boolean
+          created_at: string
+          id: string
+          parsed_actions: Json | null
+          raw_transcript: string
+          user_id: string
+        }
+        Insert: {
+          applied?: boolean
+          created_at?: string
+          id?: string
+          parsed_actions?: Json | null
+          raw_transcript: string
+          user_id: string
+        }
+        Update: {
+          applied?: boolean
+          created_at?: string
+          id?: string
+          parsed_actions?: Json | null
+          raw_transcript?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       interesting_cases: {
         Row: {
