@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ModeProvider } from "@/contexts/ModeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -33,6 +33,8 @@ import CIMTPercentile from "./pages/CIMTPercentile";
 import ORADSCalculator from "./pages/ORADSCalculator";
 import FetalGrowth from "./pages/FetalGrowth";
 import PedVolume from "./pages/PedVolume";
+import { FinancialNavigatorLayout } from "@/components/financialNavigator/FinancialNavigatorLayout";
+import { Block1Page } from "@/components/financialNavigator/block1/Block1Page";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +81,14 @@ const App = () => (
             <Route path="/ferramentas/crescimento-fetal" element={<ProtectedWithLayout><FetalGrowth /></ProtectedWithLayout>} />
             <Route path="/ferramentas/ped-volume" element={<ProtectedWithLayout><PedVolume /></ProtectedWithLayout>} />
             <Route path="/gestao-agendas" element={<ProtectedWithLayout><GestaoAgendas /></ProtectedWithLayout>} />
+            {/* Financial Navigator */}
+            <Route path="/financeiro" element={<ProtectedWithLayout><FinancialNavigatorLayout /></ProtectedWithLayout>}>
+              <Route path="config" element={<Block1Page />} />
+              <Route path="agendas" element={<div className="p-4 text-muted-foreground text-sm font-body">Bloco 2 — em breve</div>} />
+              <Route path="projecao" element={<div className="p-4 text-muted-foreground text-sm font-body">Bloco 3 — em breve</div>} />
+              <Route path="insights" element={<div className="p-4 text-muted-foreground text-sm font-body">Bloco 4 — em breve</div>} />
+              <Route index element={<Navigate to="config" replace />} />
+            </Route>
             {/* Legacy redirects */}
             <Route path="/institucional" element={<Navigate to="/comunidade" replace />} />
             <Route path="/magia" element={<Navigate to="/ferramentas-ia" replace />} />

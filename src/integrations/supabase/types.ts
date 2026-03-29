@@ -601,6 +601,229 @@ export type Database = {
         }
         Relationships: []
       }
+      fn_doctor_profile: {
+        Row: {
+          created_at: string
+          home_address: string | null
+          home_lat: number | null
+          home_lng: number | null
+          home_place_id: string | null
+          id: string
+          include_13th: boolean
+          include_vacation: boolean
+          monthly_net_goal: number | null
+          primary_regime: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          home_address?: string | null
+          home_lat?: number | null
+          home_lng?: number | null
+          home_place_id?: string | null
+          id?: string
+          include_13th?: boolean
+          include_vacation?: boolean
+          monthly_net_goal?: number | null
+          primary_regime?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          home_address?: string | null
+          home_lat?: number | null
+          home_lng?: number | null
+          home_place_id?: string | null
+          id?: string
+          include_13th?: boolean
+          include_vacation?: boolean
+          monthly_net_goal?: number | null
+          primary_regime?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      fn_onboarding_progress: {
+        Row: {
+          block1_pct: number
+          block2_pct: number
+          block3_pct: number
+          block4_pct: number
+          completed_at: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          block1_pct?: number
+          block2_pct?: number
+          block3_pct?: number
+          block4_pct?: number
+          completed_at?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          block1_pct?: number
+          block2_pct?: number
+          block3_pct?: number
+          block4_pct?: number
+          completed_at?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      fn_service_expenses: {
+        Row: {
+          amount_brl: number
+          created_at: string
+          frequency: string
+          id: string
+          label: string
+          service_id: string
+          user_id: string
+        }
+        Insert: {
+          amount_brl?: number
+          created_at?: string
+          frequency?: string
+          id?: string
+          label: string
+          service_id: string
+          user_id: string
+        }
+        Update: {
+          amount_brl?: number
+          created_at?: string
+          frequency?: string
+          id?: string
+          label?: string
+          service_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fn_service_expenses_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "fn_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fn_services: {
+        Row: {
+          address: string | null
+          color: string
+          created_at: string
+          fiscal_fixed_costs: number | null
+          fiscal_mode: string
+          fiscal_pct_base: number | null
+          fiscal_pct_total: number | null
+          fixed_monthly_salary: number | null
+          id: string
+          is_active: boolean
+          lat: number | null
+          lng: number | null
+          method_mix: Json | null
+          name: string
+          payment_delta: number
+          place_id: string | null
+          primary_method: string | null
+          regime: string
+          required_hours_month: number | null
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          color?: string
+          created_at?: string
+          fiscal_fixed_costs?: number | null
+          fiscal_mode?: string
+          fiscal_pct_base?: number | null
+          fiscal_pct_total?: number | null
+          fixed_monthly_salary?: number | null
+          id?: string
+          is_active?: boolean
+          lat?: number | null
+          lng?: number | null
+          method_mix?: Json | null
+          name: string
+          payment_delta?: number
+          place_id?: string | null
+          primary_method?: string | null
+          regime?: string
+          required_hours_month?: number | null
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          color?: string
+          created_at?: string
+          fiscal_fixed_costs?: number | null
+          fiscal_mode?: string
+          fiscal_pct_base?: number | null
+          fiscal_pct_total?: number | null
+          fixed_monthly_salary?: number | null
+          id?: string
+          is_active?: boolean
+          lat?: number | null
+          lng?: number | null
+          method_mix?: Json | null
+          name?: string
+          payment_delta?: number
+          place_id?: string | null
+          primary_method?: string | null
+          regime?: string
+          required_hours_month?: number | null
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      fn_shift_values: {
+        Row: {
+          id: string
+          service_id: string
+          shift_type: string
+          user_id: string
+          value_brl: number
+        }
+        Insert: {
+          id?: string
+          service_id: string
+          shift_type: string
+          user_id: string
+          value_brl?: number
+        }
+        Update: {
+          id?: string
+          service_id?: string
+          shift_type?: string
+          user_id?: string
+          value_brl?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fn_shift_values_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "fn_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interesting_cases: {
         Row: {
           created_at: string
