@@ -8,6 +8,7 @@ import {
   ChevronRight,
   ArrowLeftRight,
   TrendingUp,
+  Compass,
 } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
