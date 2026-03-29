@@ -35,6 +35,7 @@ import FetalGrowth from "./pages/FetalGrowth";
 import PedVolume from "./pages/PedVolume";
 import { FinancialNavigatorLayout } from "@/components/financialNavigator/FinancialNavigatorLayout";
 import { Block1Page } from "@/components/financialNavigator/block1/Block1Page";
+import { Block2Page } from "@/components/financialNavigator/block2/Block2Page";
 
 const queryClient = new QueryClient();
 
