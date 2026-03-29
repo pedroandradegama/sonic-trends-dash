@@ -33,6 +33,8 @@ import CIMTPercentile from "./pages/CIMTPercentile";
 import ORADSCalculator from "./pages/ORADSCalculator";
 import FetalGrowth from "./pages/FetalGrowth";
 import PedVolume from "./pages/PedVolume";
+import { FinancialNavigatorLayout } from "@/components/financialNavigator/FinancialNavigatorLayout";
+import { Block1Page } from "@/components/financialNavigator/block1/Block1Page";
 
 const queryClient = new QueryClient();
 
