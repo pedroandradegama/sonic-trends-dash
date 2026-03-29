@@ -195,3 +195,78 @@ export function calcBenefitProvision(
   if (includeVacation) provision += (netMonthly / 12) * (4 / 3);
   return provision;
 }
+
+// ─── Bloco 2 — Calendário ─────────────────────────────────────────────────────
+
+export type ShiftStatus = 'projetado' | 'confirmado' | 'realizado' | 'cancelado';
+
+export interface FnCalendarShift {
+  id: string;
+  user_id: string;
+  service_id: string;
+  shift_date: string;   // 'YYYY-MM-DD'
+  shift_type: FnShiftType;
+  status: ShiftStatus;
+  notes?: string;
+}
+
+// Qual slot visual (0–3) cada FnShiftType ocupa
+export const SHIFT_SLOT_INDICES: Record<FnShiftType, number[]> = {
+  slot1:       [0],
+  slot2:       [1],
+  slot3:       [2],
+  slot4:       [3],
+  plantao_6h:  [0],
+  plantao_12h: [0, 1],
+  plantao_24h: [0, 1, 2, 3],
+};
+
+// Horas de início de cada slot (para exibição e cálculo)
+export const SLOT_START_HOURS: Record<FnShiftType, number> = {
+  slot1: 7, slot2: 13, slot3: 19, slot4: 1,
+  plantao_6h: 7, plantao_12h: 7, plantao_24h: 7,
+};
+
+// Duração em horas de cada FnShiftType
+export const SHIFT_HOURS: Record<FnShiftType, number> = {
+  slot1: 6, slot2: 6, slot3: 6, slot4: 6,
+  plantao_6h: 6, plantao_12h: 12, plantao_24h: 24,
+};
+
+// Agrupamento para filtros
+export const AGENDA_SHIFT_TYPES: FnShiftType[] = ['slot1','slot2','slot3','slot4'];
+export const PLANTAO_SHIFT_TYPES: FnShiftType[] = ['plantao_6h','plantao_12h','plantao_24h'];
+
+export interface VoiceAction {
+  service_name: string;
+  service_id: string | null;
+  shift_date: string;
+  shift_type: FnShiftType;
+  confidence: number;
+  raw_mention: string;
+}
+
+export interface CommuteInfo {
+  duration_min: number;
+  distance_km: number;
+}
+
+// Dados de um dia no calendário (calculado client-side)
+export interface CalendarDayData {
+  date: string;
+  shifts: FnCalendarShift[];
+  slotOccupancy: (FnCalendarShift | null)[];
+  hasConflict: boolean;
+  totalValue: number;
+  totalHours: number;
+}
+
+// Resumo do mês
+export interface MonthSummary {
+  totalGross: number;
+  totalHours: number;
+  shiftCount: number;
+  byService: Record<string, { gross: number; hours: number; shifts: number }>;
+  byShiftType: Record<FnShiftType, number>;
+  conflictDays: string[];
+}
