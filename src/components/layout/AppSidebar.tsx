@@ -24,6 +24,7 @@ const allNavItems: { path: string; label: string; icon: typeof LayoutDashboard; 
   { path: '/minha-agenda', label: 'Minha Agenda', icon: CalendarDays, modes: ['avancado'] },
   { path: '/meu-trabalho', label: 'Meu Trabalho', icon: Briefcase, modes: ['avancado'] },
   { path: '/projecao', label: 'Projeção', icon: TrendingUp, modes: ['avancado'] },
+  { path: '/financeiro', label: 'Financial Navigator', icon: Compass, modes: ['avancado'] },
   { path: '/ferramentas-ia', label: 'Ferramentas & IA', icon: Wrench, modes: ['agenda', 'avancado'] },
   { path: '/comunidade', label: 'Comunidade', icon: Users, modes: ['avancado'] },
 ];
