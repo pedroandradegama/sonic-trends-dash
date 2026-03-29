@@ -81,6 +81,14 @@ const App = () => (
             <Route path="/ferramentas/crescimento-fetal" element={<ProtectedWithLayout><FetalGrowth /></ProtectedWithLayout>} />
             <Route path="/ferramentas/ped-volume" element={<ProtectedWithLayout><PedVolume /></ProtectedWithLayout>} />
             <Route path="/gestao-agendas" element={<ProtectedWithLayout><GestaoAgendas /></ProtectedWithLayout>} />
+            {/* Financial Navigator */}
+            <Route path="/financeiro" element={<ProtectedWithLayout><FinancialNavigatorLayout /></ProtectedWithLayout>}>
+              <Route path="config" element={<Block1Page />} />
+              <Route path="agendas" element={<div className="p-4 text-muted-foreground text-sm font-body">Bloco 2 — em breve</div>} />
+              <Route path="projecao" element={<div className="p-4 text-muted-foreground text-sm font-body">Bloco 3 — em breve</div>} />
+              <Route path="insights" element={<div className="p-4 text-muted-foreground text-sm font-body">Bloco 4 — em breve</div>} />
+              <Route index element={<Navigate to="config" replace />} />
+            </Route>
             {/* Legacy redirects */}
             <Route path="/institucional" element={<Navigate to="/comunidade" replace />} />
             <Route path="/magia" element={<Navigate to="/ferramentas-ia" replace />} />
