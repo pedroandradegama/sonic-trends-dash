@@ -1,0 +1,91 @@
+import { useEffect } from 'react';
+import { FnProjectionFilters } from './FnProjectionFilters';
+import { FnMetricsGrid } from './FnMetricsGrid';
+import { FnProjectionChart } from './FnProjectionChart';
+import { FnReceiptTimeline } from './FnReceiptTimeline';
+import { FnMethodBreakdown } from './FnMethodBreakdown';
+import { FnProvisionCard } from './FnProvisionCard';
+import { FnAdjustmentsLog } from './FnAdjustmentsLog';
+import { useFnProjection } from '@/hooks/useFnProjection';
+import { useFnConfig } from '@/hooks/useFnConfig';
+import { supabase } from '@/integrations/supabase/client';
+import { useUserProfile } from '@/hooks/useUserProfile';
+
+export function Block3Page() {
+  const { prefs, metrics, projectionPoints, adjustments, block2Progress, savePrefs } =
+    useFnProjection();
+  const { services, doctorProfile } = useFnConfig();
+  const { profile } = useUserProfile();
+
+  // Persist block2 progress whenever it changes
+  useEffect(() => {
+    if (!profile?.user_id) return;
+    (supabase as any)
+      .from('fn_onboarding_progress')
+      .upsert(
+        { user_id: profile.user_id, block2_pct: block2Progress, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id' }
+      )
+      .then(() => {});
+  }, [block2Progress, profile?.user_id]);
+
+  const hasData = projectionPoints.some(p => p.totalGross > 0);
+
+  if (!hasData) {
+    return (
+      <div className="max-w-2xl mx-auto py-10 text-center space-y-3">
+        <p className="text-sm font-medium text-muted-foreground">
+          Nenhum turno registrado ainda.
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Vá ao Bloco 2 — Agendas e adicione seus turnos para ver a projeção financeira.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5 max-w-2xl mx-auto">
+      <FnProjectionFilters
+        prefs={prefs}
+        services={services}
+        onSave={savePrefs.mutate}
+      />
+
+      <FnMetricsGrid metrics={metrics} prefs={prefs} />
+
+      <FnProjectionChart
+        points={projectionPoints}
+        services={services}
+        prefs={prefs}
+      />
+
+      <FnReceiptTimeline
+        receiptsByMonth={metrics.receiptsByMonth}
+        services={services}
+        projectionPoints={projectionPoints}
+        prefs={prefs}
+      />
+
+      <FnMethodBreakdown
+        hoursByMethod={metrics.hoursByMethod}
+        grossByMethod={metrics.grossByMethod}
+        prefs={prefs}
+      />
+
+      {(doctorProfile?.include_13th || doctorProfile?.include_vacation) &&
+        metrics.provisionAmount > 0 && (
+          <FnProvisionCard
+            provisionAmount={metrics.provisionAmount}
+            include13th={doctorProfile?.include_13th ?? false}
+            includeVacation={doctorProfile?.include_vacation ?? false}
+            netMonthly={metrics.currentMonthNet}
+          />
+        )}
+
+      {adjustments.length > 0 && (
+        <FnAdjustmentsLog adjustments={adjustments} services={services} />
+      )}
+    </div>
+  );
+}

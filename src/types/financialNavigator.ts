@@ -270,3 +270,51 @@ export interface MonthSummary {
   byShiftType: Record<FnShiftType, number>;
   conflictDays: string[];
 }
+
+// ─── Bloco 3 — Projeção Financeira ───────────────────────────────────────────
+
+export interface FnProjectionPrefs {
+  show_net: boolean;
+  tax_rate: number;
+  filter_service: string;   // 'all' | service_id
+  filter_regime: string;    // 'all' | WorkRegime
+  filter_method: string;    // 'all' | WorkMethod
+}
+
+export interface FnShiftAdjustment {
+  id: string;
+  shift_date: string;
+  service_id?: string;
+  shift_type?: FnShiftType;
+  adjustment_type: 'added' | 'removed' | 'changed';
+  reason?: string;
+  gross_impact: number;
+  created_at: string;
+}
+
+export interface MonthProjectionPoint {
+  label: string;
+  year: number;
+  month: number;
+  isPast: boolean;
+  isCurrent: boolean;
+  grossByService: Record<string, number>;
+  totalGross: number;
+  totalNet: number;
+  totalHours: number;
+  expectedReceipts: number;
+}
+
+export interface ProjectionMetrics {
+  currentMonthGross: number;
+  currentMonthNet: number;
+  nextMonthGross: number;
+  nextMonthNet: number;
+  avgMonthlyGross: number;
+  totalHoursCurrentMonth: number;
+  effectiveHourlyRate: number;
+  provisionAmount: number;
+  hoursByMethod: Record<WorkMethod, number>;
+  grossByMethod: Record<WorkMethod, number>;
+  receiptsByMonth: Record<string, number>;
+}
