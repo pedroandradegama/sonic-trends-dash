@@ -87,7 +87,7 @@ const App = () => (
             <Route path="/financeiro" element={<ProtectedWithLayout><FinancialNavigatorLayout /></ProtectedWithLayout>}>
               <Route path="config" element={<Block1Page />} />
               <Route path="agendas" element={<Block2Page />} />
-              <Route path="projecao" element={<div className="p-4 text-muted-foreground text-sm font-body">Bloco 3 — em breve</div>} />
+              <Route path="projecao" element={<Block3Page />} />
               <Route path="insights" element={<div className="p-4 text-muted-foreground text-sm font-body">Bloco 4 — em breve</div>} />
               <Route index element={<Navigate to="config" replace />} />
             </Route>
