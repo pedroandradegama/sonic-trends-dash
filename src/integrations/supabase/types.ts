@@ -761,6 +761,42 @@ export type Database = {
         }
         Relationships: []
       }
+      fn_projection_prefs: {
+        Row: {
+          created_at: string
+          filter_method: string | null
+          filter_regime: string | null
+          filter_service: string | null
+          id: string
+          show_net: boolean
+          tax_rate: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          filter_method?: string | null
+          filter_regime?: string | null
+          filter_service?: string | null
+          id?: string
+          show_net?: boolean
+          tax_rate?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          filter_method?: string | null
+          filter_regime?: string | null
+          filter_service?: string | null
+          id?: string
+          show_net?: boolean
+          tax_rate?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       fn_service_expenses: {
         Row: {
           amount_brl: number
@@ -873,6 +909,60 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      fn_shift_adjustments: {
+        Row: {
+          adjustment_type: string
+          created_at: string
+          gross_impact: number | null
+          id: string
+          reason: string | null
+          service_id: string | null
+          shift_date: string
+          shift_id: string | null
+          shift_type: string | null
+          user_id: string
+        }
+        Insert: {
+          adjustment_type: string
+          created_at?: string
+          gross_impact?: number | null
+          id?: string
+          reason?: string | null
+          service_id?: string | null
+          shift_date: string
+          shift_id?: string | null
+          shift_type?: string | null
+          user_id: string
+        }
+        Update: {
+          adjustment_type?: string
+          created_at?: string
+          gross_impact?: number | null
+          id?: string
+          reason?: string | null
+          service_id?: string | null
+          shift_date?: string
+          shift_id?: string | null
+          shift_type?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fn_shift_adjustments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "fn_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fn_shift_adjustments_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "fn_calendar_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fn_shift_values: {
         Row: {
