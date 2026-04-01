@@ -9,7 +9,7 @@ import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GooglePlacesInput } from '../GooglePlacesInput';
+import { ClinicAddressInput } from '../ClinicAddressInput';
 import { FiscalConfigSection } from './FiscalConfigSection';
 import { ShiftValuesSection } from './ShiftValuesSection';
 import { ExpensesSection } from './ExpensesSection';
