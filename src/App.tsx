@@ -37,6 +37,7 @@ import { FinancialNavigatorLayout } from "@/components/financialNavigator/Financ
 import { Block1Page } from "@/components/financialNavigator/block1/Block1Page";
 import { Block2Page } from "@/components/financialNavigator/block2/Block2Page";
 import { Block3Page } from "@/components/financialNavigator/block3/Block3Page";
+import { Block4Page } from "@/components/financialNavigator/block4/Block4Page";
 
 const queryClient = new QueryClient();
 
