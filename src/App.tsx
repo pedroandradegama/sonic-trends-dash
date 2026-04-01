@@ -37,6 +37,7 @@ import { FinancialNavigatorLayout } from "@/components/financialNavigator/Financ
 import { Block1Page } from "@/components/financialNavigator/block1/Block1Page";
 import { Block2Page } from "@/components/financialNavigator/block2/Block2Page";
 import { Block3Page } from "@/components/financialNavigator/block3/Block3Page";
+import { Block4Page } from "@/components/financialNavigator/block4/Block4Page";
 
 const queryClient = new QueryClient();
 
@@ -88,7 +89,7 @@ const App = () => (
               <Route path="config" element={<Block1Page />} />
               <Route path="agendas" element={<Block2Page />} />
               <Route path="projecao" element={<Block3Page />} />
-              <Route path="insights" element={<div className="p-4 text-muted-foreground text-sm font-body">Bloco 4 — em breve</div>} />
+              <Route path="insights" element={<Block4Page />} />
               <Route index element={<Navigate to="config" replace />} />
             </Route>
             {/* Legacy redirects */}

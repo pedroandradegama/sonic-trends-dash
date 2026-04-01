@@ -26,7 +26,7 @@ export function FinancialNavigatorLayout() {
       {/* Barra de ciclo evolutivo */}
       <div className="px-4 pt-4 pb-0">
         <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2 font-body">
-          Ciclo Financial Navigator
+          Navegador Financeiro
         </p>
         <div className="flex gap-1.5 mb-1">
           {BLOCKS.map((b, i) => {

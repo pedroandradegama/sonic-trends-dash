@@ -318,3 +318,87 @@ export interface ProjectionMetrics {
   grossByMethod: Record<WorkMethod, number>;
   receiptsByMonth: Record<string, number>;
 }
+
+// ─── Bloco 4 — Avaliação & Insights ──────────────────────────────────────────
+
+export interface EvalDimension {
+  key: string;
+  label: string;
+  group: 'financial' | 'work' | 'logistics';
+  description: string;
+}
+
+export const EVAL_DIMENSIONS: EvalDimension[] = [
+  { key: 'score_remuneration',   label: 'Remuneração',           group: 'financial',  description: 'R$/h vs. percepção de mercado' },
+  { key: 'score_punctuality',    label: 'Pontualidade',           group: 'financial',  description: 'Histórico de atrasos no pagamento' },
+  { key: 'score_transparency',   label: 'Transparência',          group: 'financial',  description: 'Clareza no relatório de repasse' },
+  { key: 'score_legal_security', label: 'Segurança jurídica',     group: 'financial',  description: 'Contrato formal e regime claro' },
+  { key: 'score_equipment',      label: 'Equipamento',            group: 'work',       description: 'Qualidade de US, TC, RM e software' },
+  { key: 'score_environment',    label: 'Ambiente e equipe',      group: 'work',       description: 'Relações, suporte técnico, gestão' },
+  { key: 'score_volume',         label: 'Volume e complexidade',  group: 'work',       description: 'Casos por turno, mix de dificuldade' },
+  { key: 'score_development',    label: 'Desenvolvimento prof.',  group: 'work',       description: 'Casos raros, ensino, publicação' },
+  { key: 'score_perspective',    label: 'Perspectiva do serviço', group: 'work',       description: 'Crescimento, estabilidade, risco futuro' },
+  { key: 'score_reputation',     label: 'Reputação / network',    group: 'work',       description: 'Valor de marca, abertura de portas' },
+  { key: 'score_commute',        label: 'Deslocamento',           group: 'logistics',  description: 'Tempo de commute no horário do turno' },
+  { key: 'score_flexibility',    label: 'Flexibilidade',          group: 'logistics',  description: 'Troca de turno, folgas, agenda' },
+  { key: 'score_bureaucracy',    label: 'Burocracia',             group: 'logistics',  description: 'NF, RH, processos administrativos' },
+];
+
+export const GROUP_LABELS = {
+  financial: 'Financeiro',
+  work: 'Trabalho',
+  logistics: 'Logística',
+};
+
+export const GROUP_DEFAULT_WEIGHTS = {
+  financial: 50,
+  work: 35,
+  logistics: 15,
+};
+
+export type EvalScores = Record<string, number>;
+
+export interface FnServiceEvaluation {
+  id?: string;
+  user_id: string;
+  service_id: string;
+  evaluated_at: string;
+  period_label: string;
+  weight_financial: number;
+  weight_work: number;
+  weight_logistics: number;
+  notes?: string;
+  [key: string]: any;
+}
+
+export interface CompositeScore {
+  service_id: string;
+  service_name: string;
+  color: string;
+  financial_score: number;
+  work_score: number;
+  logistics_score: number;
+  composite: number;
+  prev_composite?: number;
+  delta?: number;
+  evaluated_at?: string;
+}
+
+export interface KpiSnapshot {
+  snapshot_month: string;
+  total_gross: number;
+  total_net: number;
+  total_hours: number;
+  effective_rate: number;
+  shift_count: number;
+}
+
+export interface PjPfSimulation {
+  annual_gross: number;
+  simples: { total: number; rate: number; eligible: boolean };
+  lucro_presumido: { total: number; rate: number };
+  pf: { total: number; rate: number };
+  suggestion: string;
+}
+
+export type EvalMode = 'by_service' | 'by_criterion';

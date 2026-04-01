@@ -728,6 +728,45 @@ export type Database = {
         }
         Relationships: []
       }
+      fn_kpi_snapshots: {
+        Row: {
+          created_at: string
+          effective_rate: number
+          id: string
+          shift_count: number
+          snapshot_month: string
+          total_gross: number
+          total_hours: number
+          total_net: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          effective_rate?: number
+          id?: string
+          shift_count?: number
+          snapshot_month: string
+          total_gross?: number
+          total_hours?: number
+          total_net?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          effective_rate?: number
+          id?: string
+          shift_count?: number
+          snapshot_month?: string
+          total_gross?: number
+          total_hours?: number
+          total_net?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       fn_onboarding_progress: {
         Row: {
           block1_pct: number
@@ -796,6 +835,92 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      fn_service_evaluations: {
+        Row: {
+          created_at: string
+          evaluated_at: string
+          id: string
+          notes: string | null
+          period_label: string
+          score_bureaucracy: number | null
+          score_commute: number | null
+          score_development: number | null
+          score_environment: number | null
+          score_equipment: number | null
+          score_flexibility: number | null
+          score_legal_security: number | null
+          score_perspective: number | null
+          score_punctuality: number | null
+          score_remuneration: number | null
+          score_reputation: number | null
+          score_transparency: number | null
+          score_volume: number | null
+          service_id: string
+          user_id: string
+          weight_financial: number
+          weight_logistics: number
+          weight_work: number
+        }
+        Insert: {
+          created_at?: string
+          evaluated_at?: string
+          id?: string
+          notes?: string | null
+          period_label: string
+          score_bureaucracy?: number | null
+          score_commute?: number | null
+          score_development?: number | null
+          score_environment?: number | null
+          score_equipment?: number | null
+          score_flexibility?: number | null
+          score_legal_security?: number | null
+          score_perspective?: number | null
+          score_punctuality?: number | null
+          score_remuneration?: number | null
+          score_reputation?: number | null
+          score_transparency?: number | null
+          score_volume?: number | null
+          service_id: string
+          user_id: string
+          weight_financial?: number
+          weight_logistics?: number
+          weight_work?: number
+        }
+        Update: {
+          created_at?: string
+          evaluated_at?: string
+          id?: string
+          notes?: string | null
+          period_label?: string
+          score_bureaucracy?: number | null
+          score_commute?: number | null
+          score_development?: number | null
+          score_environment?: number | null
+          score_equipment?: number | null
+          score_flexibility?: number | null
+          score_legal_security?: number | null
+          score_perspective?: number | null
+          score_punctuality?: number | null
+          score_remuneration?: number | null
+          score_reputation?: number | null
+          score_transparency?: number | null
+          score_volume?: number | null
+          service_id?: string
+          user_id?: string
+          weight_financial?: number
+          weight_logistics?: number
+          weight_work?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fn_service_evaluations_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "fn_services"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fn_service_expenses: {
         Row: {

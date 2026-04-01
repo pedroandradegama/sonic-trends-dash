@@ -33,7 +33,7 @@ export function Block3Page() {
 
   if (!hasData) {
     return (
-      <div className="max-w-2xl mx-auto py-10 text-center space-y-3">
+      <div className="py-10 text-center space-y-3">
         <p className="text-sm font-medium text-muted-foreground">
           Nenhum turno registrado ainda.
         </p>
@@ -45,7 +45,7 @@ export function Block3Page() {
   }
 
   return (
-    <div className="space-y-5 max-w-2xl mx-auto">
+    <div className="space-y-5">
       <FnProjectionFilters
         prefs={prefs}
         services={services}
