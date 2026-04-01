@@ -45,7 +45,7 @@ export function Block3Page() {
   }
 
   return (
-    <div className="space-y-5 max-w-2xl mx-auto">
+    <div className="space-y-5">
       <FnProjectionFilters
         prefs={prefs}
         services={services}
