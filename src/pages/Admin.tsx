@@ -643,6 +643,11 @@ export default function Admin() {
             <AdminCommunityTopicsTab />
           </TabsContent>
 
+          {/* ── ABA CLÍNICAS PRESET ── */}
+          <TabsContent value="clinicas">
+            <AdminPresetClinicsTab />
+          </TabsContent>
+
           {/* ── ABA CONFIGURAÇÕES ── */}
           <TabsContent value="config">
             <div className="space-y-6">

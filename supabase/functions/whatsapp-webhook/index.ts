@@ -136,6 +136,27 @@ const handler = async (req: Request): Promise<Response> => {
 
     await sendWhatsAppMessage(from, reply);
 
+    // Dispatch para o handler de queries do Financial Navigator
+    const incomingText = text;
+    if (incomingText.trim().length > 3) {
+      try {
+        const fnHandlerUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/fn-whatsapp-query-handler`;
+        fetch(fnHandlerUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          },
+          body: JSON.stringify({
+            from_number: from,
+            message_text: incomingText,
+          }),
+        }).catch(err => console.error('FN query handler error:', err));
+      } catch (e) {
+        console.error('Error dispatching to fn-query-handler:', e);
+      }
+    }
+
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
