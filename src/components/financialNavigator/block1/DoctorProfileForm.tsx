@@ -11,11 +11,13 @@ import { FnDoctorProfile } from '@/types/financialNavigator';
 
 export function DoctorProfileForm() {
   const { doctorProfile, saveProfile } = useFnConfig();
-  const [form, setForm] = useState<Partial<FnDoctorProfile>>({
+  const [form, setForm] = useState<Partial<FnDoctorProfile & { whatsapp_number?: string; whatsapp_digest_enabled?: boolean }>>({
     home_address: '',
     monthly_net_goal: 0,
     include_13th: false,
     include_vacation: false,
+    whatsapp_number: '',
+    whatsapp_digest_enabled: true,
   });
   const [saving, setSaving] = useState(false);
 
