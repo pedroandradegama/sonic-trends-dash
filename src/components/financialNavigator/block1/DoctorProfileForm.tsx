@@ -101,6 +101,30 @@ export function DoctorProfileForm() {
           </div>
         </div>
 
+        {/* WhatsApp */}
+        <div className="space-y-1.5">
+          <Label className="text-xs">WhatsApp para notificações</Label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">+55</span>
+            <Input
+              value={(form as any).whatsapp_number?.replace('+55','').replace(/\D/g,'') ?? ''}
+              onChange={e => setForm(f => ({ ...f, whatsapp_number: '+55' + e.target.value.replace(/\D/g,'') }))}
+              placeholder="81 99999-9999"
+              className="pl-10"
+            />
+          </div>
+          <div className="flex items-center justify-between py-1.5">
+            <div>
+              <p className="text-sm font-body">Digest semanal (todo domingo)</p>
+              <p className="text-[11px] text-muted-foreground font-body">Agenda da semana seguinte via WhatsApp</p>
+            </div>
+            <Switch
+              checked={(form as any).whatsapp_digest_enabled ?? true}
+              onCheckedChange={v => setForm(f => ({ ...f, whatsapp_digest_enabled: v }))}
+            />
+          </div>
+        </div>
+
         <Button className="w-full" onClick={handleSave} disabled={saving}>
           {saving ? 'Salvando...' : 'Salvar perfil'}
         </Button>

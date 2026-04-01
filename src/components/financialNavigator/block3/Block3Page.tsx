@@ -46,46 +46,50 @@ export function Block3Page() {
 
   return (
     <div className="space-y-5">
-      <FnProjectionFilters
-        prefs={prefs}
-        services={services}
-        onSave={savePrefs.mutate}
-      />
+      <FnProjectionFilters prefs={prefs} services={services} onSave={savePrefs.mutate} />
 
-      <FnMetricsGrid metrics={metrics} prefs={prefs} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 space-y-5">
+          <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+            <FnMetricsGrid metrics={metrics} prefs={prefs} />
+          </div>
+          <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+            <p className="text-sm font-semibold text-foreground mb-4">Produção mês a mês</p>
+            <FnProjectionChart points={projectionPoints} services={services} prefs={prefs} />
+          </div>
+          <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+            <FnReceiptTimeline
+              receiptsByMonth={metrics.receiptsByMonth}
+              services={services}
+              projectionPoints={projectionPoints}
+              prefs={prefs}
+            />
+          </div>
+        </div>
 
-      <FnProjectionChart
-        points={projectionPoints}
-        services={services}
-        prefs={prefs}
-      />
-
-      <FnReceiptTimeline
-        receiptsByMonth={metrics.receiptsByMonth}
-        services={services}
-        projectionPoints={projectionPoints}
-        prefs={prefs}
-      />
-
-      <FnMethodBreakdown
-        hoursByMethod={metrics.hoursByMethod}
-        grossByMethod={metrics.grossByMethod}
-        prefs={prefs}
-      />
-
-      {(doctorProfile?.include_13th || doctorProfile?.include_vacation) &&
-        metrics.provisionAmount > 0 && (
-          <FnProvisionCard
-            provisionAmount={metrics.provisionAmount}
-            include13th={doctorProfile?.include_13th ?? false}
-            includeVacation={doctorProfile?.include_vacation ?? false}
-            netMonthly={metrics.currentMonthNet}
-          />
-        )}
-
-      {adjustments.length > 0 && (
-        <FnAdjustmentsLog adjustments={adjustments} services={services} />
-      )}
+        <div className="space-y-5">
+          <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+            <FnMethodBreakdown
+              hoursByMethod={metrics.hoursByMethod}
+              grossByMethod={metrics.grossByMethod}
+              prefs={prefs}
+            />
+          </div>
+          {(doctorProfile?.include_13th || doctorProfile?.include_vacation) && metrics.provisionAmount > 0 && (
+            <FnProvisionCard
+              provisionAmount={metrics.provisionAmount}
+              include13th={doctorProfile?.include_13th ?? false}
+              includeVacation={doctorProfile?.include_vacation ?? false}
+              netMonthly={metrics.currentMonthNet}
+            />
+          )}
+          {adjustments.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+              <FnAdjustmentsLog adjustments={adjustments} services={services} />
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

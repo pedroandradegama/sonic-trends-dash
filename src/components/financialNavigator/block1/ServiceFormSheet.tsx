@@ -128,9 +128,8 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
 
             <div className="space-y-1.5">
               <Label className="text-xs">Endereço da clínica</Label>
-              <GooglePlacesInput
+              <ClinicAddressInput
                 value={form.address}
-                placeholder="Buscar endereço..."
                 onSelect={r => setForm(f => ({
                   ...f,
                   address: r.address,
