@@ -16,6 +16,7 @@ import { AdminConfigTab } from '@/components/admin/AdminConfigTab';
 import { AdminSuggestionsTab } from '@/components/admin/AdminSuggestionsTab';
 import { AdminCommunityTopicsTab } from '@/components/admin/AdminCommunityTopicsTab';
 import { AdminReferralsTab } from '@/components/admin/AdminReferralsTab';
+import { AdminPresetClinicsTab } from '@/components/admin/AdminPresetClinicsTab';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
