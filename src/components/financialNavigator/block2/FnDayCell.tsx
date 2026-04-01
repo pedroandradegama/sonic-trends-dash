@@ -9,6 +9,7 @@ interface Props {
   isToday: boolean;
   isSelected: boolean;
   onClick: () => void;
+  expanded?: boolean;
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -18,66 +19,62 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-export function FnDayCell({
-  dayNumber, dateStr, dayData, isToday, isSelected, onClick,
-}: Props) {
+const SLOT_TIMES = ['7h', '13h', '19h', '1h'];
+
+export function FnDayCell({ dayNumber, dayData, isToday, expanded, onClick }: Props) {
   const { services } = useFnConfig();
   const { slotOccupancy, hasConflict, totalValue } = dayData;
 
   return (
-    <div
-      onClick={onClick}
-      className={cn(
-        'relative rounded-lg border overflow-hidden cursor-pointer transition-all',
-        'flex flex-col min-h-[52px]',
-        isSelected
-          ? 'border-primary ring-1 ring-primary/30'
-          : hasConflict
-          ? 'border-destructive/60'
-          : 'border-border hover:border-border/80',
-      )}
-      style={{ aspectRatio: '0.85' }}
-    >
-      <div className="absolute inset-0 flex flex-col">
-        {slotOccupancy.map((shift, slotIdx) => {
-          if (!shift) {
-            return <div key={slotIdx} className="flex-1 w-full" />;
-          }
-          const svc = services.find(s => s.id === shift.service_id);
-          const color = svc?.color ?? '#888880';
-          return (
-            <div
-              key={slotIdx}
-              className="flex-1 w-full relative"
-              style={{ background: hexToRgba(color, 0.18) }}
-            >
-              <div
-                className="absolute left-0 top-0 bottom-0 w-[3px]"
-                style={{ background: color }}
-              />
-            </div>
-          );
-        })}
+    <div className="h-full w-full p-1.5 flex flex-col gap-1" onClick={onClick}>
+      <div className="flex items-center justify-between">
+        <span className={cn(
+          'text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full',
+          isToday
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground'
+        )}>
+          {dayNumber}
+        </span>
+        {hasConflict && (
+          <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
+        )}
       </div>
 
-      <span
-        className={cn(
-          'absolute top-1 left-1.5 text-[11px] leading-none z-10 font-body',
-          isToday ? 'text-primary font-semibold' : 'text-muted-foreground',
-        )}
-      >
-        {dayNumber}
-      </span>
-
-      {hasConflict && (
-        <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-destructive z-10" />
+      {expanded && (
+        <div className="flex flex-col gap-0.5 flex-1">
+          {slotOccupancy.map((shift, slotIdx) => {
+            const svc = shift ? services.find(s => s.id === shift.service_id) : null;
+            const color = svc?.color ?? null;
+            return (
+              <div
+                key={slotIdx}
+                className={cn(
+                  'flex-1 rounded-sm flex items-center px-1 min-h-[12px]',
+                  !color ? 'bg-transparent' : ''
+                )}
+                style={color ? {
+                  background: hexToRgba(color, 0.15),
+                  borderLeft: `2px solid ${color}`,
+                } : {
+                  borderLeft: '2px solid transparent',
+                }}
+                title={`${SLOT_TIMES[slotIdx]}${svc ? ` — ${svc.name}` : ''}`}
+              >
+                {color && svc && (
+                  <span className="text-[8px] font-medium truncate" style={{ color }}>
+                    {svc.name.split(' ')[0]}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {totalValue > 0 && (
-        <span className="absolute bottom-0.5 right-1 text-[9px] font-medium text-muted-foreground z-10 leading-none font-body">
-          {totalValue >= 1000
-            ? `R$${(Math.round(totalValue / 100) / 10).toFixed(1)}k`
-            : `R$${totalValue}`}
+        <span className="text-[9px] font-semibold text-muted-foreground text-right leading-none">
+          R${Math.round(totalValue / 1000)}k
         </span>
       )}
     </div>

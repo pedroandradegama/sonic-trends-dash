@@ -34,59 +34,58 @@ export function FnProjectionFilters({ prefs, services, onSave }: Props) {
   );
 
   return (
-    <div className="space-y-3">
-      {/* Filtro por serviço */}
-      <div className="flex gap-1.5 overflow-x-auto pb-0.5">
-        {chip('Todos os serviços', prefs.filter_service === 'all', () =>
-          onSave({ filter_service: 'all' }))}
-        {services.map(s =>
-          chip(s.name, prefs.filter_service === s.id, () =>
-            onSave({ filter_service: s.id }), s.color)
-        )}
+    <div className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-3">
+      <div>
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Serviço</p>
+        <div className="flex gap-1.5 flex-wrap">
+          {chip('Todos', prefs.filter_service === 'all', () => onSave({ filter_service: 'all' }))}
+          {services.map(s => chip(s.name, prefs.filter_service === s.id, () => onSave({ filter_service: s.id }), s.color))}
+        </div>
       </div>
 
-      {/* Filtro por regime */}
-      <div className="flex gap-1.5 overflow-x-auto pb-0.5">
-        {chip('Todos os regimes', prefs.filter_regime === 'all', () =>
-          onSave({ filter_regime: 'all' }))}
-        {(['pj_turno','pj_producao','clt','residencia','fellowship'] as WorkRegime[]).map(r =>
-          chip(REGIME_LABELS[r], prefs.filter_regime === r, () =>
-            onSave({ filter_regime: r }))
-        )}
+      <div className="border-t border-border/50" />
+
+      <div>
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Regime</p>
+        <div className="flex gap-1.5 flex-wrap">
+          {chip('Todos', prefs.filter_regime === 'all', () => onSave({ filter_regime: 'all' }))}
+          {(['pj_turno','pj_producao','clt','residencia','fellowship'] as WorkRegime[]).map(r =>
+            chip(REGIME_LABELS[r], prefs.filter_regime === r, () => onSave({ filter_regime: r }))
+          )}
+        </div>
       </div>
 
-      {/* Toggle bruto / líquido + campo tributário */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {(['bruto','liquido'] as const).map(vt => (
-          <button
-            key={vt}
-            onClick={() => onSave({ show_net: vt === 'liquido' })}
-            className={cn(
-              'px-3 py-1.5 text-xs rounded-lg border transition-colors',
-              (vt === 'liquido') === prefs.show_net
-                ? 'bg-muted border-border font-medium text-foreground'
-                : 'border-transparent text-muted-foreground hover:bg-muted/50',
-            )}
-          >
-            Valor {vt}
-          </button>
-        ))}
+      <div className="border-t border-border/50" />
 
+      <div className="flex items-center gap-3 flex-wrap">
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Valor</p>
+        <div className="flex rounded-lg border border-border overflow-hidden">
+          {(['bruto', 'liquido'] as const).map(vt => (
+            <button
+              key={vt}
+              onClick={() => onSave({ show_net: vt === 'liquido' })}
+              className={cn(
+                'px-4 py-1.5 text-xs font-medium transition-colors capitalize',
+                (vt === 'liquido') === prefs.show_net
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-muted'
+              )}
+            >
+              {vt}
+            </button>
+          ))}
+        </div>
         {prefs.show_net && (
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-muted-foreground">Desconto total</span>
+          <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-1.5">
+            <span className="text-xs text-muted-foreground">Desconto</span>
             <Input
-              type="number"
-              min={0} max={60} step={0.5}
+              type="number" min={0} max={60} step={0.5}
               value={localTax}
               onChange={e => setLocalTax(Number(e.target.value))}
               onBlur={() => onSave({ tax_rate: localTax })}
-              className="w-16 h-7 text-xs text-right px-2"
+              className="w-16 h-7 text-xs text-right px-2 border-0 bg-transparent focus-visible:ring-0"
             />
-            <span className="text-xs text-muted-foreground">%</span>
-            <span className="text-[10px] text-muted-foreground">
-              (−{localTax}% aplicado)
-            </span>
+            <span className="text-xs font-medium text-foreground">{localTax}%</span>
           </div>
         )}
       </div>

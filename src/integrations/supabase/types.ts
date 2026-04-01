@@ -697,6 +697,8 @@ export type Database = {
           primary_regime: string | null
           updated_at: string
           user_id: string
+          whatsapp_digest_enabled: boolean
+          whatsapp_number: string | null
         }
         Insert: {
           created_at?: string
@@ -711,6 +713,8 @@ export type Database = {
           primary_regime?: string | null
           updated_at?: string
           user_id: string
+          whatsapp_digest_enabled?: boolean
+          whatsapp_number?: string | null
         }
         Update: {
           created_at?: string
@@ -725,6 +729,8 @@ export type Database = {
           primary_regime?: string | null
           updated_at?: string
           user_id?: string
+          whatsapp_digest_enabled?: boolean
+          whatsapp_number?: string | null
         }
         Relationships: []
       }
@@ -797,6 +803,51 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      fn_preset_clinics: {
+        Row: {
+          address: string
+          city: string
+          created_at: string
+          id: string
+          is_active: boolean
+          lat: number | null
+          lng: number | null
+          name: string
+          place_id: string | null
+          short_name: string | null
+          specialty: string | null
+          state: string
+        }
+        Insert: {
+          address: string
+          city?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          lat?: number | null
+          lng?: number | null
+          name: string
+          place_id?: string | null
+          short_name?: string | null
+          specialty?: string | null
+          state?: string
+        }
+        Update: {
+          address?: string
+          city?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          place_id?: string | null
+          short_name?: string | null
+          specialty?: string | null
+          state?: string
         }
         Relationships: []
       }
@@ -1145,6 +1196,39 @@ export type Database = {
           parsed_actions?: Json | null
           raw_transcript?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      fn_whatsapp_queries: {
+        Row: {
+          created_at: string
+          from_number: string
+          id: string
+          month_ref: string | null
+          query_text: string | null
+          query_type: string
+          response: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          from_number: string
+          id?: string
+          month_ref?: string | null
+          query_text?: string | null
+          query_type: string
+          response?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          from_number?: string
+          id?: string
+          month_ref?: string | null
+          query_text?: string | null
+          query_type?: string
+          response?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

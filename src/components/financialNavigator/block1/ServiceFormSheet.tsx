@@ -9,7 +9,7 @@ import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GooglePlacesInput } from '../GooglePlacesInput';
+import { ClinicAddressInput } from '../ClinicAddressInput';
 import { FiscalConfigSection } from './FiscalConfigSection';
 import { ShiftValuesSection } from './ShiftValuesSection';
 import { ExpensesSection } from './ExpensesSection';
@@ -128,9 +128,8 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
 
             <div className="space-y-1.5">
               <Label className="text-xs">Endereço da clínica</Label>
-              <GooglePlacesInput
+              <ClinicAddressInput
                 value={form.address}
-                placeholder="Buscar endereço..."
                 onSelect={r => setForm(f => ({
                   ...f,
                   address: r.address,
