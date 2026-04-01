@@ -89,7 +89,7 @@ const App = () => (
               <Route path="config" element={<Block1Page />} />
               <Route path="agendas" element={<Block2Page />} />
               <Route path="projecao" element={<Block3Page />} />
-              <Route path="insights" element={<div className="p-4 text-muted-foreground text-sm font-body">Bloco 4 — em breve</div>} />
+              <Route path="insights" element={<Block4Page />} />
               <Route index element={<Navigate to="config" replace />} />
             </Route>
             {/* Legacy redirects */}
