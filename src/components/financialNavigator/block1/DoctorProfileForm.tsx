@@ -4,7 +4,6 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import { GooglePlacesInput } from '../GooglePlacesInput';
 import { useFnConfig } from '@/hooks/useFnConfig';
 import { FnDoctorProfile } from '@/types/financialNavigator';
