@@ -40,6 +40,7 @@ export function DoctorProfileForm() {
           <GooglePlacesInput
             value={form.home_address}
             placeholder="Sua rua, bairro, cidade..."
+            mode="cep_first"
             onSelect={r => setForm(f => ({
               ...f,
               home_address: r.address,
