@@ -1,12 +1,13 @@
 import { useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useFnConfig } from '@/hooks/useFnConfig';
+import { Settings, CalendarDays, TrendingUp, Sparkles } from 'lucide-react';
 
 const BLOCKS = [
-  { id: 1, label: 'Configurações', path: '/financeiro/config',   color: 'bg-primary/60' },
-  { id: 2, label: 'Agendas',      path: '/financeiro/agendas',  color: 'bg-blue-400' },
-  { id: 3, label: 'Projeção',     path: '/financeiro/projecao', color: 'bg-teal-400' },
-  { id: 4, label: 'Insights',     path: '/financeiro/insights', color: 'bg-violet-400' },
+  { id: 1, label: 'Configurações', sub: 'Serviços e perfil',  path: '/financeiro/config',   Icon: Settings,     accent: 'from-slate-500 to-slate-600' },
+  { id: 2, label: 'Agendas',       sub: 'Calendário mensal',  path: '/financeiro/agendas',  Icon: CalendarDays, accent: 'from-blue-500 to-blue-600' },
+  { id: 3, label: 'Projeção',      sub: 'Fluxo financeiro',   path: '/financeiro/projecao', Icon: TrendingUp,   accent: 'from-teal-500 to-teal-600' },
+  { id: 4, label: 'Insights',      sub: 'KPIs e avaliação',   path: '/financeiro/insights', Icon: Sparkles,     accent: 'from-violet-500 to-violet-600' },
 ];
 
 export function FinancialNavigatorLayout() {
@@ -22,58 +23,68 @@ export function FinancialNavigatorLayout() {
   ];
 
   return (
-    <div className="flex flex-col min-h-full">
-      {/* Barra de ciclo evolutivo */}
-      <div className="px-4 pt-4 pb-0">
-        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2 font-body">
+    <div className="flex flex-col min-h-full bg-background">
+      <div className="border-b border-border bg-card/50 px-6 pt-5 pb-0">
+        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-4">
           Navegador Financeiro
         </p>
-        <div className="flex gap-1.5 mb-1">
+        <div className="flex gap-0 -mb-px">
           {BLOCKS.map((b, i) => {
             const active = pathname.includes(b.path.split('/').pop()!);
             const pct = progressValues[i];
+            const { Icon } = b;
             return (
               <button
                 key={b.id}
                 onClick={() => navigate(b.path)}
                 className={cn(
-                  'flex-1 rounded-lg p-2.5 text-left transition-all border',
+                  'group relative flex items-center gap-3 px-5 py-3.5 border-b-2 transition-all',
                   active
-                    ? 'border-border bg-card shadow-sm'
-                    : 'border-transparent hover:border-border/50',
+                    ? 'border-primary text-foreground bg-transparent'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border',
                 )}
               >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className={cn(
-                    'text-[10px] font-medium px-1.5 py-0.5 rounded font-body',
-                    active ? 'text-foreground' : 'text-muted-foreground'
-                  )}>
-                    {b.id}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground font-body">{pct}%</span>
-                </div>
-                <p className={cn(
-                  'text-xs font-medium leading-tight font-body',
-                  active ? 'text-foreground' : 'text-muted-foreground'
+                <div className={cn(
+                  'w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all',
+                  active
+                    ? `bg-gradient-to-br ${b.accent}`
+                    : 'bg-muted group-hover:bg-muted/80'
                 )}>
-                  {b.label}
-                </p>
-                {/* Mini barra de progresso */}
-                <div className="mt-1.5 h-1 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className={cn('h-full rounded-full transition-all', b.color)}
-                    style={{ width: `${pct}%` }}
-                  />
+                  <Icon className={cn('h-3.5 w-3.5', active ? 'text-white' : 'text-muted-foreground')} />
                 </div>
+
+                <div className="text-left">
+                  <p className={cn('text-sm font-medium leading-tight', active ? 'text-foreground' : '')}>
+                    {b.label}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground leading-tight">{b.sub}</p>
+                </div>
+
+                {pct > 0 && pct < 100 && (
+                  <span className={cn(
+                    'text-[9px] font-bold px-1.5 py-0.5 rounded-full ml-1',
+                    active
+                      ? 'bg-primary/10 text-primary'
+                      : 'bg-muted text-muted-foreground'
+                  )}>
+                    {pct}%
+                  </span>
+                )}
+                {pct === 100 && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 ml-1">
+                    ✓
+                  </span>
+                )}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Conteúdo do bloco */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <Outlet />
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-6xl mx-auto px-6 py-6">
+          <Outlet />
+        </div>
       </div>
     </div>
   );
