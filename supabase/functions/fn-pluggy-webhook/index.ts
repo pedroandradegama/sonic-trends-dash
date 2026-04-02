@@ -30,11 +30,19 @@ async function pluggyGet(path: string, apiKey: string) {
 }
 
 serve(async (req) => {
+  // Handle GET or HEAD requests (webhook validation/ping)
+  if (req.method === 'GET' || req.method === 'HEAD') {
+    return new Response('ok', { status: 200 })
+  }
+
   const responsePromise = new Response('ok', { status: 200 })
 
   ;(async () => {
     try {
-      const payload = await req.json()
+      const text = await req.text()
+      if (!text) return
+      let payload: any
+      try { payload = JSON.parse(text) } catch { return }
       const { event, itemId } = payload
 
       console.log('Pluggy webhook:', event, itemId)
