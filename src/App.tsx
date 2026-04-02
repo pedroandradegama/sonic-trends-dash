@@ -91,6 +91,7 @@ const App = () => (
               <Route path="agendas" element={<Block2Page />} />
               <Route path="projecao" element={<Block3Page />} />
               <Route path="insights" element={<Block4Page />} />
+              <Route path="saude" element={<FnOpenFinancePage />} />
               <Route index element={<Navigate to="config" replace />} />
             </Route>
             {/* Legacy redirects */}
