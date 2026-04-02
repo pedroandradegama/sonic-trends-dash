@@ -601,6 +601,51 @@ export type Database = {
         }
         Relationships: []
       }
+      fn_bank_connections: {
+        Row: {
+          account_type: string | null
+          connector_id: number | null
+          connector_name: string
+          created_at: string
+          id: string
+          is_pj: boolean
+          label: string | null
+          last_synced_at: string | null
+          pluggy_item_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_type?: string | null
+          connector_id?: number | null
+          connector_name: string
+          created_at?: string
+          id?: string
+          is_pj?: boolean
+          label?: string | null
+          last_synced_at?: string | null
+          pluggy_item_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_type?: string | null
+          connector_id?: number | null
+          connector_name?: string
+          created_at?: string
+          id?: string
+          is_pj?: boolean
+          label?: string | null
+          last_synced_at?: string | null
+          pluggy_item_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       fn_calendar_shifts: {
         Row: {
           created_at: string
@@ -1166,6 +1211,157 @@ export type Database = {
           {
             foreignKeyName: "fn_shift_values_service_id_fkey"
             columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "fn_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fn_spending_summaries: {
+        Row: {
+          by_category: Json | null
+          credit_card_total: number
+          id: string
+          month: string
+          pj_expenses: number
+          savings_rate: number | null
+          total_income: number
+          total_spending: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          by_category?: Json | null
+          credit_card_total?: number
+          id?: string
+          month: string
+          pj_expenses?: number
+          savings_rate?: number | null
+          total_income?: number
+          total_spending?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          by_category?: Json | null
+          credit_card_total?: number
+          id?: string
+          month?: string
+          pj_expenses?: number
+          savings_rate?: number | null
+          total_income?: number
+          total_spending?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      fn_transactions: {
+        Row: {
+          amount: number
+          bill_id: string | null
+          card_number: string | null
+          category: string | null
+          category_id: string | null
+          connection_id: string
+          created_at: string
+          custom_category: string | null
+          date: string
+          description: string
+          detected_as_income: boolean
+          fn_service_id: string | null
+          id: string
+          installment_number: number | null
+          is_credit_card: boolean
+          is_pj_expense: boolean | null
+          matched_service_id: string | null
+          merchant_category: string | null
+          merchant_cnpj: string | null
+          merchant_name: string | null
+          note: string | null
+          pluggy_account_id: string
+          pluggy_tx_id: string
+          status: string
+          total_amount: number | null
+          total_installments: number | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          bill_id?: string | null
+          card_number?: string | null
+          category?: string | null
+          category_id?: string | null
+          connection_id: string
+          created_at?: string
+          custom_category?: string | null
+          date: string
+          description: string
+          detected_as_income?: boolean
+          fn_service_id?: string | null
+          id?: string
+          installment_number?: number | null
+          is_credit_card?: boolean
+          is_pj_expense?: boolean | null
+          matched_service_id?: string | null
+          merchant_category?: string | null
+          merchant_cnpj?: string | null
+          merchant_name?: string | null
+          note?: string | null
+          pluggy_account_id: string
+          pluggy_tx_id: string
+          status?: string
+          total_amount?: number | null
+          total_installments?: number | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          bill_id?: string | null
+          card_number?: string | null
+          category?: string | null
+          category_id?: string | null
+          connection_id?: string
+          created_at?: string
+          custom_category?: string | null
+          date?: string
+          description?: string
+          detected_as_income?: boolean
+          fn_service_id?: string | null
+          id?: string
+          installment_number?: number | null
+          is_credit_card?: boolean
+          is_pj_expense?: boolean | null
+          matched_service_id?: string | null
+          merchant_category?: string | null
+          merchant_cnpj?: string | null
+          merchant_name?: string | null
+          note?: string | null
+          pluggy_account_id?: string
+          pluggy_tx_id?: string
+          status?: string
+          total_amount?: number | null
+          total_installments?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fn_transactions_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "fn_bank_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fn_transactions_fn_service_id_fkey"
+            columns: ["fn_service_id"]
+            isOneToOne: false
+            referencedRelation: "fn_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fn_transactions_matched_service_id_fkey"
+            columns: ["matched_service_id"]
             isOneToOne: false
             referencedRelation: "fn_services"
             referencedColumns: ["id"]

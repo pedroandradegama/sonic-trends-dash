@@ -53,3 +53,9 @@ verify_jwt = false
 
 [functions.verify-otp]
 verify_jwt = false
+
+[functions.fn-pluggy-connect-token]
+verify_jwt = false
+
+[functions.fn-pluggy-webhook]
+verify_jwt = false

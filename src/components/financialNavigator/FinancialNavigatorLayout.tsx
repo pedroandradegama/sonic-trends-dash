@@ -1,13 +1,14 @@
 import { useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useFnConfig } from '@/hooks/useFnConfig';
-import { Settings, CalendarDays, TrendingUp, Sparkles } from 'lucide-react';
+import { Settings, CalendarDays, TrendingUp, Sparkles, Wallet } from 'lucide-react';
 
 const BLOCKS = [
   { id: 1, label: 'Configurações', sub: 'Serviços e perfil',  path: '/financeiro/config',   Icon: Settings,     accent: 'from-slate-500 to-slate-600' },
   { id: 2, label: 'Agendas',       sub: 'Calendário mensal',  path: '/financeiro/agendas',  Icon: CalendarDays, accent: 'from-blue-500 to-blue-600' },
   { id: 3, label: 'Projeção',      sub: 'Fluxo financeiro',   path: '/financeiro/projecao', Icon: TrendingUp,   accent: 'from-teal-500 to-teal-600' },
   { id: 4, label: 'Insights',      sub: 'KPIs e avaliação',   path: '/financeiro/insights', Icon: Sparkles,     accent: 'from-violet-500 to-violet-600' },
+  { id: 5, label: 'Saúde Financeira', sub: 'Bancos e gastos', path: '/financeiro/saude',    Icon: Wallet,       accent: 'from-emerald-500 to-emerald-600' },
 ];
 
 export function FinancialNavigatorLayout() {
