@@ -37,6 +37,7 @@ export function FnConnectBankButton({ variant = 'ghost', itemId }: Props) {
 
       const pluggy = new window.PluggyConnect({
         connectToken: accessToken,
+        includeSandbox: true,
         onSuccess: async (itemData: any) => {
           console.log('Pluggy connected:', itemData.item.id);
           setTimeout(() => {
