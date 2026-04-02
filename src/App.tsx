@@ -38,6 +38,7 @@ import { Block1Page } from "@/components/financialNavigator/block1/Block1Page";
 import { Block2Page } from "@/components/financialNavigator/block2/Block2Page";
 import { Block3Page } from "@/components/financialNavigator/block3/Block3Page";
 import { Block4Page } from "@/components/financialNavigator/block4/Block4Page";
+import { FnOpenFinancePage } from "@/components/financialNavigator/openFinance/FnOpenFinancePage";
 
 const queryClient = new QueryClient();
 
