@@ -73,6 +73,7 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
         fiscal_mode: 'A',
         fiscal_pct_total: 15,
       });
+      setNameQuery('');
       setShiftValues({ ...FN_DEFAULT_SHIFT_VALUES });
       setExpenses([]);
     }

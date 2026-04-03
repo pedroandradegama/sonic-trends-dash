@@ -3,6 +3,7 @@ import { FnProjectionFilters } from './FnProjectionFilters';
 import { FnMetricsGrid } from './FnMetricsGrid';
 import { FnProjectionChart } from './FnProjectionChart';
 import { FnReceiptTimeline } from './FnReceiptTimeline';
+import { FnReceiptLineChart } from './FnReceiptLineChart';
 import { FnMethodBreakdown } from './FnMethodBreakdown';
 import { FnProvisionCard } from './FnProvisionCard';
 import { FnAdjustmentsLog } from './FnAdjustmentsLog';
