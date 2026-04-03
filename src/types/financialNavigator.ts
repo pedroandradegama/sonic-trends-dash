@@ -317,6 +317,7 @@ export interface ProjectionMetrics {
   hoursByMethod: Record<WorkMethod, number>;
   grossByMethod: Record<WorkMethod, number>;
   receiptsByMonth: Record<string, number>;
+  commuteHoursMonth: number;
 }
 
 // ─── Bloco 4 — Avaliação & Insights ──────────────────────────────────────────
