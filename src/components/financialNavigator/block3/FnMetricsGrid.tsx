@@ -4,6 +4,7 @@ import { ProjectionMetrics, FnProjectionPrefs } from '@/types/financialNavigator
 interface Props {
   metrics: ProjectionMetrics;
   prefs: FnProjectionPrefs;
+  commuteHoursMonth?: number;
 }
 
 function MetricCard({
