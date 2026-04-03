@@ -932,6 +932,56 @@ export type Database = {
         }
         Relationships: []
       }
+      fn_recurrence_rules: {
+        Row: {
+          created_at: string
+          end_month: string
+          frequency: string
+          id: string
+          is_active: boolean
+          service_id: string
+          shift_type: string
+          start_month: string
+          updated_at: string
+          user_id: string
+          weekday: number
+        }
+        Insert: {
+          created_at?: string
+          end_month: string
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          service_id: string
+          shift_type: string
+          start_month: string
+          updated_at?: string
+          user_id: string
+          weekday: number
+        }
+        Update: {
+          created_at?: string
+          end_month?: string
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          service_id?: string
+          shift_type?: string
+          start_month?: string
+          updated_at?: string
+          user_id?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fn_recurrence_rules_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "fn_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fn_service_evaluations: {
         Row: {
           created_at: string

@@ -72,21 +72,21 @@ export function FnCalendar({ year, month, onNavigate }: Props) {
         {calDays.map((cell, idx) => {
           if (cell.otherMonth) {
             return (
-              <div key={idx} className="min-h-[90px] border-r border-b border-border/40 last:border-r-0 opacity-30 p-2">
+              <div key={idx} className="min-h-[120px] border-r border-b border-border/40 last:border-r-0 opacity-30 p-2">
                 <span className="text-xs text-muted-foreground">{cell.day}</span>
               </div>
             );
           }
           const dayData = buildDayData(cell.dateStr!);
           const isWeekend = idx % 7 === 0 || idx % 7 === 6;
-          return (
-            <div
-              key={idx}
-              className={cn(
-                'min-h-[90px] border-r border-b border-border/40 cursor-pointer transition-colors',
-                'last:border-r-0',
-                isWeekend ? 'bg-muted/20' : '',
-                selectedDate === cell.dateStr ? 'ring-2 ring-inset ring-primary' : '',
+            return (
+              <div
+                key={idx}
+                className={cn(
+                  'min-h-[120px] border-r border-b border-border/40 cursor-pointer transition-colors',
+                  'last:border-r-0',
+                  isWeekend ? 'bg-muted/20' : '',
+                  selectedDate === cell.dateStr ? 'ring-2 ring-inset ring-primary' : '',
               )}
               onClick={() => setSelectedDate(cell.dateStr)}
             >
