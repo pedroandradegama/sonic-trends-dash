@@ -1,3 +1,4 @@
+import { Car } from 'lucide-react';
 import { ProjectionMetrics, FnProjectionPrefs } from '@/types/financialNavigator';
 
 interface Props {
