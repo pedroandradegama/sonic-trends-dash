@@ -72,7 +72,7 @@ export function FnCalendar({ year, month, onNavigate }: Props) {
         {calDays.map((cell, idx) => {
           if (cell.otherMonth) {
             return (
-              <div key={idx} className="min-h-[90px] border-r border-b border-border/40 last:border-r-0 opacity-30 p-2">
+              <div key={idx} className="min-h-[120px] border-r border-b border-border/40 last:border-r-0 opacity-30 p-2">
                 <span className="text-xs text-muted-foreground">{cell.day}</span>
               </div>
             );
