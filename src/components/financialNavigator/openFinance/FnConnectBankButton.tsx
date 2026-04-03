@@ -56,7 +56,9 @@ export function FnConnectBankButton({ variant = 'ghost', itemId }: Props) {
         },
         onClose: () => {
           setLoading(false);
-          qc.invalidateQueries({ queryKey: ['fn_connections', profile?.user_id] });
+          qc.invalidateQueries({ queryKey: ['fn_connections'] });
+          qc.invalidateQueries({ queryKey: ['fn_transactions'] });
+          qc.invalidateQueries({ queryKey: ['fn_summaries'] });
         },
       });
 
