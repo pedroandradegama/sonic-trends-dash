@@ -32,9 +32,13 @@ const ALL_METHODS: WorkMethod[] = ['us_geral','us_vascular','mamografia','tc','r
 
 export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
   const { upsertService, services } = useFnConfig();
+  const { data: presets = [] } = usePresetClinics();
   const isNew = !service;
 
   const [form, setForm] = useState<Partial<FnService>>({});
+  const [nameQuery, setNameQuery] = useState('');
+  const [showPresets, setShowPresets] = useState(false);
+  const nameWrapRef = React.useRef<HTMLDivElement>(null);
   const [shiftValues, setShiftValues] = useState<Record<FnShiftType, number>>(
     { ...FN_DEFAULT_SHIFT_VALUES }
   );
@@ -42,6 +46,13 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
     Omit<FnServiceExpense, 'id' | 'service_id' | 'user_id'>[]
   >([]);
   const [saving, setSaving] = useState(false);
+
+  const filteredPresets = nameQuery.length >= 1
+    ? presets.filter(c =>
+        c.name.toLowerCase().includes(nameQuery.toLowerCase()) ||
+        (c.short_name?.toLowerCase().includes(nameQuery.toLowerCase()) ?? false)
+      ).slice(0, 6)
+    : [];
 
   useEffect(() => {
     if (service) {
