@@ -52,7 +52,7 @@ export function Block3Page() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 space-y-5">
           <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
-            <FnMetricsGrid metrics={metrics} prefs={prefs} />
+            <FnMetricsGrid metrics={metrics} prefs={prefs} commuteHoursMonth={metrics.commuteHoursMonth} />
           </div>
           <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
             <p className="text-sm font-semibold text-foreground mb-4">Produção mês a mês</p>
