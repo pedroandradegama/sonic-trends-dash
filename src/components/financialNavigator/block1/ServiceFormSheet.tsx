@@ -57,6 +57,7 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
   useEffect(() => {
     if (service) {
       setForm(service);
+      setNameQuery(service.name);
       if (service.shiftValues) setShiftValues(service.shiftValues);
       if (service.expenses) {
         setExpenses(service.expenses.map(({ label, amount_brl, frequency }) =>
