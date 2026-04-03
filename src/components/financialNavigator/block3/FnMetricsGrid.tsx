@@ -1,8 +1,10 @@
+import { Car } from 'lucide-react';
 import { ProjectionMetrics, FnProjectionPrefs } from '@/types/financialNavigator';
 
 interface Props {
   metrics: ProjectionMetrics;
   prefs: FnProjectionPrefs;
+  commuteHoursMonth?: number;
 }
 
 function MetricCard({
@@ -28,7 +30,7 @@ function MetricCard({
 
 const BRL = (v: number) => `R$ ${Math.round(v).toLocaleString('pt-BR')}`;
 
-export function FnMetricsGrid({ metrics, prefs }: Props) {
+export function FnMetricsGrid({ metrics, prefs, commuteHoursMonth = 0 }: Props) {
   const label = prefs.show_net ? 'líquido' : 'bruto';
   const now = new Date();
   const MONTHS_SHORT = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
@@ -60,6 +62,13 @@ export function FnMetricsGrid({ metrics, prefs }: Props) {
           label="provisão 13º/férias"
           value={BRL(metrics.provisionAmount)}
           sub="reservar por mês"
+        />
+      )}
+      {commuteHoursMonth > 0 && (
+        <MetricCard
+          label="deslocamento/mês"
+          value={`${commuteHoursMonth.toFixed(1)}h`}
+          sub="ida+volta estimados"
         />
       )}
     </div>

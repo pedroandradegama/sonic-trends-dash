@@ -272,6 +272,7 @@ export function useFnProjection() {
       hoursByMethod,
       grossByMethod,
       receiptsByMonth,
+      commuteHoursMonth: commuteHours,
     };
   }, [projectionPoints, services, getShiftsForMonth, commuteTotals, doctorProfile, applyNet]);
 

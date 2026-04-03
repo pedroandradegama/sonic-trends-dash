@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from '@/components/ui/sheet';
@@ -9,7 +9,7 @@ import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ClinicAddressInput } from '../ClinicAddressInput';
+import { usePresetClinics } from '@/hooks/usePresetClinics';
 import { FiscalConfigSection } from './FiscalConfigSection';
 import { ShiftValuesSection } from './ShiftValuesSection';
 import { ExpensesSection } from './ExpensesSection';
@@ -32,9 +32,13 @@ const ALL_METHODS: WorkMethod[] = ['us_geral','us_vascular','mamografia','tc','r
 
 export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
   const { upsertService, services } = useFnConfig();
+  const { data: presets = [] } = usePresetClinics();
   const isNew = !service;
 
   const [form, setForm] = useState<Partial<FnService>>({});
+  const [nameQuery, setNameQuery] = useState('');
+  const [showPresets, setShowPresets] = useState(false);
+  const nameWrapRef = React.useRef<HTMLDivElement>(null);
   const [shiftValues, setShiftValues] = useState<Record<FnShiftType, number>>(
     { ...FN_DEFAULT_SHIFT_VALUES }
   );
@@ -43,9 +47,17 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
   >([]);
   const [saving, setSaving] = useState(false);
 
+  const filteredPresets = nameQuery.length >= 1
+    ? presets.filter(c =>
+        c.name.toLowerCase().includes(nameQuery.toLowerCase()) ||
+        (c.short_name?.toLowerCase().includes(nameQuery.toLowerCase()) ?? false)
+      ).slice(0, 6)
+    : [];
+
   useEffect(() => {
     if (service) {
       setForm(service);
+      setNameQuery(service.name);
       if (service.shiftValues) setShiftValues(service.shiftValues);
       if (service.expenses) {
         setExpenses(service.expenses.map(({ label, amount_brl, frequency }) =>
@@ -61,6 +73,7 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
         fiscal_mode: 'A',
         fiscal_pct_total: 15,
       });
+      setNameQuery('');
       setShiftValues({ ...FN_DEFAULT_SHIFT_VALUES });
       setExpenses([]);
     }
@@ -111,13 +124,54 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
           {/* ABA GERAL */}
           <TabsContent value="geral" className="space-y-4">
             <div className="grid grid-cols-[1fr_48px] gap-2">
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 relative" ref={nameWrapRef}>
                 <Label className="text-xs">Nome do serviço / clínica</Label>
                 <Input
-                  value={form.name ?? ''}
-                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  value={nameQuery}
+                  onChange={e => {
+                    setNameQuery(e.target.value);
+                    setForm(f => ({ ...f, name: e.target.value }));
+                    setShowPresets(true);
+                  }}
+                  onFocus={() => nameQuery.length >= 1 && setShowPresets(true)}
                   placeholder="Ex: IMAG, Hospital São Lucas..."
+                  autoComplete="off"
                 />
+                {showPresets && filteredPresets.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-background border border-border rounded-xl shadow-lg overflow-hidden max-h-60 overflow-y-auto">
+                    {filteredPresets.map((clinic) => (
+                      <button
+                        key={clinic.id}
+                        type="button"
+                        onMouseDown={() => {
+                          setNameQuery(clinic.name);
+                          setShowPresets(false);
+                          setForm(f => ({
+                            ...f,
+                            name: clinic.name,
+                            address: `${clinic.address}, ${clinic.city} - ${clinic.state}`,
+                            lat: clinic.lat ?? 0,
+                            lng: clinic.lng ?? 0,
+                            place_id: clinic.place_id ?? '',
+                          }));
+                        }}
+                        className="w-full text-left px-3 py-2.5 flex items-start gap-2.5 transition-colors hover:bg-muted"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{clinic.name}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            {clinic.address}, {clinic.city}
+                          </p>
+                        </div>
+                        {clinic.short_name && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground flex-shrink-0 self-center">
+                            {clinic.short_name}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Cor</Label>
@@ -132,15 +186,11 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
 
             <div className="space-y-1.5">
               <Label className="text-xs">Endereço da clínica</Label>
-              <ClinicAddressInput
-                value={form.address}
-                onSelect={r => setForm(f => ({
-                  ...f,
-                  address: r.address,
-                  lat: r.lat,
-                  lng: r.lng,
-                  place_id: r.place_id,
-                }))}
+              <Input
+                value={form.address ?? ''}
+                onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
+                placeholder="Preenchido automaticamente ao selecionar uma clínica"
+                className="text-muted-foreground"
               />
             </div>
 
