@@ -64,6 +64,13 @@ export function FnMetricsGrid({ metrics, prefs, commuteHoursMonth = 0 }: Props) 
           sub="reservar por mês"
         />
       )}
+      {commuteHoursMonth > 0 && (
+        <MetricCard
+          label="deslocamento/mês"
+          value={`${commuteHoursMonth.toFixed(1)}h`}
+          sub="ida+volta estimados"
+        />
+      )}
     </div>
   );
 }
