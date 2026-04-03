@@ -30,7 +30,7 @@ function MetricCard({
 
 const BRL = (v: number) => `R$ ${Math.round(v).toLocaleString('pt-BR')}`;
 
-export function FnMetricsGrid({ metrics, prefs }: Props) {
+export function FnMetricsGrid({ metrics, prefs, commuteHoursMonth = 0 }: Props) {
   const label = prefs.show_net ? 'líquido' : 'bruto';
   const now = new Date();
   const MONTHS_SHORT = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
