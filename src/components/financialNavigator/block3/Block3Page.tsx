@@ -65,6 +65,14 @@ export function Block3Page() {
               prefs={prefs}
             />
           </div>
+          <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+            <FnReceiptLineChart
+              receiptsByMonth={metrics.receiptsByMonth}
+              services={services}
+              projectionPoints={projectionPoints}
+              prefs={prefs}
+            />
+          </div>
         </div>
 
         <div className="space-y-5">
