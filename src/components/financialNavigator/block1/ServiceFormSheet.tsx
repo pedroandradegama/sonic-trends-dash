@@ -13,6 +13,7 @@ import { ClinicAddressInput } from '../ClinicAddressInput';
 import { FiscalConfigSection } from './FiscalConfigSection';
 import { ShiftValuesSection } from './ShiftValuesSection';
 import { ExpensesSection } from './ExpensesSection';
+import { RecurrenceRulesSection } from './RecurrenceRulesSection';
 import { useFnConfig } from '@/hooks/useFnConfig';
 import {
   FnService, FnServiceExpense, FnShiftType,
@@ -101,6 +102,9 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
             <TabsTrigger value="fiscal" className="flex-1">Fiscal</TabsTrigger>
             {needsExpenses && (
               <TabsTrigger value="despesas" className="flex-1">Despesas</TabsTrigger>
+            )}
+            {!isNew && (
+              <TabsTrigger value="recorrencia" className="flex-1">Recorrência</TabsTrigger>
             )}
           </TabsList>
 
@@ -245,6 +249,17 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
               <ExpensesSection
                 expenses={expenses}
                 onChange={setExpenses}
+              />
+            </TabsContent>
+          )}
+
+          {/* ABA RECORRÊNCIA */}
+          {!isNew && service && (
+            <TabsContent value="recorrencia">
+              <RecurrenceRulesSection
+                serviceId={service.id}
+                serviceName={service.name}
+                serviceColor={service.color}
               />
             </TabsContent>
           )}

@@ -79,14 +79,14 @@ export function FnCalendar({ year, month, onNavigate }: Props) {
           }
           const dayData = buildDayData(cell.dateStr!);
           const isWeekend = idx % 7 === 0 || idx % 7 === 6;
-          return (
-            <div
-              key={idx}
-              className={cn(
-                'min-h-[90px] border-r border-b border-border/40 cursor-pointer transition-colors',
-                'last:border-r-0',
-                isWeekend ? 'bg-muted/20' : '',
-                selectedDate === cell.dateStr ? 'ring-2 ring-inset ring-primary' : '',
+            return (
+              <div
+                key={idx}
+                className={cn(
+                  'min-h-[120px] border-r border-b border-border/40 cursor-pointer transition-colors',
+                  'last:border-r-0',
+                  isWeekend ? 'bg-muted/20' : '',
+                  selectedDate === cell.dateStr ? 'ring-2 ring-inset ring-primary' : '',
               )}
               onClick={() => setSelectedDate(cell.dateStr)}
             >
