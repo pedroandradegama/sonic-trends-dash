@@ -39,10 +39,17 @@ export function FnConnectBankButton({ variant = 'ghost', itemId }: Props) {
         connectToken: accessToken,
         includeSandbox: true,
         onSuccess: async (itemData: any) => {
-          console.log('Pluggy connected:', itemData.item.id);
-          setTimeout(() => {
-            qc.invalidateQueries({ queryKey: ['fn_connections', profile?.user_id] });
-          }, 3000);
+          console.log('Pluggy connected:', itemData?.item?.id);
+          // Poll for data to appear — webhook may take a few seconds
+          const poll = async (attempts: number) => {
+            qc.invalidateQueries({ queryKey: ['fn_connections'] });
+            qc.invalidateQueries({ queryKey: ['fn_transactions'] });
+            qc.invalidateQueries({ queryKey: ['fn_summaries'] });
+            if (attempts < 5) {
+              setTimeout(() => poll(attempts + 1), 3000);
+            }
+          };
+          await poll(0);
         },
         onError: (error: any) => {
           console.error('Pluggy connect error:', error);
