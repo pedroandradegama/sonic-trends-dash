@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
               .join(' + ')
             lines.push(`${dow} ${day}/${mon}: ${turnosStr}`)
           })
-          weekText = lines.join('\n')
+          weekText = lines.join(' | ')
         }
 
         let weekGross = 0
