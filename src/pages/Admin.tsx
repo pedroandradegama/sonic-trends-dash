@@ -17,6 +17,7 @@ import { AdminSuggestionsTab } from '@/components/admin/AdminSuggestionsTab';
 import { AdminCommunityTopicsTab } from '@/components/admin/AdminCommunityTopicsTab';
 import { AdminReferralsTab } from '@/components/admin/AdminReferralsTab';
 import { AdminPresetClinicsTab } from '@/components/admin/AdminPresetClinicsTab';
+import { AdminFinancialKbTab } from '@/components/admin/AdminFinancialKbTab';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -324,6 +325,9 @@ export default function Admin() {
             </TabsTrigger>
             <TabsTrigger value="clinicas" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" /> Clínicas preset
+            </TabsTrigger>
+            <TabsTrigger value="knowledge_base" className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4" /> Base Financeira
             </TabsTrigger>
             <TabsTrigger value="config" className="flex items-center gap-2">
               <Settings className="h-4 w-4" /> Configurações
