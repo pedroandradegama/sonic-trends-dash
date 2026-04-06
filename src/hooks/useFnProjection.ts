@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -108,6 +108,38 @@ export function useFnProjection() {
       );
     },
   });
+
+  // ── Auto-fetch commute times for services with coordinates ────────────────
+  const fetchedCommuteRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!uid || services.length === 0) return;
+
+    const servicesToFetch = services.filter(
+      svc => svc.lat && svc.lng && !fetchedCommuteRef.current.has(svc.id)
+    );
+    if (servicesToFetch.length === 0) return;
+
+    const slotTypes = ['slot1', 'slot2', 'slot3', 'slot4'];
+
+    servicesToFetch.forEach(svc => {
+      fetchedCommuteRef.current.add(svc.id);
+      slotTypes.forEach(async (slot) => {
+        try {
+          await supabase.functions.invoke('fn-commute-time', {
+            body: { service_id: svc.id, slot_type: slot },
+          });
+        } catch {
+          // silently ignore
+        }
+      });
+    });
+
+    const timer = setTimeout(() => {
+      qc.invalidateQueries({ queryKey: KEYS.commute(uid) });
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, [uid, services, qc]);
 
   // ── Core projection calculation ───────────────────────────────────────────────
 
