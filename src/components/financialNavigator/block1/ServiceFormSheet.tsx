@@ -22,6 +22,7 @@ import {
   WorkRegime, WorkMethod, FiscalMode,
   REGIME_LABELS, METHOD_LABELS, FN_DEFAULT_SHIFT_VALUES, FN_SERVICE_PALETTE,
 } from '@/types/financialNavigator';
+import { Info } from 'lucide-react';
 
 interface Props {
   open: boolean;
@@ -31,6 +32,9 @@ interface Props {
 
 const ALL_REGIMES: WorkRegime[] = ['pj_turno','pj_producao','clt','residencia','fellowship','pro_labore','distribuicao_lucros'];
 const ALL_METHODS: WorkMethod[] = ['us_geral','us_vascular','mamografia','tc','rm','puncao','misto'];
+const SELECTABLE_METHODS: WorkMethod[] = ['us_geral','us_vascular','mamografia','tc','rm','puncao'];
+
+const MONTH_LABELS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
 export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
   const { upsertService, services } = useFnConfig();
@@ -94,6 +98,32 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
   const needsExpenses =
     (form.regime === 'pj_turno' || form.regime === 'pj_producao') &&
     (form.fiscal_mode === 'B' || form.fiscal_mode === 'C');
+
+  // Check if same clinic already has services with other regimes
+  const sameClinicServices = services.filter(
+    s => s.name === form.name && s.id !== form.id
+  );
+
+  // Method mix helpers
+  const selectedMethods = form.method_mix
+    ? (Object.keys(form.method_mix) as WorkMethod[])
+    : [];
+
+  const handleMethodMixToggle = (method: WorkMethod, checked: boolean) => {
+    setForm(f => {
+      const current = { ...(f.method_mix ?? {}) };
+      if (checked) {
+        current[method] = 0; // placeholder, will recalc
+      } else {
+        delete current[method];
+      }
+      // Equal distribution
+      const keys = Object.keys(current);
+      const pct = keys.length > 0 ? Math.round(100 / keys.length) : 0;
+      keys.forEach(k => { current[k] = pct; });
+      return { ...f, method_mix: keys.length > 0 ? current : undefined };
+    });
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -196,6 +226,18 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
               />
             </div>
 
+            {/* Alerta se mesma clínica já tem outros regimes */}
+            {sameClinicServices.length > 0 && (
+              <div className="flex items-start gap-2 p-2.5 bg-primary/5 rounded-lg border border-primary/20">
+                <Info className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
+                <p className="text-[11px] text-muted-foreground">
+                  Você já tem {sameClinicServices.length} registro(s) para <strong>{form.name}</strong> com
+                  {' '}regime(s): {sameClinicServices.map(s => REGIME_LABELS[s.regime]).join(', ')}.
+                  Cada regime fica como um registro separado com seu próprio delta de pagamento.
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Regime de trabalho</Label>
@@ -213,7 +255,7 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs">Pagamento</Label>
+                <Label className="text-xs">Pagamento (delta)</Label>
                 <Select
                   value={String(form.payment_delta ?? 1)}
                   onValueChange={v => setForm(f => ({ ...f, payment_delta: Number(v) }))}
@@ -233,7 +275,15 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
               <Label className="text-xs">Método predominante</Label>
               <Select
                 value={form.primary_method ?? ''}
-                onValueChange={v => setForm(f => ({ ...f, primary_method: v as WorkMethod }))}
+                onValueChange={v => {
+                  const method = v as WorkMethod;
+                  setForm(f => ({
+                    ...f,
+                    primary_method: method,
+                    // Clear method_mix if not misto
+                    method_mix: method === 'misto' ? (f.method_mix ?? {}) : undefined,
+                  }));
+                }}
               >
                 <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                 <SelectContent>
@@ -243,6 +293,36 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Mixed methods selection */}
+            {form.primary_method === 'misto' && (
+              <div className="space-y-2 p-3 bg-muted rounded-lg">
+                <Label className="text-xs">Selecione os métodos (distribuição proporcional)</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {SELECTABLE_METHODS.map(m => {
+                    const checked = selectedMethods.includes(m);
+                    const pct = form.method_mix?.[m] ?? 0;
+                    return (
+                      <label key={m} className="flex items-center gap-2 text-xs cursor-pointer">
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(v) => handleMethodMixToggle(m, !!v)}
+                        />
+                        <span className="flex-1">{METHOD_LABELS[m]}</span>
+                        {checked && (
+                          <span className="text-[10px] text-muted-foreground font-medium">{pct}%</span>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
+                {selectedMethods.length > 0 && (
+                  <p className="text-[10px] text-muted-foreground">
+                    Cada método recebe {Math.round(100 / selectedMethods.length)}% do valor do turno.
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* CLT / Residência: campos extras */}
             {(form.regime === 'clt' || form.regime === 'residencia') && (
@@ -336,6 +416,7 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
                     onValueChange={v => {
                       const freq = v as FnService['distribution_frequency'];
                       const defaults: Record<string, number[]> = {
+                        quarterly: [3, 6, 9, 12],
                         biannual: [6, 12],
                         annual: [12],
                       };
@@ -349,17 +430,21 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="monthly">Mensal</SelectItem>
+                      <SelectItem value="quarterly">Trimestral</SelectItem>
                       <SelectItem value="biannual">Semestral</SelectItem>
                       <SelectItem value="annual">Anual</SelectItem>
                       <SelectItem value="irregular">Irregular</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                {(form.distribution_frequency === 'biannual' || form.distribution_frequency === 'annual') && (
+                {(form.distribution_frequency === 'quarterly' ||
+                  form.distribution_frequency === 'biannual' ||
+                  form.distribution_frequency === 'annual' ||
+                  form.distribution_frequency === 'irregular') && (
                   <div className="space-y-1.5">
                     <Label className="text-xs">Meses de distribuição</Label>
                     <div className="flex flex-wrap gap-2">
-                      {['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].map((m, i) => {
+                      {MONTH_LABELS.map((m, i) => {
                         const monthNum = i + 1;
                         const selected = form.distribution_months?.includes(monthNum) ?? false;
                         return (

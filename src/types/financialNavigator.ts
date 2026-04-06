@@ -118,7 +118,7 @@ export interface FnService {
   monthly_hours?: number;
   is_taxed?: boolean;
   tax_pct?: number;
-  distribution_frequency?: 'monthly' | 'biannual' | 'annual' | 'irregular';
+  distribution_frequency?: 'monthly' | 'quarterly' | 'biannual' | 'annual' | 'irregular';
   distribution_months?: number[];
   // Hydrated client-side
   shiftValues?: Record<FnShiftType, number>;

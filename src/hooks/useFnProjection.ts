@@ -176,9 +176,7 @@ export function useFnProjection() {
           let applies = false;
           if (freq === 'monthly') {
             applies = true;
-          } else if (freq === 'biannual' || freq === 'annual') {
-            applies = (svc.distribution_months ?? []).includes(monthIndex);
-          } else if (freq === 'irregular') {
+          } else if (freq === 'quarterly' || freq === 'biannual' || freq === 'annual' || freq === 'irregular') {
             applies = (svc.distribution_months ?? []).includes(monthIndex);
           }
           if (applies) {

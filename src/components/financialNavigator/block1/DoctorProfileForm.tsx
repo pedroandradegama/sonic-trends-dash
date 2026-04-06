@@ -4,9 +4,11 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { GooglePlacesInput } from '../GooglePlacesInput';
 import { useFnConfig } from '@/hooks/useFnConfig';
 import { FnDoctorProfile } from '@/types/financialNavigator';
+import { Check, Pencil, MapPin, Target } from 'lucide-react';
 
 export function DoctorProfileForm() {
   const { doctorProfile, saveProfile } = useFnConfig();
@@ -19,6 +21,8 @@ export function DoctorProfileForm() {
     whatsapp_digest_enabled: true,
   });
   const [saving, setSaving] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(false);
+  const [editingGoal, setEditingGoal] = useState(false);
 
   useEffect(() => {
     if (doctorProfile) setForm(doctorProfile);
@@ -28,26 +32,54 @@ export function DoctorProfileForm() {
     setSaving(true);
     await saveProfile.mutateAsync(form);
     setSaving(false);
+    setEditingAddress(false);
+    setEditingGoal(false);
   };
+
+  const hasSavedAddress = !!doctorProfile?.home_address;
+  const hasSavedGoal = (doctorProfile?.monthly_net_goal ?? 0) > 0;
 
   return (
     <Card>
       <CardContent className="pt-5 space-y-4">
         {/* Endereço residencial */}
         <div className="space-y-1.5">
-          <Label className="text-xs">Endereço residencial</Label>
-          <GooglePlacesInput
-            value={form.home_address}
-            placeholder="Sua rua, bairro, cidade..."
-            mode="cep_first"
-            onSelect={r => setForm(f => ({
-              ...f,
-              home_address: r.address,
-              home_lat: r.lat,
-              home_lng: r.lng,
-              home_place_id: r.place_id,
-            }))}
-          />
+          <Label className="text-xs flex items-center gap-1.5">
+            <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+            Endereço residencial
+          </Label>
+          {hasSavedAddress && !editingAddress ? (
+            <div className="flex items-center gap-2 p-2.5 bg-muted/50 rounded-lg border border-border/50">
+              <Check className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
+              <span className="text-sm text-foreground flex-1 truncate font-body">
+                {doctorProfile!.home_address}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs text-muted-foreground"
+                onClick={() => setEditingAddress(true)}
+              >
+                <Pencil className="h-3 w-3 mr-1" />
+                Editar
+              </Button>
+            </div>
+          ) : (
+            <GooglePlacesInput
+              value={form.home_address}
+              placeholder="Sua rua, bairro, cidade..."
+              mode="cep_first"
+              onSelect={r => {
+                setForm(f => ({
+                  ...f,
+                  home_address: r.address,
+                  home_lat: r.lat,
+                  home_lng: r.lng,
+                  home_place_id: r.place_id,
+                }));
+              }}
+            />
+          )}
           <p className="text-[11px] text-muted-foreground font-body">
             Usado para calcular tempo de deslocamento até cada clínica.
           </p>
@@ -55,15 +87,36 @@ export function DoctorProfileForm() {
 
         {/* Meta mensal */}
         <div className="space-y-1.5">
-          <Label className="text-xs">Meta de renda líquida mensal (R$)</Label>
-          <Input
-            type="number"
-            min={0}
-            step={500}
-            value={form.monthly_net_goal ?? ''}
-            onChange={e => setForm(f => ({ ...f, monthly_net_goal: Number(e.target.value) }))}
-            placeholder="Ex: 18000"
-          />
+          <Label className="text-xs flex items-center gap-1.5">
+            <Target className="h-3.5 w-3.5 text-muted-foreground" />
+            Meta de renda líquida mensal (R$)
+          </Label>
+          {hasSavedGoal && !editingGoal ? (
+            <div className="flex items-center gap-2 p-2.5 bg-muted/50 rounded-lg border border-border/50">
+              <Check className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
+              <span className="text-sm text-foreground flex-1 font-body">
+                R$ {(doctorProfile!.monthly_net_goal ?? 0).toLocaleString('pt-BR')}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs text-muted-foreground"
+                onClick={() => setEditingGoal(true)}
+              >
+                <Pencil className="h-3 w-3 mr-1" />
+                Editar
+              </Button>
+            </div>
+          ) : (
+            <Input
+              type="number"
+              min={0}
+              step={500}
+              value={form.monthly_net_goal ?? ''}
+              onChange={e => setForm(f => ({ ...f, monthly_net_goal: Number(e.target.value) }))}
+              placeholder="Ex: 18000"
+            />
+          )}
           <p className="text-[11px] text-muted-foreground font-body">
             Referência para o semáforo financeiro no Bloco 4.
           </p>
