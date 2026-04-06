@@ -674,6 +674,10 @@ export default function Admin() {
               </Card>
             </div>
           </TabsContent>
+
+          <TabsContent value="knowledge_base">
+            <AdminFinancialKbTab />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
