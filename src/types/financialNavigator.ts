@@ -32,11 +32,13 @@ export type WorkMethod =
 // ─── Labels ───────────────────────────────────────────────────────────────────
 
 export const REGIME_LABELS: Record<WorkRegime, string> = {
-  pj_turno:    'PJ — por turno',
-  pj_producao: 'PJ — por produção',
-  clt:         'CLT',
-  residencia:  'Residência',
-  fellowship:  'Fellowship (não remunerado)',
+  pj_turno:             'PJ — por turno',
+  pj_producao:          'PJ — por produção',
+  clt:                  'CLT',
+  residencia:           'Residência',
+  fellowship:           'Fellowship (não remunerado)',
+  pro_labore:           'Pró-labore (coordenação/gestão)',
+  distribuicao_lucros:  'Distribuição de lucros',
 };
 
 export const FN_SHIFT_LABELS: Record<FnShiftType, string> = {
