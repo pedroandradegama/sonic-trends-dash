@@ -8,6 +8,7 @@ import { FnKpiSparklines } from './FnKpiSparklines';
 import { FnPjPfSimulation } from './FnPjPfSimulation';
 import { FnServiceEvalSection } from './FnServiceEvalSection';
 import { FnEvalReminder } from './FnEvalReminder';
+import { FnFinancialFaq } from './FnFinancialFaq';
 
 export function Block4Page() {
   const { profile } = useUserProfile();
@@ -60,6 +61,11 @@ export function Block4Page() {
           doctorProfile={doctorProfile}
         />
       )}
+
+      {/* Consultor Financeiro com IA */}
+      <div className="border-t border-border/50 pt-6">
+        <FnFinancialFaq />
+      </div>
     </div>
   );
 }
