@@ -5,7 +5,9 @@ export type WorkRegime =
   | 'pj_producao'
   | 'clt'
   | 'residencia'
-  | 'fellowship';
+  | 'fellowship'
+  | 'pro_labore'
+  | 'distribuicao_lucros';
 
 export type FiscalMode = 'A' | 'B' | 'C';
 

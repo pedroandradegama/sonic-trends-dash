@@ -1111,16 +1111,21 @@ export type Database = {
           address: string | null
           color: string
           created_at: string
+          distribution_frequency: string | null
+          distribution_months: number[] | null
           fiscal_fixed_costs: number | null
           fiscal_mode: string
           fiscal_pct_base: number | null
           fiscal_pct_total: number | null
           fixed_monthly_salary: number | null
+          fixed_monthly_value: number | null
           id: string
           is_active: boolean
+          is_taxed: boolean
           lat: number | null
           lng: number | null
           method_mix: Json | null
+          monthly_hours: number | null
           name: string
           payment_delta: number
           place_id: string | null
@@ -1128,6 +1133,7 @@ export type Database = {
           regime: string
           required_hours_month: number | null
           sort_order: number
+          tax_pct: number | null
           updated_at: string
           user_id: string
         }
@@ -1135,16 +1141,21 @@ export type Database = {
           address?: string | null
           color?: string
           created_at?: string
+          distribution_frequency?: string | null
+          distribution_months?: number[] | null
           fiscal_fixed_costs?: number | null
           fiscal_mode?: string
           fiscal_pct_base?: number | null
           fiscal_pct_total?: number | null
           fixed_monthly_salary?: number | null
+          fixed_monthly_value?: number | null
           id?: string
           is_active?: boolean
+          is_taxed?: boolean
           lat?: number | null
           lng?: number | null
           method_mix?: Json | null
+          monthly_hours?: number | null
           name: string
           payment_delta?: number
           place_id?: string | null
@@ -1152,6 +1163,7 @@ export type Database = {
           regime?: string
           required_hours_month?: number | null
           sort_order?: number
+          tax_pct?: number | null
           updated_at?: string
           user_id: string
         }
@@ -1159,16 +1171,21 @@ export type Database = {
           address?: string | null
           color?: string
           created_at?: string
+          distribution_frequency?: string | null
+          distribution_months?: number[] | null
           fiscal_fixed_costs?: number | null
           fiscal_mode?: string
           fiscal_pct_base?: number | null
           fiscal_pct_total?: number | null
           fixed_monthly_salary?: number | null
+          fixed_monthly_value?: number | null
           id?: string
           is_active?: boolean
+          is_taxed?: boolean
           lat?: number | null
           lng?: number | null
           method_mix?: Json | null
+          monthly_hours?: number | null
           name?: string
           payment_delta?: number
           place_id?: string | null
@@ -1176,6 +1193,7 @@ export type Database = {
           regime?: string
           required_hours_month?: number | null
           sort_order?: number
+          tax_pct?: number | null
           updated_at?: string
           user_id?: string
         }
