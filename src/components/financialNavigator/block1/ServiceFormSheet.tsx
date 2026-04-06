@@ -5,6 +5,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select';
@@ -27,7 +29,7 @@ interface Props {
   service: FnService | null;
 }
 
-const ALL_REGIMES: WorkRegime[] = ['pj_turno','pj_producao','clt','residencia','fellowship'];
+const ALL_REGIMES: WorkRegime[] = ['pj_turno','pj_producao','clt','residencia','fellowship','pro_labore','distribuicao_lucros'];
 const ALL_METHODS: WorkMethod[] = ['us_geral','us_vascular','mamografia','tc','rm','puncao','misto'];
 
 export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
@@ -267,6 +269,143 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
                     placeholder="Ex: 160"
                   />
                 </div>
+              </div>
+            )}
+
+            {/* Pró-labore: campos extras */}
+            {form.regime === 'pro_labore' && (
+              <div className="space-y-3 p-3 bg-muted rounded-lg">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Valor mensal bruto (R$)</Label>
+                    <Input
+                      type="number"
+                      value={form.fixed_monthly_value ?? ''}
+                      onChange={e => setForm(f => ({ ...f, fixed_monthly_value: Number(e.target.value) }))}
+                      placeholder="Ex: 5000"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Carga horária estimada (h/mês)</Label>
+                    <Input
+                      type="number"
+                      value={form.monthly_hours ?? ''}
+                      onChange={e => setForm(f => ({ ...f, monthly_hours: Number(e.target.value) }))}
+                      placeholder="Ex: 20"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={form.is_taxed ?? false}
+                    onCheckedChange={v => setForm(f => ({ ...f, is_taxed: v }))}
+                  />
+                  <Label className="text-xs">É tributado?</Label>
+                </div>
+                {form.is_taxed && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Percentual de desconto (%)</Label>
+                    <Input
+                      type="number"
+                      value={form.tax_pct ?? ''}
+                      onChange={e => setForm(f => ({ ...f, tax_pct: Number(e.target.value) }))}
+                      placeholder="Ex: 11"
+                    />
+                    <p className="text-[10px] text-muted-foreground">Use a alíquota efetiva total (IR + INSS se aplicável)</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Distribuição de lucros: campos extras */}
+            {form.regime === 'distribuicao_lucros' && (
+              <div className="space-y-3 p-3 bg-muted rounded-lg">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Valor esperado por distribuição (R$)</Label>
+                  <Input
+                    type="number"
+                    value={form.fixed_monthly_value ?? ''}
+                    onChange={e => setForm(f => ({ ...f, fixed_monthly_value: Number(e.target.value) }))}
+                    placeholder="Ex: 30000"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Frequência</Label>
+                  <Select
+                    value={form.distribution_frequency ?? 'monthly'}
+                    onValueChange={v => {
+                      const freq = v as FnService['distribution_frequency'];
+                      const defaults: Record<string, number[]> = {
+                        biannual: [6, 12],
+                        annual: [12],
+                      };
+                      setForm(f => ({
+                        ...f,
+                        distribution_frequency: freq,
+                        distribution_months: defaults[v] ?? f.distribution_months,
+                      }));
+                    }}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">Mensal</SelectItem>
+                      <SelectItem value="biannual">Semestral</SelectItem>
+                      <SelectItem value="annual">Anual</SelectItem>
+                      <SelectItem value="irregular">Irregular</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {(form.distribution_frequency === 'biannual' || form.distribution_frequency === 'annual') && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Meses de distribuição</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].map((m, i) => {
+                        const monthNum = i + 1;
+                        const selected = form.distribution_months?.includes(monthNum) ?? false;
+                        return (
+                          <label key={m} className="flex items-center gap-1 text-xs">
+                            <Checkbox
+                              checked={selected}
+                              onCheckedChange={(checked) => {
+                                setForm(f => {
+                                  const curr = f.distribution_months ?? [];
+                                  return {
+                                    ...f,
+                                    distribution_months: checked
+                                      ? [...curr, monthNum].sort((a, b) => a - b)
+                                      : curr.filter(x => x !== monthNum),
+                                  };
+                                });
+                              }}
+                            />
+                            {m}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={form.is_taxed ?? false}
+                    onCheckedChange={v => setForm(f => ({ ...f, is_taxed: v }))}
+                  />
+                  <Label className="text-xs">É tributado?</Label>
+                </div>
+                {form.is_taxed && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Percentual de desconto (%)</Label>
+                    <Input
+                      type="number"
+                      value={form.tax_pct ?? ''}
+                      onChange={e => setForm(f => ({ ...f, tax_pct: Number(e.target.value) }))}
+                      placeholder="Ex: 0"
+                    />
+                    <p className="text-[10px] text-muted-foreground">
+                      Dividendos são isentos no Simples/LP até R$ 50k/mês. Defina 0% se aplicável ao seu caso.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </TabsContent>

@@ -5,7 +5,9 @@ export type WorkRegime =
   | 'pj_producao'
   | 'clt'
   | 'residencia'
-  | 'fellowship';
+  | 'fellowship'
+  | 'pro_labore'
+  | 'distribuicao_lucros';
 
 export type FiscalMode = 'A' | 'B' | 'C';
 
@@ -30,11 +32,13 @@ export type WorkMethod =
 // ─── Labels ───────────────────────────────────────────────────────────────────
 
 export const REGIME_LABELS: Record<WorkRegime, string> = {
-  pj_turno:    'PJ — por turno',
-  pj_producao: 'PJ — por produção',
-  clt:         'CLT',
-  residencia:  'Residência',
-  fellowship:  'Fellowship (não remunerado)',
+  pj_turno:             'PJ — por turno',
+  pj_producao:          'PJ — por produção',
+  clt:                  'CLT',
+  residencia:           'Residência',
+  fellowship:           'Fellowship (não remunerado)',
+  pro_labore:           'Pró-labore (coordenação/gestão)',
+  distribuicao_lucros:  'Distribuição de lucros',
 };
 
 export const FN_SHIFT_LABELS: Record<FnShiftType, string> = {
@@ -109,6 +113,13 @@ export interface FnService {
   fiscal_fixed_costs?: number;
   fixed_monthly_salary?: number;
   required_hours_month?: number;
+  // New regime fields
+  fixed_monthly_value?: number;
+  monthly_hours?: number;
+  is_taxed?: boolean;
+  tax_pct?: number;
+  distribution_frequency?: 'monthly' | 'biannual' | 'annual' | 'irregular';
+  distribution_months?: number[];
   // Hydrated client-side
   shiftValues?: Record<FnShiftType, number>;
   expenses?: FnServiceExpense[];

@@ -160,6 +160,34 @@ export function useFnProjection() {
         result[svc.id] = (result[svc.id] ?? 0) + val;
       });
 
+      // Add fixed-income regimes (pro_labore, distribuicao_lucros)
+      const monthIndex = month + 1; // 1-based
+      services.forEach(svc => {
+        if (prefs.filter_service !== 'all' && svc.id !== prefs.filter_service) return;
+        if (prefs.filter_regime !== 'all' && svc.regime !== prefs.filter_regime) return;
+
+        if (svc.regime === 'pro_labore') {
+          const gross = svc.fixed_monthly_value ?? 0;
+          const taxed = svc.is_taxed ? gross * (1 - (svc.tax_pct ?? 0) / 100) : gross;
+          result[svc.id] = (result[svc.id] ?? 0) + taxed;
+        } else if (svc.regime === 'distribuicao_lucros') {
+          const val = svc.fixed_monthly_value ?? 0;
+          const freq = svc.distribution_frequency ?? 'monthly';
+          let applies = false;
+          if (freq === 'monthly') {
+            applies = true;
+          } else if (freq === 'biannual' || freq === 'annual') {
+            applies = (svc.distribution_months ?? []).includes(monthIndex);
+          } else if (freq === 'irregular') {
+            applies = (svc.distribution_months ?? []).includes(monthIndex);
+          }
+          if (applies) {
+            const taxed = svc.is_taxed ? val * (1 - (svc.tax_pct ?? 0) / 100) : val;
+            result[svc.id] = (result[svc.id] ?? 0) + taxed;
+          }
+        }
+      });
+
       return result;
     },
     [getShiftsForMonth, services, prefs]
