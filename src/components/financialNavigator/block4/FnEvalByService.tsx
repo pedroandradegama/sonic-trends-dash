@@ -25,7 +25,15 @@ export function FnEvalByService({ services, activeServiceId, onSelectService }: 
 
   const activeSvc = services.find(s => s.id === activeServiceId);
 
+  const prevServiceRef = useRef<string | null>(null);
+  const evalsLenRef = useRef(0);
+
   useEffect(() => {
+    const changed = activeServiceId !== prevServiceRef.current || evaluations.length !== evalsLenRef.current;
+    if (!changed) return;
+    prevServiceRef.current = activeServiceId;
+    evalsLenRef.current = evaluations.length;
+
     if (!activeServiceId) { setScores({}); setNotes(''); return; }
     const latest = evaluations.find(e => e.service_id === activeServiceId);
     if (latest) {
