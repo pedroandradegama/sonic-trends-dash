@@ -29,7 +29,7 @@ interface Props {
   service: FnService | null;
 }
 
-const ALL_REGIMES: WorkRegime[] = ['pj_turno','pj_producao','clt','residencia','fellowship'];
+const ALL_REGIMES: WorkRegime[] = ['pj_turno','pj_producao','clt','residencia','fellowship','pro_labore','distribuicao_lucros'];
 const ALL_METHODS: WorkMethod[] = ['us_geral','us_vascular','mamografia','tc','rm','puncao','misto'];
 
 export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
