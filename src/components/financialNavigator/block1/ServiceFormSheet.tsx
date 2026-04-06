@@ -10,12 +10,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import {
-  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
-} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePresetClinics } from '@/hooks/usePresetClinics';
 import { FiscalConfigSection } from './FiscalConfigSection';
