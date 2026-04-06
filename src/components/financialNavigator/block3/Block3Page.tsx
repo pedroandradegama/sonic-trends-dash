@@ -15,8 +15,8 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 export function Block3Page() {
   const { prefs, metrics, projectionPoints, adjustments, block2Progress, savePrefs } =
     useFnProjection();
-  const { services, doctorProfile } = useFnConfig();
-  const { profile } = useUserProfile();
+  const { services, doctorProfile, isLoading: configLoading } = useFnConfig();
+  const { profile, loading: profileLoading } = useUserProfile();
 
   // Persist block2 progress whenever it changes
   useEffect(() => {
@@ -30,7 +30,16 @@ export function Block3Page() {
       .then(() => {});
   }, [block2Progress, profile?.user_id]);
 
+  const isLoading = configLoading || profileLoading;
   const hasData = projectionPoints.some(p => p.totalGross > 0);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   if (!hasData) {
     return (
