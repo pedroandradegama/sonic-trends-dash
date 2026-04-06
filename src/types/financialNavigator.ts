@@ -113,6 +113,13 @@ export interface FnService {
   fiscal_fixed_costs?: number;
   fixed_monthly_salary?: number;
   required_hours_month?: number;
+  // New regime fields
+  fixed_monthly_value?: number;
+  monthly_hours?: number;
+  is_taxed?: boolean;
+  tax_pct?: number;
+  distribution_frequency?: 'monthly' | 'biannual' | 'annual' | 'irregular';
+  distribution_months?: number[];
   // Hydrated client-side
   shiftValues?: Record<FnShiftType, number>;
   expenses?: FnServiceExpense[];
