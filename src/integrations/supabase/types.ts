@@ -2424,6 +2424,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_doctor_agenda_active: { Args: { _user_id: string }; Returns: boolean }
       is_email_authorized: { Args: { _email: string }; Returns: boolean }
     }
     Enums: {
