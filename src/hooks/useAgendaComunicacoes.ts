@@ -26,6 +26,20 @@ export interface CreateAgendaComunicacao {
   comentarios?: string;
 }
 
+async function notifyHop(action: 'created' | 'deleted', agenda: Record<string, unknown>) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    await supabase.functions.invoke('notify-hop-agenda', {
+      body: { action, agenda },
+    });
+  } catch (err) {
+    // Non-blocking: log but don't break the flow
+    console.warn('Failed to notify HOP:', err);
+  }
+}
+
 export function useAgendaComunicacoes() {
   const { user } = useAuth();
   const { profile } = useUserProfile();
@@ -67,8 +81,10 @@ export function useAgendaComunicacoes() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['agenda-comunicacoes'] });
+      // Notify HOP in background
+      notifyHop('created', data as Record<string, unknown>);
     },
   });
 
@@ -80,9 +96,11 @@ export function useAgendaComunicacoes() {
         .eq('id', id);
       
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ['agenda-comunicacoes'] });
+      notifyHop('deleted', { id });
     },
   });
 
