@@ -366,10 +366,16 @@ const AgendaCard = () => {
                     <Input type="time" value={tempHorarioFim} onChange={(e) => setTempHorarioFim(e.target.value)} />
                   </div>
                 </div>
-                <Button size="sm" onClick={confirmDaySchedule} className="w-full">
-                  <Save className="mr-2 h-4 w-4" />
-                  Salvar Horário
-                </Button>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => confirmDaySchedule(false)} className="flex-1">
+                    <Save className="mr-2 h-4 w-4" />
+                    Salvar Horário
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => confirmDaySchedule(true)} className="flex-1" title={`Repetir para todas as ${format(activeDay, 'EEEE', { locale: ptBR })}s do mês`}>
+                    <Repeat className="mr-2 h-4 w-4" />
+                    Repetir no mês
+                  </Button>
+                </div>
               </div>
             )}
 
