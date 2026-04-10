@@ -20,6 +20,7 @@ serve(async (req) => {
       .from("interesting_cases")
       .select("*, profiles!inner(medico_nome, whatsapp_number)")
       .eq("wants_followup", true)
+      .eq("resolved", false)
       .not("followup_days", "is", null);
 
     if (error) throw error;
