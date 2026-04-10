@@ -70,6 +70,9 @@ export default function Admin() {
   const [newEmail, setNewEmail] = useState('');
   const [newNome, setNewNome] = useState('');
   const [adding, setAdding] = useState(false);
+  const [editingEmailId, setEditingEmailId] = useState<string | null>(null);
+  const [editEmailValue, setEditEmailValue] = useState('');
+  const [sendingInvite, setSendingInvite] = useState<string | null>(null);
 
   // WhatsApp state
   const [waPhone, setWaPhone] = useState('5581971121516');
