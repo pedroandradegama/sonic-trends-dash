@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { DollarSign, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { FnProjectionFilters } from './FnProjectionFilters';
 import { FnMetricsGrid } from './FnMetricsGrid';
 import { FnProjectionChart } from './FnProjectionChart';
@@ -11,6 +12,8 @@ import { useFnProjection } from '@/hooks/useFnProjection';
 import { useFnConfig } from '@/hooks/useFnConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserProfile } from '@/hooks/useUserProfile';
+
+const BRL = (v: number) => `R$ ${Math.round(v).toLocaleString('pt-BR')}`;
 
 export function Block3Page() {
   const { prefs, metrics, projectionPoints, adjustments, block2Progress, savePrefs } =
