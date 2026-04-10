@@ -62,8 +62,8 @@ export function FnDayCell({ dayNumber, dayData, isToday, expanded, onClick }: Pr
                 title={`${SLOT_TIMES[slotIdx]}${svc ? ` — ${svc.name}` : ''}`}
               >
                 {color && svc && (
-                  <span className="text-[8px] font-medium truncate" style={{ color }}>
-                    {svc.name.split(' ')[0]}
+                  <span className="text-[10px] font-semibold truncate leading-tight" style={{ color }}>
+                    {svc.name.length > 12 ? svc.name.split(' ').slice(0, 2).join(' ') : svc.name}
                   </span>
                 )}
               </div>

@@ -1,14 +1,15 @@
 import { useState, useMemo } from 'react';
-import { CalendarPlus, Clock, Trash2, Send, Loader2, Edit2, Save, X } from 'lucide-react';
+import { CalendarPlus, Clock, Trash2, Send, Loader2, Edit2, Save, X, Repeat } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAgendaComunicacoes, CreateAgendaComunicacao } from '@/hooks/useAgendaComunicacoes';
-import { format, parseISO, isSameDay } from 'date-fns';
+import { format, parseISO, isSameDay, getDay, getDaysInMonth, addDays as addDaysFn } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -114,24 +115,46 @@ const AgendaCard = () => {
     setTempHorarioFim('18:00');
   };
 
-  const confirmDaySchedule = () => {
+  const confirmDaySchedule = (repeatWeekday = false) => {
     if (!activeDay) return;
 
+    const nextSchedule: DaySchedule = {
+      date: activeDay,
+      horario_inicio: tempHorarioInicio,
+      horario_fim: tempHorarioFim,
+    };
+
     setSelectedDays((prev) => {
-      const existingIndex = prev.findIndex((day) => isSameDay(day.date, activeDay));
-      const nextSchedule: DaySchedule = {
-        date: activeDay,
-        horario_inicio: tempHorarioInicio,
-        horario_fim: tempHorarioFim,
-      };
+      let newDays = [...prev];
+      const existingIndex = newDays.findIndex((day) => isSameDay(day.date, activeDay));
 
       if (existingIndex >= 0) {
-        const updated = [...prev];
-        updated[existingIndex] = nextSchedule;
-        return updated;
+        newDays[existingIndex] = nextSchedule;
+      } else {
+        newDays.push(nextSchedule);
       }
 
-      return [...prev, nextSchedule].sort((a, b) => a.date.getTime() - b.date.getTime());
+      // Repeat for all same weekdays in the month
+      if (repeatWeekday) {
+        const [yearStr, monthStr] = selectedMonth.split('-').map(Number);
+        const weekday = getDay(activeDay);
+        const totalDays = getDaysInMonth(new Date(yearStr, monthStr - 1));
+        for (let d = 1; d <= totalDays; d++) {
+          const date = new Date(yearStr, monthStr - 1, d);
+          if (getDay(date) === weekday && !isSameDay(date, activeDay)) {
+            const alreadyExists = newDays.some(day => isSameDay(day.date, date));
+            if (!alreadyExists) {
+              newDays.push({
+                date,
+                horario_inicio: tempHorarioInicio,
+                horario_fim: tempHorarioFim,
+              });
+            }
+          }
+        }
+      }
+
+      return newDays.sort((a, b) => a.date.getTime() - b.date.getTime());
     });
 
     setActiveDay(null);
@@ -343,10 +366,16 @@ const AgendaCard = () => {
                     <Input type="time" value={tempHorarioFim} onChange={(e) => setTempHorarioFim(e.target.value)} />
                   </div>
                 </div>
-                <Button size="sm" onClick={confirmDaySchedule} className="w-full">
-                  <Save className="mr-2 h-4 w-4" />
-                  Salvar Horário
-                </Button>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => confirmDaySchedule(false)} className="flex-1">
+                    <Save className="mr-2 h-4 w-4" />
+                    Salvar Horário
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => confirmDaySchedule(true)} className="flex-1" title={`Repetir para todas as ${format(activeDay, 'EEEE', { locale: ptBR })}s do mês`}>
+                    <Repeat className="mr-2 h-4 w-4" />
+                    Repetir no mês
+                  </Button>
+                </div>
               </div>
             )}
 

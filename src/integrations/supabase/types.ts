@@ -929,6 +929,7 @@ export type Database = {
           is_active: boolean
           lat: number | null
           lng: number | null
+          logo_url: string | null
           name: string
           place_id: string | null
           short_name: string | null
@@ -943,6 +944,7 @@ export type Database = {
           is_active?: boolean
           lat?: number | null
           lng?: number | null
+          logo_url?: string | null
           name: string
           place_id?: string | null
           short_name?: string | null
@@ -957,6 +959,7 @@ export type Database = {
           is_active?: boolean
           lat?: number | null
           lng?: number | null
+          logo_url?: string | null
           name?: string
           place_id?: string | null
           short_name?: string | null

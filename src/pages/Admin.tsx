@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Plus, UserCheck, UserX, Trash2, Users, Shield, Clock, MessageCircle, Send, CheckCircle2, XCircle, Loader2, Newspaper, Globe, Settings, Lightbulb, Sparkles, CalendarCheck, UserPlus, Building2, BookOpen } from 'lucide-react';
+import { ArrowLeft, Plus, UserCheck, UserX, Trash2, Users, Shield, Clock, MessageCircle, Send, CheckCircle2, XCircle, Loader2, Newspaper, Globe, Settings, Lightbulb, Sparkles, CalendarCheck, UserPlus, Building2, BookOpen, Mail, Pencil } from 'lucide-react';
 import { AdminConfigTab } from '@/components/admin/AdminConfigTab';
 import { AdminSuggestionsTab } from '@/components/admin/AdminSuggestionsTab';
 import { AdminCommunityTopicsTab } from '@/components/admin/AdminCommunityTopicsTab';
@@ -70,6 +70,9 @@ export default function Admin() {
   const [newEmail, setNewEmail] = useState('');
   const [newNome, setNewNome] = useState('');
   const [adding, setAdding] = useState(false);
+  const [editingEmailId, setEditingEmailId] = useState<string | null>(null);
+  const [editEmailValue, setEditEmailValue] = useState('');
+  const [sendingInvite, setSendingInvite] = useState<string | null>(null);
 
   // WhatsApp state
   const [waPhone, setWaPhone] = useState('5581971121516');
@@ -171,6 +174,48 @@ export default function Admin() {
     } catch (error: any) {
       toast({ title: "Erro ao remover médico", description: error.message, variant: "destructive" });
     }
+  }
+
+  async function handleUpdateEmail(doctor: AuthorizedDoctor) {
+    if (!editEmailValue.trim()) return;
+    try {
+      const { error } = await supabase
+        .from('authorized_doctors')
+        .update({ email: editEmailValue.toLowerCase().trim() })
+        .eq('id', doctor.id);
+      if (error) throw error;
+      toast({ title: "Email atualizado", description: `Email de ${doctor.nome} alterado.` });
+      setEditingEmailId(null);
+      setEditEmailValue('');
+      fetchDoctors();
+    } catch (error: any) {
+      toast({ title: "Erro ao atualizar email", description: error.message, variant: "destructive" });
+    }
+  }
+
+  async function handleSendInvite(doctor: AuthorizedDoctor) {
+    setSendingInvite(doctor.id);
+    try {
+      const { error } = await supabase.functions.invoke('send-otp', {
+        body: { email: doctor.email, isInvite: true },
+      });
+      if (error) throw error;
+      toast({ title: "Convite enviado!", description: `Email de convite enviado para ${doctor.email}.` });
+    } catch (error: any) {
+      toast({ title: "Erro ao enviar convite", description: error.message, variant: "destructive" });
+    } finally {
+      setSendingInvite(null);
+    }
+  }
+
+  function getDoctorStatus(doctor: AuthorizedDoctor): { label: string; className: string } {
+    if (!doctor.registered_at) {
+      return { label: 'Pendente', className: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30' };
+    }
+    if (!doctor.is_active) {
+      return { label: 'Registrado – Inativo', className: 'bg-red-500/10 text-red-600 border-red-500/30' };
+    }
+    return { label: 'Registrado – Ativo', className: 'bg-green-500/10 text-green-600 border-green-500/30' };
   }
 
   async function handleSendWhatsApp(e: React.FormEvent) {
@@ -368,36 +413,59 @@ export default function Admin() {
                   <p className="text-center text-muted-foreground py-8">Nenhum médico cadastrado ainda.</p>
                 ) : (
                   <div className="space-y-3">
-                    {doctors.map(doctor => (
-                      <div key={doctor.id} className={`flex items-center justify-between p-4 rounded-lg border ${doctor.is_active ? 'bg-card border-border' : 'bg-muted/50 border-muted'}`}>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className={`font-medium ${!doctor.is_active && 'text-muted-foreground'}`}>{doctor.nome}</h3>
-                            {doctor.registered_at ? (
-                              <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">Registrado</Badge>
+                    {doctors.map(doctor => {
+                      const status = getDoctorStatus(doctor);
+                      return (
+                        <div key={doctor.id} className={`flex items-start justify-between p-4 rounded-lg border ${doctor.is_active ? 'bg-card border-border' : 'bg-muted/50 border-muted'}`}>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className={`font-medium ${!doctor.is_active && 'text-muted-foreground'}`}>{doctor.nome}</h3>
+                              <Badge variant="outline" className={status.className}>{status.label}</Badge>
+                            </div>
+                            {editingEmailId === doctor.id ? (
+                              <div className="flex items-center gap-2 mt-1">
+                                <Input
+                                  value={editEmailValue}
+                                  onChange={e => setEditEmailValue(e.target.value)}
+                                  className="h-8 text-sm max-w-xs"
+                                  type="email"
+                                />
+                                <Button size="sm" variant="outline" className="h-8" onClick={() => handleUpdateEmail(doctor)}>
+                                  <CheckCircle2 className="h-3 w-3" />
+                                </Button>
+                                <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditingEmailId(null)}>
+                                  <XCircle className="h-3 w-3" />
+                                </Button>
+                              </div>
                             ) : (
-                              <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">Pendente</Badge>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <p className={`text-sm ${doctor.is_active ? 'text-muted-foreground' : 'text-muted-foreground/60'}`}>{doctor.email}</p>
+                                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => { setEditingEmailId(doctor.id); setEditEmailValue(doctor.email); }}>
+                                  <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
+                                </Button>
+                              </div>
                             )}
-                            {!doctor.is_active && <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30">Inativo</Badge>}
+                            {doctor.last_login_at && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                                <Clock className="h-3 w-3" />
+                                Último acesso: {format(new Date(doctor.last_login_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                              </p>
+                            )}
                           </div>
-                          <p className={`text-sm ${doctor.is_active ? 'text-muted-foreground' : 'text-muted-foreground/60'}`}>{doctor.email}</p>
-                          {doctor.last_login_at && (
-                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                              <Clock className="h-3 w-3" />
-                              Último acesso: {format(new Date(doctor.last_login_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                            </p>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" onClick={() => handleSendInvite(doctor)} disabled={sendingInvite === doctor.id} title="Enviar convite">
+                              {sendingInvite === doctor.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4 text-primary" />}
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => toggleActive(doctor)} title={doctor.is_active ? 'Desativar' : 'Ativar'}>
+                              {doctor.is_active ? <UserX className="h-4 w-4 text-red-500" /> : <UserCheck className="h-4 w-4 text-green-500" />}
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleDelete(doctor)} title="Remover">
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm" onClick={() => toggleActive(doctor)} title={doctor.is_active ? 'Desativar' : 'Ativar'}>
-                            {doctor.is_active ? <UserX className="h-4 w-4 text-red-500" /> : <UserCheck className="h-4 w-4 text-green-500" />}
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleDelete(doctor)} title="Remover">
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
