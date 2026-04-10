@@ -8,22 +8,28 @@ interface Props {
 }
 
 function MetricCard({
-  label, value, sub, highlight,
+  label, value, sub, highlight, icon,
 }: {
   label: string;
   value: string;
   sub?: string;
   highlight?: boolean;
+  icon?: React.ReactNode;
 }) {
   return (
-    <div className="bg-muted rounded-lg px-3 py-2.5">
-      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">
-        {label}
-      </p>
-      <p className={`text-base font-medium ${highlight ? 'text-green-700 dark:text-green-400' : 'text-foreground'}`}>
-        {value}
-      </p>
-      {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
+    <div className="bg-card border border-border rounded-xl px-4 py-4 shadow-sm">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+            {label}
+          </p>
+          <p className={`text-xl font-bold font-display ${highlight ? 'text-[hsl(var(--success))]' : 'text-foreground'}`}>
+            {value}
+          </p>
+          {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
+        </div>
+        {icon && <div className="rounded-lg p-2 bg-muted">{icon}</div>}
+      </div>
     </div>
   );
 }

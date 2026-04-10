@@ -55,12 +55,52 @@ export function Block3Page() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <FnProjectionFilters prefs={prefs} services={services} onSave={savePrefs.mutate} />
+
+      {/* Insight cards like Projeção page */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="relative overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Receita Média / Mês</p>
+              <p className="text-2xl font-bold font-display">{BRL(metrics.avgMonthlyGross)}</p>
+            </div>
+            <div className="rounded-lg p-2 bg-emerald-50 dark:bg-emerald-950/30">
+              <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+          </div>
+        </div>
+        <div className="relative overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Carga Horária / Mês</p>
+              <p className="text-2xl font-bold font-display">{metrics.totalHoursCurrentMonth}h</p>
+              <p className="text-xs text-muted-foreground mt-0.5">mês atual</p>
+            </div>
+            <div className="rounded-lg p-2 bg-violet-50 dark:bg-violet-950/30">
+              <CalendarIcon className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+            </div>
+          </div>
+        </div>
+        <div className="relative overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Valor / Hora (efetivo)</p>
+              <p className="text-2xl font-bold font-display">R$ {metrics.effectiveHourlyRate}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">inclui deslocamento</p>
+            </div>
+            <div className="rounded-lg p-2 bg-amber-50 dark:bg-amber-950/30">
+              <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 space-y-5">
           <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+            <p className="text-sm font-semibold text-foreground mb-3">Indicadores detalhados</p>
             <FnMetricsGrid metrics={metrics} prefs={prefs} commuteHoursMonth={metrics.commuteHoursMonth} />
           </div>
           <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
