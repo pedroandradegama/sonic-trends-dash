@@ -88,7 +88,10 @@ export function HomeSummary() {
   }, [comunicacoes]);
 
   const nextMonthMissing = useMemo(() => {
-    const nextMonth = addMonths(new Date(), 1);
+    const today = new Date();
+    // Only show from day 20 onwards
+    if (today.getDate() < 20) return false;
+    const nextMonth = addMonths(today, 1);
     const start = startOfMonth(nextMonth);
     const end = endOfMonth(nextMonth);
     const hasNextMonth = comunicacoes.some(c => {
@@ -114,6 +117,7 @@ export function HomeSummary() {
   // Follow-up reminders
   const overdueFollowups = useMemo(() => {
     return interestingCases.filter(c => {
+      if (c.resolved) return false;
       if (!c.wants_followup || !c.followup_days) return false;
       const target = addDays(parseISO(c.exam_date), c.followup_days);
       return isBefore(target, new Date()) || isToday(target);
