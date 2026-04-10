@@ -115,24 +115,46 @@ const AgendaCard = () => {
     setTempHorarioFim('18:00');
   };
 
-  const confirmDaySchedule = () => {
+  const confirmDaySchedule = (repeatWeekday = false) => {
     if (!activeDay) return;
 
+    const nextSchedule: DaySchedule = {
+      date: activeDay,
+      horario_inicio: tempHorarioInicio,
+      horario_fim: tempHorarioFim,
+    };
+
     setSelectedDays((prev) => {
-      const existingIndex = prev.findIndex((day) => isSameDay(day.date, activeDay));
-      const nextSchedule: DaySchedule = {
-        date: activeDay,
-        horario_inicio: tempHorarioInicio,
-        horario_fim: tempHorarioFim,
-      };
+      let newDays = [...prev];
+      const existingIndex = newDays.findIndex((day) => isSameDay(day.date, activeDay));
 
       if (existingIndex >= 0) {
-        const updated = [...prev];
-        updated[existingIndex] = nextSchedule;
-        return updated;
+        newDays[existingIndex] = nextSchedule;
+      } else {
+        newDays.push(nextSchedule);
       }
 
-      return [...prev, nextSchedule].sort((a, b) => a.date.getTime() - b.date.getTime());
+      // Repeat for all same weekdays in the month
+      if (repeatWeekday) {
+        const [yearStr, monthStr] = selectedMonth.split('-').map(Number);
+        const weekday = getDay(activeDay);
+        const totalDays = getDaysInMonth(new Date(yearStr, monthStr - 1));
+        for (let d = 1; d <= totalDays; d++) {
+          const date = new Date(yearStr, monthStr - 1, d);
+          if (getDay(date) === weekday && !isSameDay(date, activeDay)) {
+            const alreadyExists = newDays.some(day => isSameDay(day.date, date));
+            if (!alreadyExists) {
+              newDays.push({
+                date,
+                horario_inicio: tempHorarioInicio,
+                horario_fim: tempHorarioFim,
+              });
+            }
+          }
+        }
+      }
+
+      return newDays.sort((a, b) => a.date.getTime() - b.date.getTime());
     });
 
     setActiveDay(null);
