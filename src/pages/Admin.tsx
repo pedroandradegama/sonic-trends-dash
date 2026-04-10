@@ -176,6 +176,48 @@ export default function Admin() {
     }
   }
 
+  async function handleUpdateEmail(doctor: AuthorizedDoctor) {
+    if (!editEmailValue.trim()) return;
+    try {
+      const { error } = await supabase
+        .from('authorized_doctors')
+        .update({ email: editEmailValue.toLowerCase().trim() })
+        .eq('id', doctor.id);
+      if (error) throw error;
+      toast({ title: "Email atualizado", description: `Email de ${doctor.nome} alterado.` });
+      setEditingEmailId(null);
+      setEditEmailValue('');
+      fetchDoctors();
+    } catch (error: any) {
+      toast({ title: "Erro ao atualizar email", description: error.message, variant: "destructive" });
+    }
+  }
+
+  async function handleSendInvite(doctor: AuthorizedDoctor) {
+    setSendingInvite(doctor.id);
+    try {
+      const { error } = await supabase.functions.invoke('send-otp', {
+        body: { email: doctor.email, isInvite: true },
+      });
+      if (error) throw error;
+      toast({ title: "Convite enviado!", description: `Email de convite enviado para ${doctor.email}.` });
+    } catch (error: any) {
+      toast({ title: "Erro ao enviar convite", description: error.message, variant: "destructive" });
+    } finally {
+      setSendingInvite(null);
+    }
+  }
+
+  function getDoctorStatus(doctor: AuthorizedDoctor): { label: string; className: string } {
+    if (!doctor.registered_at) {
+      return { label: 'Pendente', className: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30' };
+    }
+    if (!doctor.is_active) {
+      return { label: 'Registrado – Inativo', className: 'bg-red-500/10 text-red-600 border-red-500/30' };
+    }
+    return { label: 'Registrado – Ativo', className: 'bg-green-500/10 text-green-600 border-green-500/30' };
+  }
+
   async function handleSendWhatsApp(e: React.FormEvent) {
     e.preventDefault();
     if (!waPhone.trim() || !waTemplate.trim()) return;
