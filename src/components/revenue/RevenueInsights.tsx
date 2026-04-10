@@ -75,26 +75,26 @@ export function RevenueInsights(props: Props) {
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       {cards.map(card => {
         const Icon = card.icon;
         return (
           <div
             key={card.label}
-            className="relative overflow-hidden rounded-xl border border-border bg-card p-4 shadow-sm"
+            className="relative overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm"
           >
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">
                   {card.label}
                 </p>
-                <p className="text-xl font-semibold font-display">{card.value}</p>
+                <p className="text-2xl font-bold font-display">{card.value}</p>
                 {card.sub && (
-                  <p className="text-xs text-muted-foreground mt-0.5">{card.sub}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{card.sub}</p>
                 )}
               </div>
-              <div className={cn('rounded-lg p-2', card.bg)}>
-                <Icon className={cn('h-4 w-4', card.accent)} />
+              <div className={cn('rounded-lg p-2.5', card.bg)}>
+                <Icon className={cn('h-5 w-5', card.accent)} />
               </div>
             </div>
           </div>
