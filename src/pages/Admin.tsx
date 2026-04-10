@@ -413,36 +413,59 @@ export default function Admin() {
                   <p className="text-center text-muted-foreground py-8">Nenhum médico cadastrado ainda.</p>
                 ) : (
                   <div className="space-y-3">
-                    {doctors.map(doctor => (
-                      <div key={doctor.id} className={`flex items-center justify-between p-4 rounded-lg border ${doctor.is_active ? 'bg-card border-border' : 'bg-muted/50 border-muted'}`}>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className={`font-medium ${!doctor.is_active && 'text-muted-foreground'}`}>{doctor.nome}</h3>
-                            {doctor.registered_at ? (
-                              <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">Registrado</Badge>
+                    {doctors.map(doctor => {
+                      const status = getDoctorStatus(doctor);
+                      return (
+                        <div key={doctor.id} className={`flex items-start justify-between p-4 rounded-lg border ${doctor.is_active ? 'bg-card border-border' : 'bg-muted/50 border-muted'}`}>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className={`font-medium ${!doctor.is_active && 'text-muted-foreground'}`}>{doctor.nome}</h3>
+                              <Badge variant="outline" className={status.className}>{status.label}</Badge>
+                            </div>
+                            {editingEmailId === doctor.id ? (
+                              <div className="flex items-center gap-2 mt-1">
+                                <Input
+                                  value={editEmailValue}
+                                  onChange={e => setEditEmailValue(e.target.value)}
+                                  className="h-8 text-sm max-w-xs"
+                                  type="email"
+                                />
+                                <Button size="sm" variant="outline" className="h-8" onClick={() => handleUpdateEmail(doctor)}>
+                                  <CheckCircle2 className="h-3 w-3" />
+                                </Button>
+                                <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditingEmailId(null)}>
+                                  <XCircle className="h-3 w-3" />
+                                </Button>
+                              </div>
                             ) : (
-                              <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">Pendente</Badge>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <p className={`text-sm ${doctor.is_active ? 'text-muted-foreground' : 'text-muted-foreground/60'}`}>{doctor.email}</p>
+                                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => { setEditingEmailId(doctor.id); setEditEmailValue(doctor.email); }}>
+                                  <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
+                                </Button>
+                              </div>
                             )}
-                            {!doctor.is_active && <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30">Inativo</Badge>}
+                            {doctor.last_login_at && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                                <Clock className="h-3 w-3" />
+                                Último acesso: {format(new Date(doctor.last_login_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                              </p>
+                            )}
                           </div>
-                          <p className={`text-sm ${doctor.is_active ? 'text-muted-foreground' : 'text-muted-foreground/60'}`}>{doctor.email}</p>
-                          {doctor.last_login_at && (
-                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                              <Clock className="h-3 w-3" />
-                              Último acesso: {format(new Date(doctor.last_login_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                            </p>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" onClick={() => handleSendInvite(doctor)} disabled={sendingInvite === doctor.id} title="Enviar convite">
+                              {sendingInvite === doctor.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4 text-primary" />}
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => toggleActive(doctor)} title={doctor.is_active ? 'Desativar' : 'Ativar'}>
+                              {doctor.is_active ? <UserX className="h-4 w-4 text-red-500" /> : <UserCheck className="h-4 w-4 text-green-500" />}
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleDelete(doctor)} title="Remover">
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm" onClick={() => toggleActive(doctor)} title={doctor.is_active ? 'Desativar' : 'Ativar'}>
-                            {doctor.is_active ? <UserX className="h-4 w-4 text-red-500" /> : <UserCheck className="h-4 w-4 text-green-500" />}
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleDelete(doctor)} title="Remover">
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
