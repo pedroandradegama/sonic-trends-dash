@@ -83,6 +83,13 @@ export function ClinicAddressInput({ value, onSelect, className }: Props) {
               )}
             >
               <MapPin className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+              {clinic.logo_url ? (
+                <img
+                  src={clinic.logo_url}
+                  alt={clinic.name}
+                  className="h-8 w-8 rounded-lg object-contain bg-muted/60 border border-border/60 p-0.5 flex-shrink-0"
+                />
+              ) : null}
               <div className="min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{clinic.name}</p>
                 <p className="text-[11px] text-muted-foreground truncate">
