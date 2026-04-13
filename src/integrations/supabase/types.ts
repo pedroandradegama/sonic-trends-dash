@@ -601,6 +601,50 @@ export type Database = {
         }
         Relationships: []
       }
+      fn_actual_production: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          notes: string | null
+          production_month: string
+          service_id: string
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          production_month: string
+          service_id: string
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          production_month?: string
+          service_id?: string
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fn_actual_production_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "fn_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fn_bank_connections: {
         Row: {
           account_type: string | null
