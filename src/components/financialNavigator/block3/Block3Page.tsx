@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
-import { DollarSign, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { DollarSign, Calendar as CalendarIcon, Clock, TrendingUp, Target, Wallet } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { FnProjectionFilters } from './FnProjectionFilters';
 import { FnMetricsGrid } from './FnMetricsGrid';
 import { FnProjectionChart } from './FnProjectionChart';
@@ -16,10 +17,16 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 const BRL = (v: number) => `R$ ${Math.round(v).toLocaleString('pt-BR')}`;
 
 export function Block3Page() {
-  const { prefs, metrics, projectionPoints, adjustments, block2Progress, savePrefs } =
+  const { prefs, metrics, projectionPoints, adjustments, block2Progress, isLoading: projLoading, savePrefs } =
     useFnProjection();
   const { services, doctorProfile, isLoading: configLoading } = useFnConfig();
   const { profile, loading: profileLoading } = useUserProfile();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 80);
+    return () => clearTimeout(t);
+  }, []);
 
   // Persist block2 progress whenever it changes
   useEffect(() => {
@@ -33,8 +40,10 @@ export function Block3Page() {
       .then(() => {});
   }, [block2Progress, profile?.user_id]);
 
-  const isLoading = configLoading || profileLoading;
-  const hasData = projectionPoints.some(p => p.totalGross > 0);
+  const isLoading = configLoading || profileLoading || projLoading;
+  const hasData = projectionPoints.some(p => p.totalGross > 0) || services.some(s =>
+    s.regime === 'clt' || s.regime === 'residencia' || s.regime === 'pro_labore' || s.regime === 'distribuicao_lucros'
+  );
 
   if (isLoading) {
     return (
@@ -58,96 +67,134 @@ export function Block3Page() {
   }
 
   return (
-    <div className="space-y-6">
-      <FnProjectionFilters prefs={prefs} services={services} onSave={savePrefs.mutate} />
+    <div className="space-y-7">
+      {/* ── Filtros ─────────────────────────────── */}
+      <div className={cn('transition-all duration-500', mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3')}>
+        <FnProjectionFilters prefs={prefs} services={services} onSave={savePrefs.mutate} />
+      </div>
 
-      {/* Insight cards like Projeção page */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="relative overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm">
+      {/* ── Hero insight cards ───────────────────── */}
+      <div className={cn(
+        'grid grid-cols-1 sm:grid-cols-3 gap-4 transition-all duration-500 delay-100',
+        mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+      )}>
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-emerald-50/30 dark:to-emerald-950/10 p-6 shadow-sm">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-100/30 dark:bg-emerald-900/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Receita Média / Mês</p>
-              <p className="text-2xl font-bold font-display">{BRL(metrics.avgMonthlyGross)}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 font-body">Receita Média / Mês</p>
+              <p className="text-3xl font-bold font-display tracking-tight">{BRL(metrics.avgMonthlyGross)}</p>
+              <p className="text-xs text-muted-foreground mt-1 font-body">8 meses projetados</p>
             </div>
-            <div className="rounded-lg p-2 bg-emerald-50 dark:bg-emerald-950/30">
-              <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            <div className="rounded-xl p-2.5 bg-emerald-100/60 dark:bg-emerald-900/30">
+              <DollarSign className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
             </div>
           </div>
         </div>
-        <div className="relative overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm">
+
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-violet-50/30 dark:to-violet-950/10 p-6 shadow-sm">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-violet-100/30 dark:bg-violet-900/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Carga Horária / Mês</p>
-              <p className="text-2xl font-bold font-display">{metrics.totalHoursCurrentMonth}h</p>
-              <p className="text-xs text-muted-foreground mt-0.5">mês atual</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 font-body">Carga Horária / Mês</p>
+              <p className="text-3xl font-bold font-display tracking-tight">{metrics.totalHoursCurrentMonth}h</p>
+              <p className="text-xs text-muted-foreground mt-1 font-body">mês atual</p>
             </div>
-            <div className="rounded-lg p-2 bg-violet-50 dark:bg-violet-950/30">
-              <CalendarIcon className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+            <div className="rounded-xl p-2.5 bg-violet-100/60 dark:bg-violet-900/30">
+              <CalendarIcon className="h-6 w-6 text-violet-600 dark:text-violet-400" />
             </div>
           </div>
         </div>
-        <div className="relative overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm">
+
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-amber-50/30 dark:to-amber-950/10 p-6 shadow-sm">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-100/30 dark:bg-amber-900/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Valor / Hora (efetivo)</p>
-              <p className="text-2xl font-bold font-display">R$ {metrics.effectiveHourlyRate}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">inclui deslocamento</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 font-body">Valor / Hora (efetivo)</p>
+              <p className="text-3xl font-bold font-display tracking-tight">R$ {metrics.effectiveHourlyRate}</p>
+              <p className="text-xs text-muted-foreground mt-1 font-body">inclui deslocamento</p>
             </div>
-            <div className="rounded-lg p-2 bg-amber-50 dark:bg-amber-950/30">
-              <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            <div className="rounded-xl p-2.5 bg-amber-100/60 dark:bg-amber-900/30">
+              <Clock className="h-6 w-6 text-amber-600 dark:text-amber-400" />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 space-y-5">
-          <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
-            <p className="text-sm font-semibold text-foreground mb-3">Indicadores detalhados</p>
+      {/* ── Conteúdo principal ─────────────────── */}
+      <div className={cn(
+        'grid grid-cols-1 lg:grid-cols-3 gap-5 transition-all duration-500 delay-200',
+        mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
+      )}>
+        <div className="lg:col-span-2 space-y-6">
+          {/* Indicadores */}
+          <section className="rounded-3xl border border-border/70 bg-gradient-to-b from-card to-muted/20 p-6 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <p className="text-sm font-semibold text-foreground font-display">Indicadores detalhados</p>
+            </div>
             <FnMetricsGrid metrics={metrics} prefs={prefs} commuteHoursMonth={metrics.commuteHoursMonth} />
-          </div>
-          <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
-            <p className="text-sm font-semibold text-foreground mb-4">Produção mês a mês</p>
+          </section>
+
+          {/* Gráfico de produção */}
+          <section className="rounded-3xl border border-border/70 bg-gradient-to-b from-card to-muted/20 p-6 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <Target className="h-4 w-4 text-primary" />
+              <p className="text-sm font-semibold text-foreground font-display">Produção mês a mês</p>
+            </div>
             <FnProjectionChart points={projectionPoints} services={services} prefs={prefs} />
-          </div>
-          <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+          </section>
+
+          {/* Timeline de recebimento */}
+          <section className="rounded-3xl border border-border/70 bg-gradient-to-b from-card to-muted/20 p-6 shadow-sm">
             <FnReceiptTimeline
               receiptsByMonth={metrics.receiptsByMonth}
               services={services}
               projectionPoints={projectionPoints}
               prefs={prefs}
             />
-          </div>
-          <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+          </section>
+
+          {/* Fluxo de recebimento */}
+          <section className="rounded-3xl border border-border/70 bg-gradient-to-b from-card to-muted/20 p-6 shadow-sm">
             <FnReceiptLineChart
               receiptsByMonth={metrics.receiptsByMonth}
               services={services}
               projectionPoints={projectionPoints}
               prefs={prefs}
             />
-          </div>
+          </section>
         </div>
 
-        <div className="space-y-5">
-          <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+        <div className="space-y-6">
+          {/* Breakdown por método */}
+          <section className="rounded-3xl border border-border/70 bg-gradient-to-b from-card to-muted/20 p-6 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <Wallet className="h-4 w-4 text-primary" />
+              <p className="text-sm font-semibold text-foreground font-display">Por método</p>
+            </div>
             <FnMethodBreakdown
               hoursByMethod={metrics.hoursByMethod}
               grossByMethod={metrics.grossByMethod}
               prefs={prefs}
             />
-          </div>
+          </section>
+
           {(doctorProfile?.include_13th || doctorProfile?.include_vacation) && metrics.provisionAmount > 0 && (
-            <FnProvisionCard
-              provisionAmount={metrics.provisionAmount}
-              include13th={doctorProfile?.include_13th ?? false}
-              includeVacation={doctorProfile?.include_vacation ?? false}
-              netMonthly={metrics.currentMonthNet}
-            />
+            <section className="rounded-3xl border border-border/70 bg-gradient-to-b from-card to-muted/20 p-5 shadow-sm">
+              <FnProvisionCard
+                provisionAmount={metrics.provisionAmount}
+                include13th={doctorProfile?.include_13th ?? false}
+                includeVacation={doctorProfile?.include_vacation ?? false}
+                netMonthly={metrics.currentMonthNet}
+              />
+            </section>
           )}
+
           {adjustments.length > 0 && (
-            <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+            <section className="rounded-3xl border border-border/70 bg-gradient-to-b from-card to-muted/20 p-5 shadow-sm">
               <FnAdjustmentsLog adjustments={adjustments} services={services} />
-            </div>
+            </section>
           )}
         </div>
       </div>
