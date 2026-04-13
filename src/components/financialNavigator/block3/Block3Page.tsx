@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { DollarSign, Calendar as CalendarIcon, Clock, TrendingUp, Target, Wallet } from 'lucide-react';
+import { DollarSign, Calendar as CalendarIcon, Clock, TrendingUp, Target, Wallet, ArrowUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FnProjectionFilters } from './FnProjectionFilters';
 import { FnMetricsGrid } from './FnMetricsGrid';
@@ -9,6 +9,7 @@ import { FnReceiptLineChart } from './FnReceiptLineChart';
 import { FnMethodBreakdown } from './FnMethodBreakdown';
 import { FnProvisionCard } from './FnProvisionCard';
 import { FnAdjustmentsLog } from './FnAdjustmentsLog';
+import { FnActualVsProjected } from './FnActualVsProjected';
 import { useFnProjection } from '@/hooks/useFnProjection';
 import { useFnConfig } from '@/hooks/useFnConfig';
 import { supabase } from '@/integrations/supabase/client';
@@ -163,6 +164,11 @@ export function Block3Page() {
               projectionPoints={projectionPoints}
               prefs={prefs}
             />
+          </section>
+
+          {/* Projetado vs Realizado */}
+          <section className="rounded-3xl border border-border/70 bg-gradient-to-b from-card to-muted/20 p-6 shadow-sm">
+            <FnActualVsProjected />
           </section>
         </div>
 
