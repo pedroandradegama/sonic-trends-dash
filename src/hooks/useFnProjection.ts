@@ -234,7 +234,16 @@ export function useFnProjection() {
       const totalNet = applyNet(totalGross);
 
       const monthShifts = getShiftsForMonth(y, m);
-      const totalHours = monthShifts.reduce(
+      // Apply same filters to hours calculation
+      const filteredShifts = monthShifts.filter(shift => {
+        const svc = services.find(s => s.id === shift.service_id);
+        if (!svc) return false;
+        if (safeFilterService !== 'all' && svc.id !== safeFilterService) return false;
+        if (safeFilterRegime !== 'all' && svc.regime !== safeFilterRegime) return false;
+        if (safeFilterMethod !== 'all' && svc.primary_method !== safeFilterMethod) return false;
+        return true;
+      });
+      const totalHours = filteredShifts.reduce(
         (acc, s) => acc + (SHIFT_HOURS[s.shift_type] ?? 0), 0
       );
 
