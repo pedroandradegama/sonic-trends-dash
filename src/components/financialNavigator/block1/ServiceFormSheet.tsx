@@ -22,7 +22,7 @@ import {
   WorkRegime, WorkMethod, FiscalMode,
   REGIME_LABELS, METHOD_LABELS, FN_DEFAULT_SHIFT_VALUES, FN_SERVICE_PALETTE,
 } from '@/types/financialNavigator';
-import { Info } from 'lucide-react';
+import { Info, Plus, Trash2 } from 'lucide-react';
 
 interface Props {
   open: boolean;
@@ -35,6 +35,11 @@ const ALL_METHODS: WorkMethod[] = ['us_geral','us_vascular','mamografia','tc','r
 const SELECTABLE_METHODS: WorkMethod[] = ['us_geral','us_vascular','mamografia','tc','rm','puncao'];
 
 const MONTH_LABELS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+interface RegimeEntry {
+  regime: WorkRegime;
+  payment_delta: number;
+}
 
 export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
   const { upsertService, services } = useFnConfig();
@@ -53,6 +58,11 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
   >([]);
   const [saving, setSaving] = useState(false);
 
+  // Multi-regime support for NEW services
+  const [regimeEntries, setRegimeEntries] = useState<RegimeEntry[]>([
+    { regime: 'pj_turno', payment_delta: 1 }
+  ]);
+
   const filteredPresets = nameQuery.length >= 1
     ? presets.filter(c =>
         c.name.toLowerCase().includes(nameQuery.toLowerCase()) ||
@@ -64,6 +74,7 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
     if (service) {
       setForm(service);
       setNameQuery(service.name);
+      setRegimeEntries([{ regime: service.regime, payment_delta: service.payment_delta }]);
       if (service.shiftValues) setShiftValues(service.shiftValues);
       if (service.expenses) {
         setExpenses(service.expenses.map(({ label, amount_brl, frequency }) =>
@@ -80,7 +91,7 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
         fiscal_pct_total: 15,
       });
       setNameQuery('');
-      // New services start with all shifts zeroed — user activates what they need
+      setRegimeEntries([{ regime: 'pj_turno', payment_delta: 1 }]);
       setShiftValues(Object.fromEntries(
         (Object.keys(FN_DEFAULT_SHIFT_VALUES) as FnShiftType[]).map(st => [st, 0])
       ) as Record<FnShiftType, number>);
@@ -88,18 +99,45 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
     }
   }, [service, open]);
 
+  // Keep form.regime in sync with first regime entry
+  useEffect(() => {
+    if (regimeEntries.length > 0) {
+      setForm(f => ({
+        ...f,
+        regime: regimeEntries[0].regime,
+        payment_delta: regimeEntries[0].payment_delta,
+      }));
+    }
+  }, [regimeEntries]);
+
   const handleSave = async () => {
     if (!form.name?.trim()) return;
     setSaving(true);
-    await upsertService.mutateAsync({ service: form, shiftValues, expenses });
+
+    if (isNew && regimeEntries.length > 1) {
+      // Create one service per regime entry
+      for (const entry of regimeEntries) {
+        const svcForm = {
+          ...form,
+          regime: entry.regime,
+          payment_delta: entry.payment_delta,
+        };
+        await upsertService.mutateAsync({ service: svcForm, shiftValues, expenses });
+      }
+    } else {
+      // Single regime (edit or new with one regime)
+      await upsertService.mutateAsync({ service: form, shiftValues, expenses });
+    }
+
     setSaving(false);
     onOpenChange(false);
   };
 
+  const activeRegime = form.regime ?? 'pj_turno';
   const needsShiftValues =
-    form.regime === 'pj_turno' || form.regime === 'pj_producao';
+    activeRegime === 'pj_turno' || activeRegime === 'pj_producao';
   const needsExpenses =
-    (form.regime === 'pj_turno' || form.regime === 'pj_producao') &&
+    (activeRegime === 'pj_turno' || activeRegime === 'pj_producao') &&
     (form.fiscal_mode === 'B' || form.fiscal_mode === 'C');
 
   // Check if same clinic already has services with other regimes
@@ -116,16 +154,34 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
     setForm(f => {
       const current = { ...(f.method_mix ?? {}) };
       if (checked) {
-        current[method] = 0; // placeholder, will recalc
+        current[method] = 0;
       } else {
         delete current[method];
       }
-      // Equal distribution
       const keys = Object.keys(current);
       const pct = keys.length > 0 ? Math.round(100 / keys.length) : 0;
       keys.forEach(k => { current[k] = pct; });
       return { ...f, method_mix: keys.length > 0 ? current : undefined };
     });
+  };
+
+  const handleAddRegime = () => {
+    const usedRegimes = regimeEntries.map(e => e.regime);
+    const available = ALL_REGIMES.find(r => !usedRegimes.includes(r));
+    if (available) {
+      setRegimeEntries(prev => [...prev, { regime: available, payment_delta: 1 }]);
+    }
+  };
+
+  const handleRemoveRegime = (index: number) => {
+    if (regimeEntries.length <= 1) return;
+    setRegimeEntries(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRegimeChange = (index: number, field: keyof RegimeEntry, value: any) => {
+    setRegimeEntries(prev => prev.map((e, i) =>
+      i === index ? { ...e, [field]: value } : e
+    ));
   };
 
   return (
@@ -247,42 +303,90 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
                 <p className="text-[11px] text-muted-foreground">
                   Você já tem {sameClinicServices.length} registro(s) para <strong>{form.name}</strong> com
                   {' '}regime(s): {sameClinicServices.map(s => REGIME_LABELS[s.regime]).join(', ')}.
-                  Cada regime fica como um registro separado com seu próprio delta de pagamento.
                 </p>
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Regime de trabalho</Label>
-                <Select
-                  value={form.regime}
-                  onValueChange={v => setForm(f => ({ ...f, regime: v as WorkRegime }))}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {ALL_REGIMES.map(r => (
-                      <SelectItem key={r} value={r}>{REGIME_LABELS[r]}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {/* ── REGIMES SECTION ─────────────────────────── */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold">Regime(s) de trabalho</Label>
+                {isNew && regimeEntries.length < ALL_REGIMES.length && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs gap-1 text-primary"
+                    onClick={handleAddRegime}
+                  >
+                    <Plus className="h-3 w-3" />
+                    Adicionar regime
+                  </Button>
+                )}
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs">Pagamento (delta)</Label>
-                <Select
-                  value={String(form.payment_delta ?? 1)}
-                  onValueChange={v => setForm(f => ({ ...f, payment_delta: Number(v) }))}
+              {regimeEntries.map((entry, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-2 p-2.5 rounded-xl border border-border bg-muted/30"
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">Imediato</SelectItem>
-                    <SelectItem value="1">M+1</SelectItem>
-                    <SelectItem value="2">M+2</SelectItem>
-                    <SelectItem value="3">M+3</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                  <div className="flex-1 space-y-1">
+                    <Select
+                      value={entry.regime}
+                      onValueChange={v => handleRegimeChange(idx, 'regime', v as WorkRegime)}
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ALL_REGIMES.map(r => (
+                          <SelectItem
+                            key={r}
+                            value={r}
+                            disabled={regimeEntries.some((e, i) => i !== idx && e.regime === r)}
+                          >
+                            {REGIME_LABELS[r]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="w-24 space-y-1">
+                    <Select
+                      value={String(entry.payment_delta)}
+                      onValueChange={v => handleRegimeChange(idx, 'payment_delta', Number(v))}
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Imediato</SelectItem>
+                        <SelectItem value="1">M+1</SelectItem>
+                        <SelectItem value="2">M+2</SelectItem>
+                        <SelectItem value="3">M+3</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {regimeEntries.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive"
+                      onClick={() => handleRemoveRegime(idx)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+
+              {isNew && regimeEntries.length > 1 && (
+                <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <Info className="h-3 w-3" />
+                  Cada regime será salvo como um registro separado para a mesma clínica.
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -294,7 +398,6 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
                   setForm(f => ({
                     ...f,
                     primary_method: method,
-                    // Clear method_mix if not misto
                     method_mix: method === 'misto' ? (f.method_mix ?? {}) : undefined,
                   }));
                 }}
@@ -339,7 +442,7 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
             )}
 
             {/* CLT / Residência: campos extras */}
-            {(form.regime === 'clt' || form.regime === 'residencia') && (
+            {(activeRegime === 'clt' || activeRegime === 'residencia') && (
               <div className="grid grid-cols-2 gap-3 p-3 bg-muted rounded-lg">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Salário fixo mensal (R$)</Label>
@@ -367,7 +470,7 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
             )}
 
             {/* Pró-labore: campos extras */}
-            {form.regime === 'pro_labore' && (
+            {activeRegime === 'pro_labore' && (
               <div className="space-y-3 p-3 bg-muted rounded-lg">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
@@ -412,7 +515,7 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
             )}
 
             {/* Distribuição de lucros: campos extras */}
-            {form.regime === 'distribuicao_lucros' && (
+            {activeRegime === 'distribuicao_lucros' && (
               <div className="space-y-3 p-3 bg-muted rounded-lg">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Valor esperado por distribuição (R$)</Label>
@@ -522,7 +625,7 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
           {/* ABA FISCAL */}
           <TabsContent value="fiscal">
             <FiscalConfigSection
-              regime={form.regime ?? 'pj_turno'}
+              regime={activeRegime}
               fiscalMode={(form.fiscal_mode ?? 'A') as FiscalMode}
               fiscalPctTotal={form.fiscal_pct_total ?? 15}
               fiscalPctBase={form.fiscal_pct_base ?? 10}
@@ -555,7 +658,12 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
 
         <div className="mt-6 space-y-2">
           <Button className="w-full" onClick={handleSave} disabled={saving || !form.name?.trim()}>
-            {saving ? 'Salvando...' : isNew ? 'Adicionar serviço' : 'Salvar alterações'}
+            {saving ? 'Salvando...' : isNew
+              ? regimeEntries.length > 1
+                ? `Adicionar ${regimeEntries.length} regimes`
+                : 'Adicionar serviço'
+              : 'Salvar alterações'
+            }
           </Button>
           <Button variant="outline" className="w-full" onClick={() => onOpenChange(false)}>
             Cancelar
