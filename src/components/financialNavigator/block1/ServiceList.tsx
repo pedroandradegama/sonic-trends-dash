@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { FnService, REGIME_LABELS, METHOD_LABELS } from '@/types/financialNavigator';
 import { useFnConfig } from '@/hooks/useFnConfig';
+import { usePresetClinics } from '@/hooks/usePresetClinics';
 
 interface Props {
   services: FnService[];
@@ -17,8 +18,18 @@ const REGIME_BADGE_VARIANT: Record<string, string> = {
   fellowship:  'bg-gray-100 text-gray-600 border-gray-200',
 };
 
+function normalizeClinicName(value?: string | null) {
+  return (value ?? '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
 export function ServiceList({ services, onEdit }: Props) {
   const { deleteService } = useFnConfig();
+  const { data: presetClinics = [] } = usePresetClinics();
 
   if (services.length === 0) {
     return (
@@ -33,7 +44,18 @@ export function ServiceList({ services, onEdit }: Props) {
 
   return (
     <div className="space-y-2">
-      {services.map(svc => (
+      {services.map(svc => {
+        const clinicPreset = presetClinics.find(clinic => {
+          if (svc.place_id && clinic.place_id) return clinic.place_id === svc.place_id;
+
+          const clinicName = normalizeClinicName(clinic.name);
+          const clinicShortName = normalizeClinicName(clinic.short_name);
+          const serviceName = normalizeClinicName(svc.name);
+
+          return clinicName === serviceName || clinicShortName === serviceName;
+        });
+
+        return (
         <div
           key={svc.id}
           className="bg-card border border-border rounded-xl overflow-hidden"
@@ -42,18 +64,43 @@ export function ServiceList({ services, onEdit }: Props) {
             className="flex items-center justify-between px-4 py-3"
             style={{ borderLeft: `4px solid ${svc.color}` }}
           >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div
-                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                style={{ background: svc.color }}
-              />
-              <span className="font-medium text-sm truncate font-body">{svc.name}</span>
-              <span className={cn(
-                'text-[10px] px-2 py-0.5 rounded-full border font-medium flex-shrink-0',
-                REGIME_BADGE_VARIANT[svc.regime] ?? 'bg-muted text-muted-foreground'
-              )}>
-                {REGIME_LABELS[svc.regime]}
-              </span>
+            <div className="flex items-center gap-3 min-w-0">
+              {clinicPreset?.logo_url ? (
+                <img
+                  src={clinicPreset.logo_url}
+                  alt={`Logo da clínica ${svc.name}`}
+                  loading="lazy"
+                  className="h-11 w-11 rounded-xl object-contain bg-muted/60 border border-border/60 p-1.5 flex-shrink-0"
+                />
+              ) : (
+                <div className="h-11 w-11 rounded-xl bg-muted border border-border/60 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-semibold text-muted-foreground font-display">
+                    {svc.name.charAt(0)}
+                  </span>
+                </div>
+              )}
+
+              <div className="min-w-0">
+                <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
+                  <div
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={{ background: svc.color }}
+                  />
+                  <span className="font-medium text-sm truncate font-body">{svc.name}</span>
+                  <span className={cn(
+                    'text-[10px] px-2 py-0.5 rounded-full border font-medium flex-shrink-0',
+                    REGIME_BADGE_VARIANT[svc.regime] ?? 'bg-muted text-muted-foreground'
+                  )}>
+                    {REGIME_LABELS[svc.regime]}
+                  </span>
+                </div>
+
+                {clinicPreset?.short_name && (
+                  <p className="text-[11px] text-muted-foreground font-body truncate mt-1">
+                    {clinicPreset.short_name}
+                  </p>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(svc.id)}>
@@ -93,7 +140,7 @@ export function ServiceList({ services, onEdit }: Props) {
             </span>
           </div>
         </div>
-      ))}
+      )})}
     </div>
   );
 }

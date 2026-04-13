@@ -89,6 +89,33 @@ export function useFnConfig() {
     },
   });
 
+  const buildServicePayload = (service: Partial<FnService>) => ({
+    name: service.name ?? 'Novo serviço',
+    color: service.color ?? FN_SERVICE_PALETTE[services.length % FN_SERVICE_PALETTE.length],
+    sort_order: service.sort_order ?? services.length,
+    is_active: service.is_active ?? true,
+    address: service.address ?? null,
+    lat: service.lat ?? null,
+    lng: service.lng ?? null,
+    place_id: service.place_id ?? null,
+    regime: service.regime ?? 'pj_turno',
+    primary_method: service.primary_method ?? null,
+    method_mix: service.method_mix ?? null,
+    payment_delta: service.payment_delta ?? 1,
+    fiscal_mode: service.fiscal_mode ?? 'A',
+    fiscal_pct_total: service.fiscal_pct_total ?? 15,
+    fiscal_pct_base: service.fiscal_pct_base ?? 10,
+    fiscal_fixed_costs: service.fiscal_fixed_costs ?? 0,
+    fixed_monthly_salary: service.fixed_monthly_salary ?? null,
+    required_hours_month: service.required_hours_month ?? null,
+    fixed_monthly_value: service.fixed_monthly_value ?? null,
+    monthly_hours: service.monthly_hours ?? null,
+    is_taxed: service.is_taxed ?? false,
+    tax_pct: service.tax_pct ?? 0,
+    distribution_frequency: service.distribution_frequency ?? null,
+    distribution_months: service.distribution_months ?? null,
+  });
+
   const upsertService = useMutation({
     mutationFn: async ({
       service,
@@ -104,16 +131,7 @@ export function useFnConfig() {
       if (!svcId) {
         const { data, error } = await (supabase as any)
           .from('fn_services')
-          .insert({
-            user_id: uid,
-            name: service.name ?? 'Novo serviço',
-            color: service.color ?? FN_SERVICE_PALETTE[services.length % FN_SERVICE_PALETTE.length],
-            sort_order: services.length,
-            regime: service.regime ?? 'pj_turno',
-            payment_delta: service.payment_delta ?? 1,
-            fiscal_mode: service.fiscal_mode ?? 'A',
-            fiscal_pct_total: service.fiscal_pct_total ?? 15,
-          })
+          .insert({ user_id: uid, ...buildServicePayload(service) })
           .select()
           .single();
         if (error) throw error;
@@ -121,7 +139,7 @@ export function useFnConfig() {
       } else {
         const { error } = await (supabase as any)
           .from('fn_services')
-          .update({ ...service, updated_at: new Date().toISOString() })
+          .update({ ...buildServicePayload(service), updated_at: new Date().toISOString() })
           .eq('id', svcId)
           .eq('user_id', uid);
         if (error) throw error;

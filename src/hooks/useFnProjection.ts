@@ -25,7 +25,7 @@ export function useFnProjection() {
   const { profile } = useUserProfile();
   const uid = profile?.user_id ?? '';
   const { services, doctorProfile } = useFnConfig();
-  const { getShiftsForMonth } = useFnCalendar();
+  const { getShiftsForMonth, isLoading: calendarLoading } = useFnCalendar();
   const qc = useQueryClient();
 
   // ── Preferences ─────────────────────────────────────────────────────────────
@@ -33,7 +33,7 @@ export function useFnProjection() {
   const { data: prefs = {
     show_net: false, tax_rate: 27,
     filter_service: 'all', filter_regime: 'all', filter_method: 'all',
-  } as FnProjectionPrefs } = useQuery({
+  } as FnProjectionPrefs, isLoading: prefsLoading } = useQuery({
     queryKey: KEYS.prefs(uid),
     enabled: !!uid,
     queryFn: async () => {
@@ -62,7 +62,7 @@ export function useFnProjection() {
 
   // ── Adjustments ──────────────────────────────────────────────────────────────
 
-  const { data: adjustments = [] } = useQuery({
+  const { data: adjustments = [], isLoading: adjustmentsLoading } = useQuery({
     queryKey: KEYS.adjustments(uid),
     enabled: !!uid,
     queryFn: async (): Promise<FnShiftAdjustment[]> => {
@@ -88,7 +88,7 @@ export function useFnProjection() {
 
   // ── Commute totals (from cache) ───────────────────────────────────────────────
 
-  const { data: commuteTotals = {} } = useQuery({
+  const { data: commuteTotals = {}, isLoading: commuteLoading } = useQuery({
     queryKey: KEYS.commute(uid),
     enabled: !!uid,
     queryFn: async (): Promise<Record<string, number>> => {
@@ -141,6 +141,21 @@ export function useFnProjection() {
     return () => clearTimeout(timer);
   }, [uid, services, qc]);
 
+  const safeFilterService =
+    prefs.filter_service === 'all' || services.some(service => service.id === prefs.filter_service)
+      ? prefs.filter_service
+      : 'all';
+
+  const safeFilterRegime =
+    prefs.filter_regime === 'all' || services.some(service => service.regime === prefs.filter_regime)
+      ? prefs.filter_regime
+      : 'all';
+
+  const safeFilterMethod =
+    prefs.filter_method === 'all' || services.some(service => service.primary_method === prefs.filter_method)
+      ? prefs.filter_method
+      : 'all';
+
   // ── Core projection calculation ───────────────────────────────────────────────
 
   const calcMonthGross = useCallback(
@@ -152,9 +167,9 @@ export function useFnProjection() {
         const svc = services.find(s => s.id === shift.service_id);
         if (!svc) return;
 
-        if (prefs.filter_service !== 'all' && svc.id !== prefs.filter_service) return;
-        if (prefs.filter_regime !== 'all' && svc.regime !== prefs.filter_regime) return;
-        if (prefs.filter_method !== 'all' && svc.primary_method !== prefs.filter_method) return;
+        if (safeFilterService !== 'all' && svc.id !== safeFilterService) return;
+        if (safeFilterRegime !== 'all' && svc.regime !== safeFilterRegime) return;
+        if (safeFilterMethod !== 'all' && svc.primary_method !== safeFilterMethod) return;
 
         const val = svc.shiftValues?.[shift.shift_type] ?? 0;
         result[svc.id] = (result[svc.id] ?? 0) + val;
@@ -163,13 +178,16 @@ export function useFnProjection() {
       // Add fixed-income regimes (pro_labore, distribuicao_lucros)
       const monthIndex = month + 1; // 1-based
       services.forEach(svc => {
-        if (prefs.filter_service !== 'all' && svc.id !== prefs.filter_service) return;
-        if (prefs.filter_regime !== 'all' && svc.regime !== prefs.filter_regime) return;
+        if (safeFilterService !== 'all' && svc.id !== safeFilterService) return;
+        if (safeFilterRegime !== 'all' && svc.regime !== safeFilterRegime) return;
+        if (safeFilterMethod !== 'all' && svc.primary_method !== safeFilterMethod) return;
 
         if (svc.regime === 'pro_labore') {
           const gross = svc.fixed_monthly_value ?? 0;
           const taxed = svc.is_taxed ? gross * (1 - (svc.tax_pct ?? 0) / 100) : gross;
           result[svc.id] = (result[svc.id] ?? 0) + taxed;
+        } else if (svc.regime === 'clt' || svc.regime === 'residencia') {
+          result[svc.id] = (result[svc.id] ?? 0) + (svc.fixed_monthly_salary ?? 0);
         } else if (svc.regime === 'distribuicao_lucros') {
           const val = svc.fixed_monthly_value ?? 0;
           const freq = svc.distribution_frequency ?? 'monthly';
@@ -188,7 +206,7 @@ export function useFnProjection() {
 
       return result;
     },
-    [getShiftsForMonth, services, prefs]
+    [getShiftsForMonth, services, safeFilterMethod, safeFilterRegime, safeFilterService]
   );
 
   const applyNet = useCallback(
@@ -352,6 +370,7 @@ export function useFnProjection() {
     metrics,
     adjustments,
     block2Progress,
+    isLoading: calendarLoading || prefsLoading || adjustmentsLoading || commuteLoading,
     savePrefs,
     addAdjustment,
   };
