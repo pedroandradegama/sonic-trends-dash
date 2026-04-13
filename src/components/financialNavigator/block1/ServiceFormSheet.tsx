@@ -80,7 +80,10 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
         fiscal_pct_total: 15,
       });
       setNameQuery('');
-      setShiftValues({ ...FN_DEFAULT_SHIFT_VALUES });
+      // New services start with all shifts zeroed — user activates what they need
+      setShiftValues(Object.fromEntries(
+        (Object.keys(FN_DEFAULT_SHIFT_VALUES) as FnShiftType[]).map(st => [st, 0])
+      ) as Record<FnShiftType, number>);
       setExpenses([]);
     }
   }, [service, open]);
@@ -187,9 +190,20 @@ export function ServiceFormSheet({ open, onOpenChange, service }: Props) {
                             place_id: clinic.place_id ?? '',
                           }));
                         }}
-                        className="w-full text-left px-3 py-2.5 flex items-start gap-2.5 transition-colors hover:bg-muted"
+                        className="w-full text-left px-3 py-2.5 flex items-center gap-2.5 transition-colors hover:bg-muted"
                       >
-                        <div className="min-w-0">
+                        {clinic.logo_url ? (
+                          <img
+                            src={clinic.logo_url}
+                            alt={clinic.name}
+                            className="h-9 w-9 rounded-lg object-contain bg-muted/60 border border-border/60 p-1 flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="h-9 w-9 rounded-lg bg-muted border border-border/60 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-semibold text-muted-foreground">{clinic.name.charAt(0)}</span>
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium text-foreground truncate">{clinic.name}</p>
                           <p className="text-[11px] text-muted-foreground truncate">
                             {clinic.address}, {clinic.city}
