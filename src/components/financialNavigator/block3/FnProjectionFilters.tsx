@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { FnService, FnProjectionPrefs, WorkRegime, REGIME_LABELS } from '@/types/financialNavigator';
@@ -11,6 +11,10 @@ interface Props {
 
 export function FnProjectionFilters({ prefs, services, onSave }: Props) {
   const [localTax, setLocalTax] = useState(prefs.tax_rate);
+
+  useEffect(() => {
+    setLocalTax(prefs.tax_rate);
+  }, [prefs.tax_rate]);
 
   const chip = (
     label: string,
@@ -34,8 +38,8 @@ export function FnProjectionFilters({ prefs, services, onSave }: Props) {
   );
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-3">
-      <div>
+    <div className="rounded-3xl border border-border/70 bg-gradient-to-br from-card via-card to-muted/30 p-4 shadow-sm space-y-3">
+      <div className="rounded-2xl border border-border/60 bg-background/70 p-3">
         <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Serviço</p>
         <div className="flex gap-1.5 flex-wrap">
           {chip('Todos', prefs.filter_service === 'all', () => onSave({ filter_service: 'all' }))}
@@ -43,9 +47,7 @@ export function FnProjectionFilters({ prefs, services, onSave }: Props) {
         </div>
       </div>
 
-      <div className="border-t border-border/50" />
-
-      <div>
+      <div className="rounded-2xl border border-border/60 bg-background/70 p-3">
         <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Regime</p>
         <div className="flex gap-1.5 flex-wrap">
           {chip('Todos', prefs.filter_regime === 'all', () => onSave({ filter_regime: 'all' }))}
@@ -55,9 +57,8 @@ export function FnProjectionFilters({ prefs, services, onSave }: Props) {
         </div>
       </div>
 
-      <div className="border-t border-border/50" />
-
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="rounded-2xl border border-border/60 bg-background/70 p-3">
+        <div className="flex items-center gap-3 flex-wrap">
         <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Valor</p>
         <div className="flex rounded-lg border border-border overflow-hidden">
           {(['bruto', 'liquido'] as const).map(vt => (
@@ -88,6 +89,7 @@ export function FnProjectionFilters({ prefs, services, onSave }: Props) {
             <span className="text-xs font-medium text-foreground">{localTax}%</span>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

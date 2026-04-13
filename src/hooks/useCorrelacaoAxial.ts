@@ -209,7 +209,8 @@ export function useCorrelacaoAxial(medicoNome: string | null) {
       const medicoExecutante = normalize(exame["Médico executante"] || '');
       const isUSG = exameName.startsWith('USG');
       const isMedico = medicoExecutante.includes(normalizedMedicoNome);
-      return isUSG && isMedico && exame.Prontuário;
+      const isExcludedGenerator = exameName.includes('ESTRUTURAS SUPERFICIAIS');
+      return isUSG && isMedico && exame.Prontuário && !isExcludedGenerator;
     });
 
     console.log('[CorrelacaoAxial] Total USG exames do médico:', usgExames.length);
