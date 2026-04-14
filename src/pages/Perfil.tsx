@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Bell, Camera, Loader2, Save, MessageSquare, BookOpen, Clock } from "lucide-react";
+import { User, Bell, Camera, Loader2, Save, MessageSquare, BookOpen, Clock, Link2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -12,6 +12,7 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { useDoctorPreferences } from "@/hooks/useDoctorPreferences";
 import ReminderCard from "@/components/institucional/ReminderCard";
 import { supabase } from "@/integrations/supabase/client";
+import { GoogleDriveConnectCard } from "@/components/integrations/GoogleDriveConnectCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -220,6 +221,16 @@ export default function PerfilPage() {
       <Button onClick={handleSave} disabled={!hasChanges || isSaving} className="w-full" size="lg">
         {isSaving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...</> : <><Save className="mr-2 h-4 w-4" /> Salvar preferências</>}
       </Button>
+
+      <Separator />
+
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Link2 className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-semibold">Integrações</h3>
+        </div>
+        <GoogleDriveConnectCard />
+      </div>
 
       <Separator />
 
