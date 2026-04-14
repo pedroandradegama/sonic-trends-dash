@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { DollarSign, Calendar as CalendarIcon, Clock, TrendingUp, Target, Wallet, ArrowUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { RPHIntelligenceBlock } from './RPHIntelligenceBlock';
 import { FnProjectionFilters } from './FnProjectionFilters';
 import { FnMetricsGrid } from './FnMetricsGrid';
 import { FnProjectionChart } from './FnProjectionChart';
@@ -170,6 +171,16 @@ export function Block3Page() {
           <section className="rounded-3xl border border-border/70 bg-gradient-to-b from-card to-muted/20 p-6 shadow-sm">
             <FnActualVsProjected />
           </section>
+
+          {/* RPH Intelligence */}
+          <RPHIntelligenceBlock
+            avgRPH={metrics.totalHoursCurrentMonth > 0 ? metrics.currentMonthGross / metrics.totalHoursCurrentMonth : 0}
+            currentMonthGross={metrics.currentMonthGross}
+            totalHours={metrics.totalHoursCurrentMonth}
+            effectiveHourlyRate={metrics.effectiveHourlyRate}
+            previousMonthGross={projectionPoints[1]?.totalGross}
+            previousMonthHours={projectionPoints[1]?.totalHours}
+          />
         </div>
 
         <div className="space-y-6">
