@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  clinicId: string | null;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -25,6 +26,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [clinicId, setClinicId] = useState<string | null>(null);
+
+  const loadClinicId = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('clinic_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+      setClinicId((data as any)?.clinic_id ?? null);
+    } catch {
+      setClinicId(null);
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -32,6 +47,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        if (session?.user) {
+          loadClinicId(session.user.id);
+        } else {
+          setClinicId(null);
+        }
         setLoading(false);
       }
     );
@@ -40,6 +60,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.user) {
+        loadClinicId(session.user.id);
+      }
       setLoading(false);
     });
 
@@ -75,6 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     session,
     loading,
+    clinicId,
     signIn,
     signUp,
     signOut,

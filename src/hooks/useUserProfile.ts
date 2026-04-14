@@ -7,6 +7,7 @@ interface UserProfile {
   user_id: string;
   email: string;
   medico_nome: string;
+  clinic_id: string | null;
   created_at: string;
   updated_at: string;
 }
