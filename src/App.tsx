@@ -18,6 +18,7 @@ import MinhaAgenda from "./pages/MinhaAgenda";
 import MeuTrabalho from "./pages/MeuTrabalho";
 // Projecao page removed — projection lives inside /financeiro
 import FerramentasIA from "./pages/FerramentasIA";
+import TasksPage from "./pages/TasksPage";
 import Comunidade from "./pages/Comunidade";
 // Legacy pages still needed for standalone routes
 import Index from "./pages/Index";
@@ -69,6 +70,7 @@ const App = () => (
             <Route path="/meu-trabalho" element={<ProtectedWithLayout><MeuTrabalho /></ProtectedWithLayout>} />
             <Route path="/projecao" element={<Navigate to="/financeiro/projecao" replace />} />
             <Route path="/ferramentas-ia" element={<ProtectedWithLayout><FerramentasIA /></ProtectedWithLayout>} />
+            <Route path="/ferramentas-ia/tarefas" element={<ProtectedWithLayout><TasksPage /></ProtectedWithLayout>} />
             <Route path="/comunidade" element={<ProtectedWithLayout><Comunidade /></ProtectedWithLayout>} />
             {/* Legacy standalone pages (for deep links / sub-content) */}
             <Route path="/repasse" element={<ProtectedWithLayout><Index /></ProtectedWithLayout>} />
