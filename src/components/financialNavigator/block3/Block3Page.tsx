@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { DollarSign, Calendar as CalendarIcon, Clock, TrendingUp, Target, Wallet, ArrowUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { RPHIntelligenceBlock } from './RPHIntelligenceBlock';
 import { FnProjectionFilters } from './FnProjectionFilters';
 import { FnMetricsGrid } from './FnMetricsGrid';
 import { FnProjectionChart } from './FnProjectionChart';
