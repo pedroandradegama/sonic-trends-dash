@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { format, parse, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -14,21 +15,24 @@ interface DashboardData {
 }
 
 export function useDashboardData() {
+  const { clinicId } = useAuth();
   const [data, setData] = useState<DashboardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const { data: dashboardData, error } = await supabase
+      let query = supabase
         .from('Repasse')
         .select('*')
         .order('"Dt. Atendimento"', { ascending: false });
+
+      if (clinicId) {
+        query = query.eq('clinic_id', clinicId);
+      }
+
+      const { data: dashboardData, error } = await query;
 
       if (error) throw error;
 
