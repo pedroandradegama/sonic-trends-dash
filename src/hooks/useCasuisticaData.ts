@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface CasuisticaRow {
   [key: string]: any;
@@ -12,6 +13,7 @@ export interface CasuisticaRow {
 }
 
 export function useCasuisticaData() {
+  const { clinicId } = useAuth();
   const [data, setData] = useState<CasuisticaRow[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,9 +22,15 @@ export function useCasuisticaData() {
     try {
       setLoading(true);
       setError(null);
-      const { data, error } = await (supabase as any)
+      let query = (supabase as any)
         .from("Casuistica")
         .select("*");
+
+      if (clinicId) {
+        query = query.eq("clinic_id", clinicId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setData((data as CasuisticaRow[]) || []);
@@ -32,7 +40,7 @@ export function useCasuisticaData() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [clinicId]);
 
   useEffect(() => {
     fetchData();

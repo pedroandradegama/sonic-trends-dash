@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface RepasseRow {
   "Dt. Atendimento"?: string | null;
@@ -13,6 +14,7 @@ export interface RepasseRow {
 }
 
 export function useRepasseData() {
+  const { clinicId } = useAuth();
   const [data, setData] = useState<RepasseRow[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,10 +23,16 @@ export function useRepasseData() {
     try {
       setLoading(true);
       setError(null);
-      const { data, error } = await (supabase as any)
+      let query = (supabase as any)
         .from("Repasse")
         .select("*")
         .order('"Dt. Atendimento"', { ascending: false });
+
+      if (clinicId) {
+        query = query.eq("clinic_id", clinicId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setData((data as RepasseRow[]) || []);
@@ -34,7 +42,7 @@ export function useRepasseData() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [clinicId]);
 
   useEffect(() => {
     fetchData();
