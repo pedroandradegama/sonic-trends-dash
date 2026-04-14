@@ -48,7 +48,11 @@ export function useDashboardData() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [clinicId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // Processa dados para gráficos evolutivos
   const getMonthlyData = () => {
