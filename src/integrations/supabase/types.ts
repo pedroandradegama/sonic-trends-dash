@@ -310,6 +310,7 @@ export type Database = {
       }
       Casuistica: {
         Row: {
+          clinic_id: string | null
           "Cód. Médico Executante": number | null
           "Cód. Médico Solicitante": number | null
           "Cód. Paciente": number | null
@@ -327,6 +328,7 @@ export type Database = {
           Subgrupo: string | null
         }
         Insert: {
+          clinic_id?: string | null
           "Cód. Médico Executante"?: number | null
           "Cód. Médico Solicitante"?: number | null
           "Cód. Paciente"?: number | null
@@ -344,6 +346,7 @@ export type Database = {
           Subgrupo?: string | null
         }
         Update: {
+          clinic_id?: string | null
           "Cód. Médico Executante"?: number | null
           "Cód. Médico Solicitante"?: number | null
           "Cód. Paciente"?: number | null
@@ -360,7 +363,15 @@ export type Database = {
           "Status laudo"?: string | null
           Subgrupo?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "Casuistica_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cimt_norms: {
         Row: {
@@ -410,6 +421,71 @@ export type Database = {
           segment?: string
           sex?: string
           source?: string
+        }
+        Relationships: []
+      }
+      clinic_data_mappings: {
+        Row: {
+          clinic_id: string | null
+          column_mappings: Json
+          created_at: string | null
+          file_format: string
+          id: string
+          parsing_rules: Json | null
+          source_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          clinic_id?: string | null
+          column_mappings: Json
+          created_at?: string | null
+          file_format: string
+          id?: string
+          parsing_rules?: Json | null
+          source_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          clinic_id?: string | null
+          column_mappings?: Json
+          created_at?: string | null
+          file_format?: string
+          id?: string
+          parsing_rules?: Json | null
+          source_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_data_mappings_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinics: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          settings: Json | null
+          slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          settings?: Json | null
+          slug: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          settings?: Json | null
+          slug?: string
         }
         Relationships: []
       }
@@ -1612,6 +1688,69 @@ export type Database = {
         }
         Relationships: []
       }
+      google_drive_integrations: {
+        Row: {
+          access_token_encrypted: string | null
+          auto_process: boolean | null
+          clinic_id: string | null
+          created_at: string | null
+          file_patterns: string[] | null
+          folder_id: string
+          folder_name: string | null
+          id: string
+          last_sync: string | null
+          medico_id: string | null
+          refresh_token_encrypted: string | null
+          status: string | null
+          token_expires_at: string | null
+        }
+        Insert: {
+          access_token_encrypted?: string | null
+          auto_process?: boolean | null
+          clinic_id?: string | null
+          created_at?: string | null
+          file_patterns?: string[] | null
+          folder_id: string
+          folder_name?: string | null
+          id?: string
+          last_sync?: string | null
+          medico_id?: string | null
+          refresh_token_encrypted?: string | null
+          status?: string | null
+          token_expires_at?: string | null
+        }
+        Update: {
+          access_token_encrypted?: string | null
+          auto_process?: boolean | null
+          clinic_id?: string | null
+          created_at?: string | null
+          file_patterns?: string[] | null
+          folder_id?: string
+          folder_name?: string | null
+          id?: string
+          last_sync?: string | null
+          medico_id?: string | null
+          refresh_token_encrypted?: string | null
+          status?: string | null
+          token_expires_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_drive_integrations_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "google_drive_integrations_medico_id_fkey"
+            columns: ["medico_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       interesting_cases: {
         Row: {
           created_at: string
@@ -1654,6 +1793,54 @@ export type Database = {
           updated_at?: string
           user_id?: string
           wants_followup?: boolean
+        }
+        Relationships: []
+      }
+      market_benchmark_data: {
+        Row: {
+          created_at: string | null
+          id: string
+          metric: string
+          percentile_25: number | null
+          percentile_50: number | null
+          percentile_75: number | null
+          percentile_90: number | null
+          reference_period: string | null
+          region: string
+          sample_size: number | null
+          source: string | null
+          specialty: string
+          value: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          metric: string
+          percentile_25?: number | null
+          percentile_50?: number | null
+          percentile_75?: number | null
+          percentile_90?: number | null
+          reference_period?: string | null
+          region: string
+          sample_size?: number | null
+          source?: string | null
+          specialty: string
+          value: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          metric?: string
+          percentile_25?: number | null
+          percentile_50?: number | null
+          percentile_75?: number | null
+          percentile_90?: number | null
+          reference_period?: string | null
+          region?: string
+          sample_size?: number | null
+          source?: string | null
+          specialty?: string
+          value?: number
         }
         Relationships: []
       }
@@ -1888,6 +2075,38 @@ export type Database = {
         }
         Relationships: []
       }
+      parsed_documents: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          id: string
+          parsed_data: Json
+          raw_document_id: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          parsed_data: Json
+          raw_document_id?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          parsed_data?: Json
+          raw_document_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parsed_documents_raw_document_id_fkey"
+            columns: ["raw_document_id"]
+            isOneToOne: false
+            referencedRelation: "raw_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       peds_us_organ_norms: {
         Row: {
           age_max_mo: number
@@ -1945,35 +2164,49 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          clinic_id: string | null
           created_at: string
           email: string
           id: string
           medico_nome: string
+          role: string | null
           updated_at: string
           user_id: string
           whatsapp_number: string | null
         }
         Insert: {
           avatar_url?: string | null
+          clinic_id?: string | null
           created_at?: string
           email: string
           id?: string
           medico_nome: string
+          role?: string | null
           updated_at?: string
           user_id: string
           whatsapp_number?: string | null
         }
         Update: {
           avatar_url?: string | null
+          clinic_id?: string | null
           created_at?: string
           email?: string
           id?: string
           medico_nome?: string
+          role?: string | null
           updated_at?: string
           user_id?: string
           whatsapp_number?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       radioburger_suggestions: {
         Row: {
@@ -1998,6 +2231,60 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      raw_documents: {
+        Row: {
+          clinic_id: string | null
+          created_at: string | null
+          document_type: string | null
+          file_name: string
+          file_type: string
+          file_url: string
+          id: string
+          medico_id: string | null
+          source: string | null
+          status: string | null
+        }
+        Insert: {
+          clinic_id?: string | null
+          created_at?: string | null
+          document_type?: string | null
+          file_name: string
+          file_type: string
+          file_url: string
+          id?: string
+          medico_id?: string | null
+          source?: string | null
+          status?: string | null
+        }
+        Update: {
+          clinic_id?: string | null
+          created_at?: string | null
+          document_type?: string | null
+          file_name?: string
+          file_type?: string
+          file_url?: string
+          id?: string
+          medico_id?: string | null
+          source?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raw_documents_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raw_documents_medico_id_fkey"
+            columns: ["medico_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       reminder_preferences: {
         Row: {
@@ -2037,6 +2324,7 @@ export type Database = {
       }
       Repasse: {
         Row: {
+          clinic_id: string | null
           Convênio: string | null
           "Dt. Atendimento": string | null
           Médico: string | null
@@ -2046,6 +2334,7 @@ export type Database = {
           "Vl. Repasse": string | null
         }
         Insert: {
+          clinic_id?: string | null
           Convênio?: string | null
           "Dt. Atendimento"?: string | null
           Médico?: string | null
@@ -2055,6 +2344,7 @@ export type Database = {
           "Vl. Repasse"?: string | null
         }
         Update: {
+          clinic_id?: string | null
           Convênio?: string | null
           "Dt. Atendimento"?: string | null
           Médico?: string | null
@@ -2063,7 +2353,15 @@ export type Database = {
           Qtde?: string | null
           "Vl. Repasse"?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "Repasse_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       revenue_preferences: {
         Row: {
@@ -2222,6 +2520,113 @@ export type Database = {
           },
         ]
       }
+      task_occurrences: {
+        Row: {
+          completed_at: string | null
+          id: string
+          reminded_at: string | null
+          scheduled_date: string
+          status: string | null
+          task_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: string
+          reminded_at?: string | null
+          scheduled_date: string
+          status?: string | null
+          task_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          id?: string
+          reminded_at?: string | null
+          scheduled_date?: string
+          status?: string | null
+          task_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_occurrences_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          category: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_via: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          is_recurring: boolean | null
+          medico_id: string | null
+          parent_task_id: string | null
+          recurrence_rule: Json | null
+          reminder_config: Json | null
+          snoozed_until: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_via?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          medico_id?: string | null
+          parent_task_id?: string | null
+          recurrence_rule?: Json | null
+          reminder_config?: Json | null
+          snoozed_until?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_via?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          medico_id?: string | null
+          parent_task_id?: string | null
+          recurrence_rule?: Json | null
+          reminder_config?: Json | null
+          snoozed_until?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_medico_id_fkey"
+            columns: ["medico_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tirads_rules: {
         Row: {
           category_group: string
@@ -2372,6 +2777,82 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_conversations: {
+        Row: {
+          context: Json | null
+          id: string
+          last_intent: string | null
+          medico_id: string | null
+          phone_number: string
+          updated_at: string | null
+        }
+        Insert: {
+          context?: Json | null
+          id?: string
+          last_intent?: string | null
+          medico_id?: string | null
+          phone_number: string
+          updated_at?: string | null
+        }
+        Update: {
+          context?: Json | null
+          id?: string
+          last_intent?: string | null
+          medico_id?: string | null
+          phone_number?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_conversations_medico_id_fkey"
+            columns: ["medico_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      whatsapp_message_log: {
+        Row: {
+          content: string | null
+          conversation_id: string | null
+          created_at: string | null
+          direction: string
+          id: string
+          intent_detected: string | null
+          media_url: string | null
+          message_type: string | null
+        }
+        Insert: {
+          content?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          direction: string
+          id?: string
+          intent_detected?: string | null
+          media_url?: string | null
+          message_type?: string | null
+        }
+        Update: {
+          content?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          direction?: string
+          id?: string
+          intent_detected?: string | null
+          media_url?: string | null
+          message_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_message_log_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_notification_rules: {
         Row: {
           created_at: string
@@ -2455,7 +2936,28 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      rph_analytics: {
+        Row: {
+          clinic_id: string | null
+          convenio: string | null
+          estimated_hours: number | null
+          medico_nome: string | null
+          month: string | null
+          produto_exame: string | null
+          rph: number | null
+          total_procedures: number | null
+          total_revenue: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "Repasse_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_fully_dispatched_article_ids: {
@@ -2473,6 +2975,7 @@ export type Database = {
       }
       is_doctor_agenda_active: { Args: { _user_id: string }; Returns: boolean }
       is_email_authorized: { Args: { _email: string }; Returns: boolean }
+      refresh_rph_analytics: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "medico" | "master_admin"
