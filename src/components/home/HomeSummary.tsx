@@ -359,28 +359,31 @@ export function HomeSummary() {
                   )}
                 </div>
 
-                <Separator className="my-3" />
-
-                {/* NPS block */}
-                <div>
-                  {npsSummary ? (
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-baseline gap-1">
-                        <ThumbsUp className="h-3.5 w-3.5 text-primary" />
-                        <span className={`text-xl font-bold ${
-                          npsSummary.nps >= 50 ? 'text-[hsl(var(--success))]' :
-                          npsSummary.nps >= 0 ? 'text-[hsl(var(--warning))]' : 'text-destructive'
-                        }`}>{npsSummary.nps}</span>
-                        <span className="text-xs text-muted-foreground">NPS</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {npsSummary.promoters} prom. · {npsSummary.detractors} detr.
-                      </div>
+                {showNps && (
+                  <>
+                    <Separator className="my-3" />
+                    {/* NPS block */}
+                    <div>
+                      {npsSummary ? (
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-baseline gap-1">
+                            <ThumbsUp className="h-3.5 w-3.5 text-primary" />
+                            <span className={`text-xl font-bold ${
+                              npsSummary.nps >= 50 ? 'text-[hsl(var(--success))]' :
+                              npsSummary.nps >= 0 ? 'text-[hsl(var(--warning))]' : 'text-destructive'
+                            }`}>{npsSummary.nps}</span>
+                            <span className="text-xs text-muted-foreground">NPS</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {npsSummary.promoters} prom. · {npsSummary.detractors} detr.
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Sem dados de NPS.</p>
+                      )}
                     </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Sem dados de NPS.</p>
-                  )}
-                </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -412,7 +415,7 @@ export function HomeSummary() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Próximo feriado */}
-                {nextFeriado && (
+                {showFeriados && nextFeriado && (
                   <div className="space-y-0.5">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Próximo Feriado</p>
                     <p className="text-sm font-medium">{nextFeriado.name}</p>
