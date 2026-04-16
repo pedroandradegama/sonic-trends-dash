@@ -19,6 +19,7 @@ import { useRepasseData } from '@/hooks/useRepasseData';
 import { DestaquesCard } from '@/components/home/DestaquesCard';
 import { MemberGetMemberCard } from '@/components/home/MemberGetMemberCard';
 import { RadioburgerSuggestionButton } from '@/components/comunidade/RadioburgerSuggestionButton';
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import {
   DollarSign, BarChart3, ThumbsUp, ArrowRight,
   Baby, Stethoscope, BookOpen, ChevronRight, Bookmark,
@@ -40,6 +41,13 @@ export function HomeSummary() {
   const { data: repasseRaw } = useRepasseData();
   const { holidays } = useAdminHolidays();
   const { dates: radioburgerDates } = useAdminRadioburger();
+  const { isEnabled } = useFeatureFlags();
+
+  const showRepasse = isEnabled('repasse');
+  const showNps = isEnabled('nps');
+  const showAgendaComms = isEnabled('agenda_comms');
+  const showFeriados = isEnabled('feriados_imag');
+  const showCasosCompartilhados = isEnabled('casos_compartilhados_imag');
 
   const topExams = useMemo(() => examDistribution.slice(0, 3), [examDistribution]);
 
