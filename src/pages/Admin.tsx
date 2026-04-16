@@ -18,6 +18,8 @@ import { AdminCommunityTopicsTab } from '@/components/admin/AdminCommunityTopics
 import { AdminReferralsTab } from '@/components/admin/AdminReferralsTab';
 import { AdminPresetClinicsTab } from '@/components/admin/AdminPresetClinicsTab';
 import { AdminFinancialKbTab } from '@/components/admin/AdminFinancialKbTab';
+import { AdminFeatureFlagsTab } from '@/components/admin/AdminFeatureFlagsTab';
+import { ToggleLeft } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -373,6 +375,9 @@ export default function Admin() {
             </TabsTrigger>
             <TabsTrigger value="knowledge_base" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" /> Base Financeira
+            </TabsTrigger>
+            <TabsTrigger value="funcionalidades" className="flex items-center gap-2">
+              <ToggleLeft className="h-4 w-4" /> Funcionalidades
             </TabsTrigger>
             <TabsTrigger value="config" className="flex items-center gap-2">
               <Settings className="h-4 w-4" /> Configurações
@@ -745,6 +750,10 @@ export default function Admin() {
 
           <TabsContent value="knowledge_base">
             <AdminFinancialKbTab />
+          </TabsContent>
+
+          <TabsContent value="funcionalidades">
+            <AdminFeatureFlagsTab />
           </TabsContent>
         </Tabs>
       </div>
