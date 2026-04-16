@@ -52,7 +52,7 @@ function LayoutInner({ children }: MainLayoutProps) {
       {isMobile ? (
         <>
           <MobileSidebar />
-          <main className="pt-18 px-4 pb-6">
+          <main className="pt-14 px-4 pb-20">
             {children}
           </main>
         </>
@@ -62,7 +62,7 @@ function LayoutInner({ children }: MainLayoutProps) {
           <AppSidebar />
           <main className={cn(
             "transition-all duration-300 min-h-screen px-6 pb-6 pt-20",
-            collapsed ? "ml-16" : "ml-64"
+            collapsed ? "ml-16" : "ml-60"
           )}>
             <div className="mx-auto">
               {children}

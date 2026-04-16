@@ -1,19 +1,19 @@
 import { useState } from 'react';
-import { 
-  LayoutDashboard,
-  CalendarDays, 
-  Briefcase, 
-  Wrench, 
+import {
+  Home,
+  Briefcase,
+  Compass,
+  MoreHorizontal,
+  CalendarDays,
   Users,
-  LogOut,
-  Menu,
+  Wrench,
+  User,
   ArrowLeftRight,
-  TrendingUp,
+  LogOut,
 } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import imagLogoNew from '@/assets/imag-logo-new.png';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -21,47 +21,28 @@ import { useAppMode } from '@/contexts/ModeContext';
 import { PasswordConfirmDialog } from './PasswordConfirmDialog';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 
-type AppModeKey = 'agenda' | 'avancado';
-
-type NavItem = {
-  path: string;
-  label: string;
-  icon: typeof LayoutDashboard;
-  modes: AppModeKey[];
-  requiresFlags?: string[];
-};
-
-const allNavItems: NavItem[] = [
-  { path: '/home', label: 'Home', icon: LayoutDashboard, modes: ['avancado'] },
-  { path: '/minha-agenda', label: 'Minha Agenda', icon: CalendarDays, modes: ['avancado'], requiresFlags: ['agenda_comms', 'agenda_preferences'] },
-  { path: '/meu-trabalho', label: 'Meu Trabalho', icon: Briefcase, modes: ['avancado'], requiresFlags: ['repasse', 'nps', 'casuistica'] },
-  { path: '/projecao', label: 'Projeção', icon: TrendingUp, modes: ['avancado'] },
-  { path: '/ferramentas-ia', label: 'Ferramentas & IA', icon: Wrench, modes: ['agenda', 'avancado'] },
-  { path: '/comunidade', label: 'Comunidade', icon: Users, modes: ['avancado'] },
-];
+const tabs = [
+  { path: '/home', label: 'Início', icon: Home },
+  { path: '/ferramentas-ia', label: 'Trabalho', icon: Briefcase },
+  { path: '/financeiro', label: 'Finanças', icon: Compass },
+] as const;
 
 export function MobileSidebar() {
   const { signOut } = useAuth();
   const { profile } = useUserProfile();
   const location = useLocation();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const firstName = profile?.medico_nome?.split(' ')[0] || '';
-  const { mode, clearMode } = useAppMode();
+  const { clearMode } = useAppMode();
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const { isEnabled, isLoading: flagsLoading } = useFeatureFlags();
 
-  const navItems = allNavItems.filter(item => {
-    if (mode && !item.modes.includes(mode as AppModeKey)) return false;
-    if (item.requiresFlags && item.requiresFlags.length > 0) {
-      if (flagsLoading) return false;
-      return item.requiresFlags.some(f => isEnabled(f));
-    }
-    return true;
-  });
+  const showAgenda = !flagsLoading && (isEnabled('agenda_comms') || isEnabled('agenda_preferences'));
+  const showMeuTrabalho = !flagsLoading && (isEnabled('repasse') || isEnabled('nps') || isEnabled('casuistica'));
 
   const handleSwitchMode = () => {
-    setOpen(false);
+    setMoreOpen(false);
     setShowPasswordDialog(true);
   };
 
@@ -69,6 +50,14 @@ export function MobileSidebar() {
     clearMode();
     navigate('/modo');
   };
+
+  const moreItems: Array<{ path: string; label: string; icon: typeof Home }> = [
+    ...(showAgenda ? [{ path: '/minha-agenda', label: 'Minha Agenda', icon: CalendarDays }] : []),
+    ...(showMeuTrabalho ? [{ path: '/meu-trabalho', label: 'Meu Trabalho', icon: Briefcase }] : []),
+    { path: '/ferramentas-ia', label: 'Ferramentas & IA', icon: Wrench },
+    { path: '/comunidade', label: 'Comunidade', icon: Users },
+    { path: '/perfil', label: 'Perfil', icon: User },
+  ];
 
   return (
     <>
@@ -78,75 +67,94 @@ export function MobileSidebar() {
             <img src={imagLogoNew} alt="IMAG" className="h-7" />
             <span className="text-sm font-semibold text-foreground">Portal do Médico</span>
           </div>
-          
-          <div className="flex items-center gap-2">
-            {firstName && (
-              <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs">
-                {firstName.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <Sheet open={open} onOpenChange={setOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-0">
-                <div className="flex flex-col h-full">
-                  <div className="flex items-center gap-3 p-4 border-b border-border">
-                    <img src={imagLogoNew} alt="IMAG" className="h-7" />
-                    <span className="text-base font-semibold">Menu</span>
-                  </div>
-
-                  <nav className="flex-1 p-3 space-y-1">
-                    {navItems.map((item) => {
-                      const isActive = location.pathname === item.path;
-                      const Icon = item.icon;
-                      
-                      return (
-                        <NavLink
-                          key={item.path}
-                          to={item.path}
-                          onClick={() => setOpen(false)}
-                          className={cn(
-                            "flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200",
-                            "text-sm font-medium",
-                            isActive 
-                              ? "bg-primary/10 text-primary border border-primary/20" 
-                              : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                          )}
-                        >
-                          <Icon className={cn("h-5 w-5", isActive && "text-primary")} />
-                          <span>{item.label}</span>
-                        </NavLink>
-                      );
-                    })}
-                  </nav>
-
-                  <div className="p-3 border-t border-border space-y-1">
-                    <Button
-                      variant="ghost"
-                      onClick={handleSwitchMode}
-                      className="w-full justify-start text-muted-foreground hover:text-foreground"
-                    >
-                      <ArrowLeftRight className="h-5 w-5 mr-3" />
-                      Trocar modo
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={() => { setOpen(false); signOut(); }}
-                      className="w-full justify-start text-muted-foreground hover:text-destructive"
-                    >
-                      <LogOut className="h-5 w-5 mr-3" />
-                      Sair
-                    </Button>
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
+          {firstName && (
+            <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs">
+              {firstName.charAt(0).toUpperCase()}
+            </div>
+          )}
         </div>
       </header>
+
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        <div className="flex items-stretch justify-around h-16">
+          {tabs.map((tab) => {
+            const isActive = location.pathname === tab.path;
+            const Icon = tab.icon;
+            return (
+              <NavLink
+                key={tab.path}
+                to={tab.path}
+                className={cn(
+                  "flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors",
+                  isActive ? "text-primary" : "text-muted-foreground"
+                )}
+              >
+                <Icon className="h-5 w-5" />
+                <span className="text-[10px] font-medium">{tab.label}</span>
+              </NavLink>
+            );
+          })}
+
+          <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+            <SheetTrigger asChild>
+              <button
+                className={cn(
+                  "flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors",
+                  moreOpen ? "text-primary" : "text-muted-foreground"
+                )}
+              >
+                <MoreHorizontal className="h-5 w-5" />
+                <span className="text-[10px] font-medium">Mais</span>
+              </button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="rounded-t-2xl p-4 max-h-[80vh]">
+              <div className="space-y-1 pt-2">
+                {moreItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <NavLink
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setMoreOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors",
+                        isActive
+                          ? "bg-primary/10 text-primary"
+                          : "text-foreground hover:bg-accent"
+                      )}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span>{item.label}</span>
+                    </NavLink>
+                  );
+                })}
+
+                <div className="border-t border-border my-2" />
+
+                <button
+                  onClick={handleSwitchMode}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                >
+                  <ArrowLeftRight className="h-5 w-5" />
+                  <span>Trocar modo</span>
+                </button>
+                <button
+                  onClick={() => { setMoreOpen(false); signOut(); }}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                >
+                  <LogOut className="h-5 w-5" />
+                  <span>Sair</span>
+                </button>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </nav>
+
       <PasswordConfirmDialog
         open={showPasswordDialog}
         onOpenChange={setShowPasswordDialog}
