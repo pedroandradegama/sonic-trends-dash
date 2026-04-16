@@ -247,6 +247,7 @@ export function HomeSummary() {
           {/* Row 1 — Action & Performance (3 columns) */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Card 1: Sua Agenda */}
+            {showAgendaComms && (
             <Card className="cursor-pointer hover:shadow-md transition-shadow group" onClick={() => navigate('/minha-agenda')}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center justify-between">
@@ -294,8 +295,10 @@ export function HomeSummary() {
                 )}
               </CardContent>
             </Card>
+            )}
 
             {/* Card 2: Repasse */}
+            {showRepasse && (
             <Card className="cursor-pointer hover:shadow-md transition-shadow group" onClick={() => navigate('/meu-trabalho')}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center justify-between">
@@ -322,6 +325,7 @@ export function HomeSummary() {
                 )}
               </CardContent>
             </Card>
+            )}
 
             {/* Card 3: Desempenho (Casuística + NPS) */}
             <Card className="cursor-pointer hover:shadow-md transition-shadow group" onClick={() => navigate('/meu-trabalho')}>
