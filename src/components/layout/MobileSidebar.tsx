@@ -19,13 +19,22 @@ import imagLogoNew from '@/assets/imag-logo-new.png';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAppMode } from '@/contexts/ModeContext';
 import { PasswordConfirmDialog } from './PasswordConfirmDialog';
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 
 type AppModeKey = 'agenda' | 'avancado';
 
-const allNavItems: { path: string; label: string; icon: typeof LayoutDashboard; modes: AppModeKey[] }[] = [
+type NavItem = {
+  path: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  modes: AppModeKey[];
+  requiresFlags?: string[];
+};
+
+const allNavItems: NavItem[] = [
   { path: '/home', label: 'Home', icon: LayoutDashboard, modes: ['avancado'] },
-  { path: '/minha-agenda', label: 'Minha Agenda', icon: CalendarDays, modes: ['avancado'] },
-  { path: '/meu-trabalho', label: 'Meu Trabalho', icon: Briefcase, modes: ['avancado'] },
+  { path: '/minha-agenda', label: 'Minha Agenda', icon: CalendarDays, modes: ['avancado'], requiresFlags: ['agenda_comms', 'agenda_preferences'] },
+  { path: '/meu-trabalho', label: 'Meu Trabalho', icon: Briefcase, modes: ['avancado'], requiresFlags: ['repasse', 'nps', 'casuistica'] },
   { path: '/projecao', label: 'Projeção', icon: TrendingUp, modes: ['avancado'] },
   { path: '/ferramentas-ia', label: 'Ferramentas & IA', icon: Wrench, modes: ['agenda', 'avancado'] },
   { path: '/comunidade', label: 'Comunidade', icon: Users, modes: ['avancado'] },
@@ -40,10 +49,16 @@ export function MobileSidebar() {
   const firstName = profile?.medico_nome?.split(' ')[0] || '';
   const { mode, clearMode } = useAppMode();
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const { isEnabled, isLoading: flagsLoading } = useFeatureFlags();
 
-  const navItems = allNavItems.filter(item =>
-    !mode || item.modes.includes(mode as AppModeKey)
-  );
+  const navItems = allNavItems.filter(item => {
+    if (mode && !item.modes.includes(mode as AppModeKey)) return false;
+    if (item.requiresFlags && item.requiresFlags.length > 0) {
+      if (flagsLoading) return false;
+      return item.requiresFlags.some(f => isEnabled(f));
+    }
+    return true;
+  });
 
   const handleSwitchMode = () => {
     setOpen(false);

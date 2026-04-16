@@ -16,13 +16,22 @@ import { useSidebar } from '@/contexts/SidebarContext';
 import { useAppMode } from '@/contexts/ModeContext';
 import { useState } from 'react';
 import { PasswordConfirmDialog } from './PasswordConfirmDialog';
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 
 type AppModeKey = 'agenda' | 'avancado';
 
-const allNavItems: { path: string; label: string; icon: typeof LayoutDashboard; modes: AppModeKey[] }[] = [
+type NavItem = {
+  path: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  modes: AppModeKey[];
+  requiresFlags?: string[]; // visible if ANY of these flags is enabled (or list empty)
+};
+
+const allNavItems: NavItem[] = [
   { path: '/home', label: 'Home', icon: LayoutDashboard, modes: ['avancado'] },
-  { path: '/minha-agenda', label: 'Minha Agenda', icon: CalendarDays, modes: ['avancado'] },
-  { path: '/meu-trabalho', label: 'Meu Trabalho', icon: Briefcase, modes: ['avancado'] },
+  { path: '/minha-agenda', label: 'Minha Agenda', icon: CalendarDays, modes: ['avancado'], requiresFlags: ['agenda_comms', 'agenda_preferences'] },
+  { path: '/meu-trabalho', label: 'Meu Trabalho', icon: Briefcase, modes: ['avancado'], requiresFlags: ['repasse', 'nps', 'casuistica'] },
   { path: '/financeiro', label: 'Navegador Financeiro', icon: Compass, modes: ['avancado'] },
   { path: '/ferramentas-ia', label: 'Ferramentas & IA', icon: Wrench, modes: ['agenda', 'avancado'] },
   { path: '/comunidade', label: 'Comunidade', icon: Users, modes: ['avancado'] },
@@ -34,10 +43,17 @@ export function AppSidebar() {
   const { collapsed, toggle } = useSidebar();
   const { mode, clearMode } = useAppMode();
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const { isEnabled, isLoading: flagsLoading } = useFeatureFlags();
 
-  const navItems = allNavItems.filter(item => 
-    !mode || item.modes.includes(mode as 'agenda' | 'avancado')
-  );
+  const navItems = allNavItems.filter(item => {
+    if (mode && !item.modes.includes(mode as AppModeKey)) return false;
+    if (item.requiresFlags && item.requiresFlags.length > 0) {
+      // While flags are loading, hide gated items to avoid flicker; show as soon as loaded
+      if (flagsLoading) return false;
+      return item.requiresFlags.some(f => isEnabled(f));
+    }
+    return true;
+  });
 
   const handleSwitchMode = () => {
     setShowPasswordDialog(true);
