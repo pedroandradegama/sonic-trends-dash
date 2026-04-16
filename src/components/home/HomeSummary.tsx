@@ -19,6 +19,7 @@ import { useRepasseData } from '@/hooks/useRepasseData';
 import { DestaquesCard } from '@/components/home/DestaquesCard';
 import { MemberGetMemberCard } from '@/components/home/MemberGetMemberCard';
 import { RadioburgerSuggestionButton } from '@/components/comunidade/RadioburgerSuggestionButton';
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import {
   DollarSign, BarChart3, ThumbsUp, ArrowRight,
   Baby, Stethoscope, BookOpen, ChevronRight, Bookmark,
@@ -40,6 +41,13 @@ export function HomeSummary() {
   const { data: repasseRaw } = useRepasseData();
   const { holidays } = useAdminHolidays();
   const { dates: radioburgerDates } = useAdminRadioburger();
+  const { isEnabled } = useFeatureFlags();
+
+  const showRepasse = isEnabled('repasse');
+  const showNps = isEnabled('nps');
+  const showAgendaComms = isEnabled('agenda_comms');
+  const showFeriados = isEnabled('feriados_imag');
+  const showCasosCompartilhados = isEnabled('casos_compartilhados_imag');
 
   const topExams = useMemo(() => examDistribution.slice(0, 3), [examDistribution]);
 
@@ -239,6 +247,7 @@ export function HomeSummary() {
           {/* Row 1 — Action & Performance (3 columns) */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Card 1: Sua Agenda */}
+            {showAgendaComms && (
             <Card className="cursor-pointer hover:shadow-md transition-shadow group" onClick={() => navigate('/minha-agenda')}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center justify-between">
@@ -286,8 +295,10 @@ export function HomeSummary() {
                 )}
               </CardContent>
             </Card>
+            )}
 
             {/* Card 2: Repasse */}
+            {showRepasse && (
             <Card className="cursor-pointer hover:shadow-md transition-shadow group" onClick={() => navigate('/meu-trabalho')}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center justify-between">
@@ -314,6 +325,7 @@ export function HomeSummary() {
                 )}
               </CardContent>
             </Card>
+            )}
 
             {/* Card 3: Desempenho (Casuística + NPS) */}
             <Card className="cursor-pointer hover:shadow-md transition-shadow group" onClick={() => navigate('/meu-trabalho')}>
@@ -347,28 +359,31 @@ export function HomeSummary() {
                   )}
                 </div>
 
-                <Separator className="my-3" />
-
-                {/* NPS block */}
-                <div>
-                  {npsSummary ? (
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-baseline gap-1">
-                        <ThumbsUp className="h-3.5 w-3.5 text-primary" />
-                        <span className={`text-xl font-bold ${
-                          npsSummary.nps >= 50 ? 'text-[hsl(var(--success))]' :
-                          npsSummary.nps >= 0 ? 'text-[hsl(var(--warning))]' : 'text-destructive'
-                        }`}>{npsSummary.nps}</span>
-                        <span className="text-xs text-muted-foreground">NPS</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {npsSummary.promoters} prom. · {npsSummary.detractors} detr.
-                      </div>
+                {showNps && (
+                  <>
+                    <Separator className="my-3" />
+                    {/* NPS block */}
+                    <div>
+                      {npsSummary ? (
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-baseline gap-1">
+                            <ThumbsUp className="h-3.5 w-3.5 text-primary" />
+                            <span className={`text-xl font-bold ${
+                              npsSummary.nps >= 50 ? 'text-[hsl(var(--success))]' :
+                              npsSummary.nps >= 0 ? 'text-[hsl(var(--warning))]' : 'text-destructive'
+                            }`}>{npsSummary.nps}</span>
+                            <span className="text-xs text-muted-foreground">NPS</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {npsSummary.promoters} prom. · {npsSummary.detractors} detr.
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Sem dados de NPS.</p>
+                      )}
                     </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Sem dados de NPS.</p>
-                  )}
-                </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -400,7 +415,7 @@ export function HomeSummary() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Próximo feriado */}
-                {nextFeriado && (
+                {showFeriados && nextFeriado && (
                   <div className="space-y-0.5">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Próximo Feriado</p>
                     <p className="text-sm font-medium">{nextFeriado.name}</p>

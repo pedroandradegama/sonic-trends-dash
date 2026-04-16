@@ -2756,6 +2756,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_feature_flags: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          feature: string
+          granted_by: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          feature: string
+          granted_by?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          feature?: string
+          granted_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2976,6 +3000,8 @@ export type Database = {
       is_doctor_agenda_active: { Args: { _user_id: string }; Returns: boolean }
       is_email_authorized: { Args: { _email: string }; Returns: boolean }
       refresh_rph_analytics: { Args: never; Returns: undefined }
+      trigger_dispatch_task_reminders: { Args: never; Returns: undefined }
+      trigger_generate_task_occurrences: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "medico" | "master_admin"
