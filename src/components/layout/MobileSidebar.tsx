@@ -3,10 +3,8 @@ import {
   Home,
   Briefcase,
   Compass,
-  MoreHorizontal,
-  CalendarDays,
-  Users,
-  Wrench,
+  Clock,
+  ChevronDown,
   User,
   ArrowLeftRight,
   LogOut,
@@ -14,15 +12,22 @@ import {
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import imagLogoNew from '@/assets/imag-logo-new.png';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAppMode } from '@/contexts/ModeContext';
 import { PasswordConfirmDialog } from './PasswordConfirmDialog';
-import { useFeatureFlags } from '@/hooks/useFeatureFlags';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const tabs = [
   { path: '/home', label: 'Início', icon: Home },
+  { path: '/tempo/deslocamentos', label: 'Tempo', icon: Clock, matchPrefix: '/tempo' },
   { path: '/ferramentas-ia', label: 'Trabalho', icon: Briefcase },
   { path: '/financeiro', label: 'Finanças', icon: Compass },
 ] as const;
@@ -32,32 +37,16 @@ export function MobileSidebar() {
   const { profile } = useUserProfile();
   const location = useLocation();
   const navigate = useNavigate();
-  const [moreOpen, setMoreOpen] = useState(false);
-  const firstName = profile?.medico_nome?.split(' ')[0] || '';
   const { clearMode } = useAppMode();
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const { isEnabled, isLoading: flagsLoading } = useFeatureFlags();
 
-  const showAgenda = !flagsLoading && (isEnabled('agenda_comms') || isEnabled('agenda_preferences'));
-  const showMeuTrabalho = !flagsLoading && (isEnabled('repasse') || isEnabled('nps') || isEnabled('casuistica'));
-
-  const handleSwitchMode = () => {
-    setMoreOpen(false);
-    setShowPasswordDialog(true);
-  };
+  const firstName = profile?.medico_nome?.split(' ')[0] || 'Usuário';
+  const avatarUrl = (profile as any)?.avatar_url;
 
   const handlePasswordConfirmed = () => {
     clearMode();
     navigate('/modo');
   };
-
-  const moreItems: Array<{ path: string; label: string; icon: typeof Home }> = [
-    ...(showAgenda ? [{ path: '/minha-agenda', label: 'Minha Agenda', icon: CalendarDays }] : []),
-    ...(showMeuTrabalho ? [{ path: '/meu-trabalho', label: 'Meu Trabalho', icon: Briefcase }] : []),
-    { path: '/ferramentas-ia', label: 'Ferramentas & IA', icon: Wrench },
-    { path: '/comunidade', label: 'Comunidade', icon: Users },
-    { path: '/perfil', label: 'Perfil', icon: User },
-  ];
 
   return (
     <>
@@ -67,11 +56,47 @@ export function MobileSidebar() {
             <img src={imagLogoNew} alt="IMAG" className="h-7" />
             <span className="text-sm font-semibold text-foreground">Portal do Médico</span>
           </div>
-          {firstName && (
-            <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs">
-              {firstName.charAt(0).toUpperCase()}
-            </div>
-          )}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-1.5 outline-none">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs overflow-hidden ring-2 ring-primary/5">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    firstName.charAt(0).toUpperCase()
+                  )}
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="flex items-center gap-2 py-2">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs overflow-hidden">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    firstName.charAt(0).toUpperCase()
+                  )}
+                </div>
+                <span className="text-sm font-medium truncate">{firstName}</span>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/perfil')} className="cursor-pointer">
+                <User className="mr-2 h-4 w-4" />
+                Meu Perfil
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowPasswordDialog(true)} className="cursor-pointer">
+                <ArrowLeftRight className="mr-2 h-4 w-4" />
+                Trocar modo
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer text-destructive focus:text-destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sair
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
@@ -81,14 +106,16 @@ export function MobileSidebar() {
       >
         <div className="flex items-stretch justify-around h-16">
           {tabs.map((tab) => {
-            const isActive = location.pathname === tab.path;
+            const isActive = (tab as any).matchPrefix
+              ? location.pathname.startsWith((tab as any).matchPrefix)
+              : location.pathname === tab.path;
             const Icon = tab.icon;
             return (
               <NavLink
                 key={tab.path}
                 to={tab.path}
                 className={cn(
-                  "flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors",
+                  "flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors",
                   isActive ? "text-primary" : "text-muted-foreground"
                 )}
               >
@@ -97,61 +124,6 @@ export function MobileSidebar() {
               </NavLink>
             );
           })}
-
-          <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-            <SheetTrigger asChild>
-              <button
-                className={cn(
-                  "flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors",
-                  moreOpen ? "text-primary" : "text-muted-foreground"
-                )}
-              >
-                <MoreHorizontal className="h-5 w-5" />
-                <span className="text-[10px] font-medium">Mais</span>
-              </button>
-            </SheetTrigger>
-            <SheetContent side="bottom" className="rounded-t-2xl p-4 max-h-[80vh]">
-              <div className="space-y-1 pt-2">
-                {moreItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = location.pathname === item.path;
-                  return (
-                    <NavLink
-                      key={item.path}
-                      to={item.path}
-                      onClick={() => setMoreOpen(false)}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors",
-                        isActive
-                          ? "bg-primary/10 text-primary"
-                          : "text-foreground hover:bg-accent"
-                      )}
-                    >
-                      <Icon className="h-5 w-5" />
-                      <span>{item.label}</span>
-                    </NavLink>
-                  );
-                })}
-
-                <div className="border-t border-border my-2" />
-
-                <button
-                  onClick={handleSwitchMode}
-                  className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                >
-                  <ArrowLeftRight className="h-5 w-5" />
-                  <span>Trocar modo</span>
-                </button>
-                <button
-                  onClick={() => { setMoreOpen(false); signOut(); }}
-                  className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-                >
-                  <LogOut className="h-5 w-5" />
-                  <span>Sair</span>
-                </button>
-              </div>
-            </SheetContent>
-          </Sheet>
         </div>
       </nav>
 
