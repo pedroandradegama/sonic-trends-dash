@@ -190,6 +190,8 @@ export function TempoDeslocamentosPage() {
       setGeocoding(false);
     }
   };
+
+  const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
