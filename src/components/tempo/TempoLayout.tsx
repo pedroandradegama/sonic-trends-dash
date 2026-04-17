@@ -1,41 +1,38 @@
 import { useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useFnConfig } from '@/hooks/useFnConfig';
-import { TrendingUp, Sparkles, Wallet } from 'lucide-react';
+import { CalendarDays, MapPin, CheckSquare } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 
-const BLOCKS = [
-  { id: 3, label: 'Projeção',         sub: 'Fluxo financeiro',  path: '/financeiro/projecao', Icon: TrendingUp, accent: 'from-teal-500 to-teal-600' },
-  { id: 4, label: 'Insights',         sub: 'KPIs e avaliação',  path: '/financeiro/insights', Icon: Sparkles,   accent: 'from-violet-500 to-violet-600' },
-  { id: 5, label: 'Saúde Financeira', sub: 'Bancos e gastos',   path: '/financeiro/saude',    Icon: Wallet,     accent: 'from-emerald-500 to-emerald-600' },
-];
-
-export function FinancialNavigatorLayout() {
+export function TempoLayout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { progress } = useFnConfig();
+  const { isEnabled, isLoading } = useFeatureFlags();
 
-  const progressByPath: Record<string, number> = {
-    '/financeiro/projecao': progress?.block3_pct ?? 0,
-    '/financeiro/insights': progress?.block4_pct ?? 0,
-    '/financeiro/saude': 0,
-  };
+  const showAgenda = !isLoading && (isEnabled('agenda_comms') || isEnabled('agenda_preferences'));
+
+  const TABS = [
+    ...(showAgenda
+      ? [{ label: 'Agenda', sub: 'Disponibilidades e turnos', path: '/tempo/agenda', Icon: CalendarDays, accent: 'from-blue-500 to-blue-600' }]
+      : []),
+    { label: 'Deslocamentos', sub: 'Distâncias e tempo', path: '/tempo/deslocamentos', Icon: MapPin, accent: 'from-teal-500 to-teal-600' },
+    { label: 'Tarefas', sub: 'Pendências e lembretes', path: '/tempo/tarefas', Icon: CheckSquare, accent: 'from-violet-500 to-violet-600' },
+  ];
 
   return (
     <div className="flex flex-col min-h-full bg-background">
       <div className="border-b border-border bg-card/50 px-4 md:px-6 pt-4 md:pt-5 pb-0">
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-3 md:mb-4">
-          Navegador Financeiro
+          Tempo
         </p>
         <ScrollArea className="w-full">
           <div className="flex gap-0 -mb-px min-w-max">
-            {BLOCKS.map((b) => {
-              const active = pathname.includes(b.path.split('/').pop()!);
-              const pct = progressByPath[b.path] ?? 0;
+            {TABS.map((b) => {
+              const active = pathname.startsWith(b.path);
               const { Icon } = b;
               return (
                 <button
-                  key={b.id}
+                  key={b.path}
                   onClick={() => navigate(b.path)}
                   className={cn(
                     'group relative flex items-center gap-2 md:gap-3 px-3 md:px-5 py-3 md:py-3.5 border-b-2 transition-all whitespace-nowrap',
@@ -50,27 +47,12 @@ export function FinancialNavigatorLayout() {
                   )}>
                     <Icon className={cn('h-3.5 w-3.5 md:h-4 md:w-4', active ? 'text-white' : 'text-muted-foreground')} />
                   </div>
-
                   <div className="text-left min-w-0">
                     <p className={cn('text-xs md:text-sm font-medium leading-tight', active ? 'text-foreground' : '')}>
                       {b.label}
                     </p>
                     <p className="text-[9px] md:text-[10px] text-muted-foreground leading-tight hidden sm:block">{b.sub}</p>
                   </div>
-
-                  {pct > 0 && pct < 100 && (
-                    <span className={cn(
-                      'text-[9px] font-bold px-1.5 py-0.5 rounded-full ml-0.5 md:ml-1 flex-shrink-0',
-                      active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-                    )}>
-                      {pct}%
-                    </span>
-                  )}
-                  {pct === 100 && (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 ml-0.5 md:ml-1 flex-shrink-0">
-                      ✓
-                    </span>
-                  )}
                 </button>
               );
             })}
