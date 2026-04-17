@@ -166,6 +166,45 @@ export function useFnConfig() {
           );
         }
       }
+
+      // Auto-calculate commute if service has lat/lng AND home is set
+      if (svcId && service.lat && service.lng && doctorProfile?.home_lat && doctorProfile?.home_lng) {
+        try {
+          const { data: cm } = await supabase.functions.invoke('calculate-commute', {
+            body: {
+              origin_lat: doctorProfile.home_lat,
+              origin_lng: doctorProfile.home_lng,
+              dest_lat: service.lat,
+              dest_lng: service.lng,
+            },
+          });
+          if (cm?.minutes != null) {
+            await (supabase as any).from('fn_services').update({
+              commute_minutes: cm.minutes,
+              commute_km: cm.km,
+            }).eq('id', svcId);
+
+            await (supabase as any).from('commute_entries').upsert({
+              user_id: uid,
+              service_id: svcId,
+              label: service.name ?? 'Trabalho',
+              origin_description: 'Casa',
+              destination_description: service.name ?? null,
+              origin_lat: doctorProfile.home_lat,
+              origin_lng: doctorProfile.home_lng,
+              dest_lat: service.lat,
+              dest_lng: service.lng,
+              duration_minutes: cm.minutes,
+              distance_km: cm.km,
+              days_of_week: [1, 2, 3, 4, 5],
+              source: 'google_maps',
+              is_work_commute: true,
+            }, { onConflict: 'service_id' });
+          }
+        } catch (err) {
+          console.warn('[useFnConfig] commute calculation failed', err);
+        }
+      }
     },
     onSuccess: invalidate,
   });
