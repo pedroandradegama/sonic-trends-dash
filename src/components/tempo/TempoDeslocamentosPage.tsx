@@ -249,6 +249,10 @@ export function TempoDeslocamentosPage() {
                       <Badge variant="outline" className="gap-1 text-amber-700 border-amber-300">
                         <Calculator className="h-3 w-3" /> calcular
                       </Badge>
+                    ) : svc.address ? (
+                      <Badge variant="outline" className="gap-1 text-amber-700 border-amber-300">
+                        <Calculator className="h-3 w-3" /> sem coordenadas
+                      </Badge>
                     ) : (
                       <Badge variant="outline" className="text-muted-foreground">sem endereço</Badge>
                     )}
