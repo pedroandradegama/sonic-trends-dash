@@ -45,12 +45,14 @@ export function TempoDeslocamentosPage() {
   const [parsedEntries, setParsedEntries] = useState<ParsedCommuteEntry[]>([]);
   const [transcript, setTranscript] = useState('');
   const [recalculating, setRecalculating] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
   const hasHome = !!(doctorProfile?.home_lat && doctorProfile?.home_lng);
   const servicesWithCoords = services.filter((s: any) => s.lat && s.lng);
+  const servicesPendingGeocode = services.filter((s: any) => s.address && (!s.lat || !s.lng));
 
   // ── Build per-service commute breakdown for current month from real shifts ──
   const now = new Date();
@@ -107,6 +109,85 @@ export function TempoDeslocamentosPage() {
       toast.error('Erro: ' + e.message);
     } finally {
       setRecalculating(false);
+    }
+  };
+
+  const handleGeocodePending = async () => {
+    if (servicesPendingGeocode.length === 0) {
+      toast.info('Todos os serviços já têm coordenadas.');
+      return;
+    }
+    setGeocoding(true);
+    try {
+      let geocoded = 0;
+      let commuteUpdated = 0;
+      for (const svc of servicesPendingGeocode) {
+        const { data: geo } = await supabase.functions.invoke('geocode-address', {
+          body: { address: svc.address },
+        });
+        if (!geo?.lat || !geo?.lng) continue;
+
+        await (supabase as any).from('fn_services').update({
+          lat: geo.lat, lng: geo.lng, place_id: geo.place_id ?? null,
+        }).eq('id', svc.id);
+        geocoded++;
+
+        // Backfill preset if matching
+        try {
+          const firstLine = (svc.address as string).split(',')[0];
+          const { data: presets } = await (supabase as any)
+            .from('fn_preset_clinics')
+            .select('id, lat, lng')
+            .ilike('address', `%${firstLine}%`);
+          for (const p of presets ?? []) {
+            if (!p.lat || !p.lng) {
+              await (supabase as any).from('fn_preset_clinics').update({
+                lat: geo.lat, lng: geo.lng, place_id: geo.place_id ?? null,
+              }).eq('id', p.id);
+            }
+          }
+        } catch {}
+
+        // Calculate commute if home is set
+        if (hasHome) {
+          const { data: cm } = await supabase.functions.invoke('calculate-commute', {
+            body: {
+              origin_lat: doctorProfile!.home_lat,
+              origin_lng: doctorProfile!.home_lng,
+              dest_lat: geo.lat,
+              dest_lng: geo.lng,
+            },
+          });
+          if (cm?.minutes != null) {
+            await (supabase as any).from('fn_services').update({
+              commute_minutes: cm.minutes, commute_km: cm.km,
+            }).eq('id', svc.id);
+            await (supabase as any).from('commute_entries').upsert({
+              user_id: doctorProfile!.user_id,
+              service_id: svc.id,
+              label: svc.name,
+              origin_description: 'Casa',
+              destination_description: svc.name,
+              origin_lat: doctorProfile!.home_lat,
+              origin_lng: doctorProfile!.home_lng,
+              dest_lat: geo.lat,
+              dest_lng: geo.lng,
+              duration_minutes: cm.minutes,
+              distance_km: cm.km,
+              days_of_week: [1, 2, 3, 4, 5],
+              source: 'google_maps',
+              is_work_commute: true,
+            }, { onConflict: 'service_id' });
+            commuteUpdated++;
+          }
+        }
+      }
+      toast.success(`${geocoded} endereço(s) geocodificado(s)${hasHome ? `, ${commuteUpdated} trajeto(s) calculado(s)` : ''}.`);
+      window.location.reload();
+    } catch (e: any) {
+      toast.error('Erro: ' + e.message);
+    } finally {
+      setGeocoding(false);
     }
   };
 
@@ -200,12 +281,20 @@ export function TempoDeslocamentosPage() {
               Calculado a partir dos turnos cadastrados na sua Agenda × tempo entre sua casa e cada unidade
             </p>
           </div>
-          {hasHome && servicesWithCoords.length > 0 && (
-            <Button variant="outline" size="sm" onClick={handleRecalculate} disabled={recalculating}>
-              {recalculating ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1.5" />}
-              Recalcular tempos
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {servicesPendingGeocode.length > 0 && (
+              <Button variant="outline" size="sm" onClick={handleGeocodePending} disabled={geocoding}>
+                {geocoding ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <MapPin className="h-3.5 w-3.5 mr-1.5" />}
+                Geocodificar {servicesPendingGeocode.length} endereço{servicesPendingGeocode.length === 1 ? '' : 's'}
+              </Button>
+            )}
+            {hasHome && servicesWithCoords.length > 0 && (
+              <Button variant="outline" size="sm" onClick={handleRecalculate} disabled={recalculating}>
+                {recalculating ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1.5" />}
+                Recalcular tempos
+              </Button>
+            )}
+          </div>
         </div>
 
         {!hasHome && (
