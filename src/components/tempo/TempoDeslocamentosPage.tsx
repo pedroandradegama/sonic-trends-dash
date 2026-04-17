@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Clock, Mic, MicOff, Loader2, Plus, Trash2, RefreshCw, AlertCircle, Briefcase, Home as HomeIcon } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MapPin, Clock, Mic, MicOff, Loader2, Plus, Trash2, RefreshCw, AlertCircle, Briefcase, Home as HomeIcon, Pencil, Calculator } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -9,7 +9,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useFnConfig } from '@/hooks/useFnConfig';
-import { useCommuteEntries } from '@/hooks/useCommuteEntries';
+import { useFnCalendar } from '@/hooks/useFnCalendar';
+import { useCommuteEntries, CommuteEntry } from '@/hooks/useCommuteEntries';
 import { CommuteVoicePreviewSheet, ParsedCommuteEntry } from './CommuteVoicePreviewSheet';
 import { CommuteManualSheet } from './CommuteManualSheet';
 
@@ -34,11 +35,13 @@ function daysSummary(days: number[]) {
 export function TempoDeslocamentosPage() {
   const navigate = useNavigate();
   const { doctorProfile, services } = useFnConfig();
-  const { workEntries, personalEntries, deleteEntry, getMonthlyMinutes } = useCommuteEntries();
+  const { getShiftsForMonth } = useFnCalendar();
+  const { personalEntries, deleteEntry, getMonthlyMinutes } = useCommuteEntries();
 
   const [recState, setRecState] = useState<'idle' | 'recording' | 'processing'>('idle');
   const [previewOpen, setPreviewOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<CommuteEntry | null>(null);
   const [parsedEntries, setParsedEntries] = useState<ParsedCommuteEntry[]>([]);
   const [transcript, setTranscript] = useState('');
   const [recalculating, setRecalculating] = useState(false);
@@ -47,13 +50,30 @@ export function TempoDeslocamentosPage() {
   const chunksRef = useRef<Blob[]>([]);
 
   const hasHome = !!(doctorProfile?.home_lat && doctorProfile?.home_lng);
-  const servicesWithCommute = services.filter((s: any) => s.commute_minutes != null);
   const servicesWithCoords = services.filter((s: any) => s.lat && s.lng);
 
-  // Estimate work commute minutes/month: each service round-trip * working days assumption (~17 days)
-  const workMonthlyMinutes = servicesWithCommute.reduce((sum: number, s: any) => {
-    return sum + ((s.commute_minutes ?? 0) * 2 * 17);
-  }, 0);
+  // ── Build per-service commute breakdown for current month from real shifts ──
+  const now = new Date();
+  const monthShifts = getShiftsForMonth(now.getFullYear(), now.getMonth());
+
+  const workBreakdown = services
+    .map((svc: any) => {
+      const shiftCount = monthShifts.filter(s => s.service_id === svc.id).length;
+      const oneWayMin = svc.commute_minutes ?? 0;
+      const monthlyMin = oneWayMin * 2 * shiftCount; // round trip per shift
+      return {
+        service: svc,
+        shiftCount,
+        oneWayMin,
+        oneWayKm: svc.commute_km ?? null,
+        monthlyMin,
+        hasCommute: oneWayMin > 0,
+        hasCoords: !!(svc.lat && svc.lng),
+      };
+    })
+    .filter(b => b.shiftCount > 0 || b.hasCommute);
+
+  const workMonthlyMinutes = workBreakdown.reduce((s, b) => s + b.monthlyMin, 0);
   const personalMonthlyMinutes = getMonthlyMinutes(e => !e.is_work_commute);
   const totalMonthly = workMonthlyMinutes + personalMonthlyMinutes;
 
@@ -132,6 +152,19 @@ export function TempoDeslocamentosPage() {
     }
   };
 
+  const openEdit = (entry: CommuteEntry) => {
+    setEditingEntry(entry);
+    setManualOpen(true);
+  };
+  const openCreate = () => {
+    setEditingEntry(null);
+    setManualOpen(true);
+  };
+  const closeManual = () => {
+    setManualOpen(false);
+    setEditingEntry(null);
+  };
+
   return (
     <div className="space-y-6">
       {/* Resumo mensal */}
@@ -141,7 +174,7 @@ export function TempoDeslocamentosPage() {
             Tempo total de deslocamento mensal
           </p>
           <p className="text-3xl font-bold text-foreground">{formatHours(totalMonthly)}</p>
-          <div className="flex gap-4 mt-3 text-sm">
+          <div className="flex gap-4 mt-3 text-sm flex-wrap">
             <div className="flex items-center gap-1.5">
               <Briefcase className="h-3.5 w-3.5 text-primary" />
               <span className="text-muted-foreground">Trabalho:</span>
@@ -163,12 +196,14 @@ export function TempoDeslocamentosPage() {
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <Briefcase className="h-4 w-4 text-primary" /> Deslocamentos de trabalho
             </h2>
-            <p className="text-xs text-muted-foreground">Calculado automaticamente entre sua casa e suas unidades</p>
+            <p className="text-xs text-muted-foreground">
+              Calculado a partir dos turnos cadastrados na sua Agenda × tempo entre sua casa e cada unidade
+            </p>
           </div>
           {hasHome && servicesWithCoords.length > 0 && (
             <Button variant="outline" size="sm" onClick={handleRecalculate} disabled={recalculating}>
               {recalculating ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1.5" />}
-              Recalcular
+              Recalcular tempos
             </Button>
           )}
         </div>
@@ -185,28 +220,56 @@ export function TempoDeslocamentosPage() {
           </Alert>
         )}
 
-        {servicesWithCommute.length === 0 && hasHome && (
+        {workBreakdown.length === 0 && hasHome && (
           <Card><CardContent className="pt-6 text-sm text-muted-foreground text-center">
-            Nenhuma unidade com deslocamento calculado. Cadastre serviços com endereço em <button onClick={() => navigate('/tempo/agenda')} className="underline text-primary">Agenda</button> e clique em "Recalcular".
+            Nenhum turno cadastrado este mês. Adicione turnos na <button onClick={() => navigate('/tempo/agenda')} className="underline text-primary">Agenda</button>.
           </CardContent></Card>
         )}
 
         <div className="grid gap-2">
-          {servicesWithCommute.map((svc: any) => (
-            <Card key={svc.id}>
-              <CardContent className="py-3 flex items-center gap-3">
-                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: svc.color }} />
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{svc.name}</p>
-                  {svc.address && <p className="text-xs text-muted-foreground truncate">{svc.address}</p>}
-                </div>
-                <Badge variant="secondary" className="gap-1"><Clock className="h-3 w-3" />{svc.commute_minutes} min</Badge>
-                {svc.commute_km != null && (
-                  <Badge variant="outline" className="gap-1"><MapPin className="h-3 w-3" />{svc.commute_km} km</Badge>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+          {workBreakdown.map(b => {
+            const svc = b.service;
+            return (
+              <Card key={svc.id}>
+                <CardContent className="py-3">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: svc.color }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{svc.name}</p>
+                      {svc.address && <p className="text-xs text-muted-foreground truncate">{svc.address}</p>}
+                    </div>
+                    {b.hasCommute ? (
+                      <>
+                        <Badge variant="secondary" className="gap-1"><Clock className="h-3 w-3" />{b.oneWayMin} min</Badge>
+                        {b.oneWayKm != null && (
+                          <Badge variant="outline" className="gap-1"><MapPin className="h-3 w-3" />{b.oneWayKm} km</Badge>
+                        )}
+                      </>
+                    ) : b.hasCoords ? (
+                      <Badge variant="outline" className="gap-1 text-amber-700 border-amber-300">
+                        <Calculator className="h-3 w-3" /> calcular
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-muted-foreground">sem endereço</Badge>
+                    )}
+                  </div>
+                  {/* Memória de cálculo */}
+                  <div className="bg-muted/40 rounded-lg px-3 py-2 text-[11px] text-muted-foreground font-mono leading-relaxed">
+                    {b.hasCommute ? (
+                      <>
+                        <span className="text-foreground font-semibold">{b.oneWayMin} min</span> (ida) × 2 (ida e volta) × <span className="text-foreground font-semibold">{b.shiftCount} turno{b.shiftCount === 1 ? '' : 's'}</span> no mês
+                        {' = '}<span className="text-primary font-bold">{formatHours(b.monthlyMin)}</span>
+                      </>
+                    ) : b.hasCoords ? (
+                      <>{b.shiftCount} turno{b.shiftCount === 1 ? '' : 's'} este mês — clique em "Recalcular tempos" para estimar o trajeto.</>
+                    ) : (
+                      <>{b.shiftCount} turno{b.shiftCount === 1 ? '' : 's'} este mês — cadastre o endereço da unidade na Agenda.</>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </section>
 
@@ -221,7 +284,7 @@ export function TempoDeslocamentosPage() {
             </h2>
             <p className="text-xs text-muted-foreground">Escola, academia, consultas médicas...</p>
           </div>
-          <Button size="sm" variant="outline" onClick={() => setManualOpen(true)}>
+          <Button size="sm" variant="outline" onClick={openCreate}>
             <Plus className="h-3.5 w-3.5 mr-1.5" /> Adicionar
           </Button>
         </div>
@@ -243,6 +306,9 @@ export function TempoDeslocamentosPage() {
                     {e.duration_minutes ? ` • ${e.duration_minutes} min` : ''}
                   </p>
                 </div>
+                <Button variant="ghost" size="icon" onClick={() => openEdit(e)}>
+                  <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                </Button>
                 <Button
                   variant="ghost" size="icon"
                   onClick={() => { if (confirm('Excluir este deslocamento?')) deleteEntry.mutate(e.id); }}
@@ -285,7 +351,7 @@ export function TempoDeslocamentosPage() {
         transcript={transcript}
         entries={parsedEntries}
       />
-      <CommuteManualSheet open={manualOpen} onClose={() => setManualOpen(false)} />
+      <CommuteManualSheet open={manualOpen} onClose={closeManual} entry={editingEntry} />
     </div>
   );
 }
