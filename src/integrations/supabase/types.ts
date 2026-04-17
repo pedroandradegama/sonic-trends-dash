@@ -519,6 +519,77 @@ export type Database = {
         }
         Relationships: []
       }
+      commute_entries: {
+        Row: {
+          created_at: string | null
+          days_of_week: number[] | null
+          dest_lat: number | null
+          dest_lng: number | null
+          destination_description: string | null
+          distance_km: number | null
+          duration_minutes: number | null
+          id: string
+          is_work_commute: boolean | null
+          label: string
+          origin_description: string | null
+          origin_lat: number | null
+          origin_lng: number | null
+          raw_transcript: string | null
+          service_id: string | null
+          source: string | null
+          time_of_day: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          days_of_week?: number[] | null
+          dest_lat?: number | null
+          dest_lng?: number | null
+          destination_description?: string | null
+          distance_km?: number | null
+          duration_minutes?: number | null
+          id?: string
+          is_work_commute?: boolean | null
+          label: string
+          origin_description?: string | null
+          origin_lat?: number | null
+          origin_lng?: number | null
+          raw_transcript?: string | null
+          service_id?: string | null
+          source?: string | null
+          time_of_day?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          days_of_week?: number[] | null
+          dest_lat?: number | null
+          dest_lng?: number | null
+          destination_description?: string | null
+          distance_km?: number | null
+          duration_minutes?: number | null
+          id?: string
+          is_work_commute?: boolean | null
+          label?: string
+          origin_description?: string | null
+          origin_lat?: number | null
+          origin_lng?: number | null
+          raw_transcript?: string | null
+          service_id?: string | null
+          source?: string | null
+          time_of_day?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commute_entries_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "fn_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       digest_dispatch_queue: {
         Row: {
           article_id: string
@@ -1302,6 +1373,8 @@ export type Database = {
         Row: {
           address: string | null
           color: string
+          commute_km: number | null
+          commute_minutes: number | null
           created_at: string
           distribution_frequency: string | null
           distribution_months: number[] | null
@@ -1332,6 +1405,8 @@ export type Database = {
         Insert: {
           address?: string | null
           color?: string
+          commute_km?: number | null
+          commute_minutes?: number | null
           created_at?: string
           distribution_frequency?: string | null
           distribution_months?: number[] | null
@@ -1362,6 +1437,8 @@ export type Database = {
         Update: {
           address?: string | null
           color?: string
+          commute_km?: number | null
+          commute_minutes?: number | null
           created_at?: string
           distribution_frequency?: string | null
           distribution_months?: number[] | null
