@@ -127,11 +127,37 @@ export function useFnConfig() {
       expenses?: Omit<FnServiceExpense, 'id' | 'service_id' | 'user_id'>[];
     }) => {
       let svcId = service.id;
+      let finalLat = service.lat ?? null;
+      let finalLng = service.lng ?? null;
+      let finalPlaceId = service.place_id ?? null;
+
+      // ── Auto-geocode if address is set but coordinates are missing ──
+      if (service.address && (!finalLat || !finalLng)) {
+        try {
+          const { data: geo } = await supabase.functions.invoke('geocode-address', {
+            body: { address: service.address },
+          });
+          if (geo?.lat && geo?.lng) {
+            finalLat = geo.lat;
+            finalLng = geo.lng;
+            finalPlaceId = geo.place_id ?? finalPlaceId;
+          }
+        } catch (err) {
+          console.warn('[useFnConfig] geocode failed', err);
+        }
+      }
+
+      const payload = {
+        ...buildServicePayload(service),
+        lat: finalLat,
+        lng: finalLng,
+        place_id: finalPlaceId,
+      };
 
       if (!svcId) {
         const { data, error } = await (supabase as any)
           .from('fn_services')
-          .insert({ user_id: uid, ...buildServicePayload(service) })
+          .insert({ user_id: uid, ...payload })
           .select()
           .single();
         if (error) throw error;
@@ -139,7 +165,7 @@ export function useFnConfig() {
       } else {
         const { error } = await (supabase as any)
           .from('fn_services')
-          .update({ ...buildServicePayload(service), updated_at: new Date().toISOString() })
+          .update({ ...payload, updated_at: new Date().toISOString() })
           .eq('id', svcId)
           .eq('user_id', uid);
         if (error) throw error;
@@ -167,15 +193,35 @@ export function useFnConfig() {
         }
       }
 
+      // ── Backfill preset clinic with coords if it has a matching place_id but no lat/lng ──
+      if (finalLat && finalLng && service.address) {
+        try {
+          const { data: matchingPresets } = await (supabase as any)
+            .from('fn_preset_clinics')
+            .select('id, lat, lng')
+            .ilike('address', `%${service.address.split(',')[0]}%`);
+          for (const p of matchingPresets ?? []) {
+            if (!p.lat || !p.lng) {
+              await (supabase as any)
+                .from('fn_preset_clinics')
+                .update({ lat: finalLat, lng: finalLng, place_id: finalPlaceId })
+                .eq('id', p.id);
+            }
+          }
+        } catch (err) {
+          console.warn('[useFnConfig] preset backfill failed', err);
+        }
+      }
+
       // Auto-calculate commute if service has lat/lng AND home is set
-      if (svcId && service.lat && service.lng && doctorProfile?.home_lat && doctorProfile?.home_lng) {
+      if (svcId && finalLat && finalLng && doctorProfile?.home_lat && doctorProfile?.home_lng) {
         try {
           const { data: cm } = await supabase.functions.invoke('calculate-commute', {
             body: {
               origin_lat: doctorProfile.home_lat,
               origin_lng: doctorProfile.home_lng,
-              dest_lat: service.lat,
-              dest_lng: service.lng,
+              dest_lat: finalLat,
+              dest_lng: finalLng,
             },
           });
           if (cm?.minutes != null) {
@@ -192,8 +238,8 @@ export function useFnConfig() {
               destination_description: service.name ?? null,
               origin_lat: doctorProfile.home_lat,
               origin_lng: doctorProfile.home_lng,
-              dest_lat: service.lat,
-              dest_lng: service.lng,
+              dest_lat: finalLat,
+              dest_lng: finalLng,
               duration_minutes: cm.minutes,
               distance_km: cm.km,
               days_of_week: [1, 2, 3, 4, 5],
