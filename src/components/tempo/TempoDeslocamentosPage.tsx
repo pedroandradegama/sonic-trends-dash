@@ -281,12 +281,20 @@ export function TempoDeslocamentosPage() {
               Calculado a partir dos turnos cadastrados na sua Agenda × tempo entre sua casa e cada unidade
             </p>
           </div>
-          {hasHome && servicesWithCoords.length > 0 && (
-            <Button variant="outline" size="sm" onClick={handleRecalculate} disabled={recalculating}>
-              {recalculating ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1.5" />}
-              Recalcular tempos
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {servicesPendingGeocode.length > 0 && (
+              <Button variant="outline" size="sm" onClick={handleGeocodePending} disabled={geocoding}>
+                {geocoding ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <MapPin className="h-3.5 w-3.5 mr-1.5" />}
+                Geocodificar {servicesPendingGeocode.length} endereço{servicesPendingGeocode.length === 1 ? '' : 's'}
+              </Button>
+            )}
+            {hasHome && servicesWithCoords.length > 0 && (
+              <Button variant="outline" size="sm" onClick={handleRecalculate} disabled={recalculating}>
+                {recalculating ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1.5" />}
+                Recalcular tempos
+              </Button>
+            )}
+          </div>
         </div>
 
         {!hasHome && (
