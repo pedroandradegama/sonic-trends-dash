@@ -2,6 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Kanban, CalendarDays, List } from "lucide-react";
 import { TaskCreateDialog } from "@/components/tasks/TaskCreateDialog";
 import { TaskKanbanView } from "@/components/tasks/TaskKanbanView";
+import { TaskCalendarView } from "@/components/tasks/TaskCalendarView";
 import { useTasks } from "@/hooks/useTasks";
 import { toast } from "sonner";
 import { format, isToday, isThisWeek, isBefore, startOfDay } from "date-fns";
@@ -73,9 +74,11 @@ export default function TasksPage() {
         </TabsContent>
 
         <TabsContent value="calendar">
-          <div className="rounded-2xl border bg-card p-8 text-center text-muted-foreground text-sm">
-            Visualização de calendário em breve.
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20 text-muted-foreground text-sm">Carregando...</div>
+          ) : (
+            <TaskCalendarView tasks={tasks} />
+          )}
         </TabsContent>
 
         <TabsContent value="list">
