@@ -5,8 +5,9 @@ import { TrendingUp, Sparkles, Wallet } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 const BLOCKS = [
-  { id: 3, label: 'Gestão Financeira', sub: 'Fluxo financeiro',  path: '/financeiro/projecao', Icon: TrendingUp, accent: 'from-teal-500 to-teal-600' },
-  { id: 4, label: 'Insights',         sub: 'KPIs e avaliação',  path: '/financeiro/insights', Icon: Sparkles,   accent: 'from-violet-500 to-violet-600' },
+  { id: 1, label: 'Projeção',          sub: 'Fluxo financeiro',     path: '/financeiro/projecao', Icon: TrendingUp, accent: 'from-teal-500 to-teal-600' },
+  { id: 2, label: 'Insights',          sub: 'KPIs e avaliação',     path: '/financeiro/insights', Icon: Sparkles,   accent: 'from-violet-500 to-violet-600' },
+  { id: 3, label: 'Gestão Financeira', sub: 'Ferramentas externas', path: '/financeiro/gestao',   Icon: Wallet,     accent: 'from-emerald-500 to-emerald-600' },
 ];
 
 export function FinancialNavigatorLayout() {

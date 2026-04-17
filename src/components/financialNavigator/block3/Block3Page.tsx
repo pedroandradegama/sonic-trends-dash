@@ -11,7 +11,7 @@ import { FnMethodBreakdown } from './FnMethodBreakdown';
 import { FnProvisionCard } from './FnProvisionCard';
 import { FnAdjustmentsLog } from './FnAdjustmentsLog';
 import { FnActualVsProjected } from './FnActualVsProjected';
-import { ExternalToolsSection } from './ExternalToolsSection';
+
 import { useFnProjection } from '@/hooks/useFnProjection';
 import { useFnConfig } from '@/hooks/useFnConfig';
 import { supabase } from '@/integrations/supabase/client';
@@ -217,8 +217,6 @@ export function Block3Page() {
         </div>
       </div>
 
-      {/* ── Ferramentas externas ───────────────── */}
-      <ExternalToolsSection />
     </div>
   );
 }
