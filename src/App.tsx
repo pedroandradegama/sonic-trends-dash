@@ -35,6 +35,7 @@ import { FinancialNavigatorLayout } from "@/components/financialNavigator/Financ
 import { Block3Page } from "@/components/financialNavigator/block3/Block3Page";
 import { Block4Page } from "@/components/financialNavigator/block4/Block4Page";
 import { FnOpenFinancePage } from "@/components/financialNavigator/openFinance/FnOpenFinancePage";
+import GestaoFinanceiraPage from "@/pages/GestaoFinanceira";
 import { TempoLayout } from "@/components/tempo/TempoLayout";
 import { TempoAgendaPage } from "@/components/tempo/TempoAgendaPage";
 import { TempoDeslocamentosPage } from "@/components/tempo/TempoDeslocamentosPage";
@@ -98,6 +99,7 @@ const App = () => (
               <Route path="projecao" element={<Block3Page />} />
               <Route path="insights" element={<Block4Page />} />
               <Route path="saude" element={<FnOpenFinancePage />} />
+              <Route path="gestao" element={<GestaoFinanceiraPage />} />
               <Route index element={<Navigate to="projecao" replace />} />
             </Route>
             {/* Legacy redirects */}
